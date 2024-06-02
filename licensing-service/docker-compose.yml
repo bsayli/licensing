@@ -1,0 +1,21 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin  # Consider using environment variables for passwords in production
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${HOME}/docker_volumes/keycloak:/opt/keycloak/data  
+    command: start-dev
+
+  licensing-service:
+    build: .  # Replace with path to your Dockerfile if it's not in the current directory
+    environment:
+      # Define environment variables here
+      SPRING_PROFILES_ACTIVE: dev  # Replace with your desired values
+    ports:
+      - "8081:8081"  # Replace 8081 with your desired application port
+    depends_on:
+      - keycloak  # Ensure Keycloak starts before your application
