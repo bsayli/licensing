@@ -5,9 +5,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.c9.licensing.security.EncryptionUtil;
+import com.c9.licensing.security.JwtUtil;
 import com.c9.licensing.security.UserIdUtil;
 import com.c9.licensing.security.impl.EncryptionUtilImpl;
-import com.c9.licensing.security.impl.JwtUtil;
+import com.c9.licensing.security.impl.JwtUtilImpl;
 import com.c9.licensing.security.impl.UserIdUtilImpl;
 
 @Configuration
@@ -22,6 +23,8 @@ public class SecretConfig {
     @Value("${license.jwt.secret.key}")
     private String licenseJwtSecretKey;
     
+    @Value("${jwt.token.expiration}")
+    private Integer tokenExpirationInMinute;
     
     @Bean
     UserIdUtil userIdUti() {
@@ -35,7 +38,7 @@ public class SecretConfig {
     
     @Bean
     JwtUtil jwtUtil() {
-    	return new JwtUtil(licenseJwtSecretKey);
+    	return new JwtUtilImpl(licenseJwtSecretKey, tokenExpirationInMinute);
     }
    
 

@@ -2,128 +2,19 @@ package com.c9.licensing.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
-import com.c9.licensing.errors.LicenseExpiredException;
-import com.c9.licensing.errors.LicenseInactiveException;
-import com.c9.licensing.errors.LicenseInvalidException;
-import com.c9.licensing.errors.LicenseUsageLimitExceededException;
-import com.c9.licensing.errors.TokenExpiredException;
-import com.c9.licensing.errors.TokenInvalidException;
-import com.c9.licensing.model.LicenseErrorCode;
-import com.c9.licensing.model.LicenseInfo;
 import com.c9.licensing.model.LicenseValidationResult;
-import com.c9.licensing.security.UserIdUtil;
 
-@Service
-public class LicenseService {
-
-	private static final String ERROR_DURING_LICENSE_VALIDATION = "An unexpected error occurred during license validation";
-	private static final String LICENSE_VALIDATION_FAILED = "License validation failed";
-	private static final String LICENSE_KEY_IS_VALID = "License key is valid";
-	private static final String TOKEN_IS_VALID = "Token is valid";
-	private static final String TOKEN_REFRESHED = "Token is refreshed";
+public interface LicenseService {
 	
+	String ERROR_DURING_LICENSE_VALIDATION = "An unexpected error occurred during license validation";
+	String LICENSE_VALIDATION_FAILED = "License validation failed";
+	String LICENSE_KEY_IS_VALID = "License key is valid";
+	String TOKEN_IS_VALID = "Token is valid";
+	String TOKEN_REFRESHED = "Token is refreshed";
+	Logger logger = LoggerFactory.getLogger(LicenseService.class);
 
-
-	private static final Logger logger = LoggerFactory.getLogger(LicenseService.class);
-
-	@Autowired
-	private LicenseValidationService licenseValidationService;
-
-	@Autowired
-	private TokenValidationService tokenValidationService;
-
-	@Autowired
-	private UserIdUtil userIdUtil;
+	LicenseValidationResult getLicenseResult(String licenseKey, String instanceId);
 	
-	public LicenseValidationResult getLicenseResult(String licenseKey, String instanceId) {
-		LicenseValidationResult validationResult;
-		try {
-			LicenseInfo info = licenseValidationService.validateLicense(licenseKey, instanceId);
-			validationResult = getValidationResult(instanceId, info, null, LICENSE_KEY_IS_VALID);
-
-		} catch (LicenseInvalidException | LicenseInactiveException | LicenseExpiredException
-				| LicenseUsageLimitExceededException e) {
-			logger.error(LICENSE_VALIDATION_FAILED, e);
-			validationResult = new LicenseValidationResult.Builder()
-					.valid(false)
-					.errorCode(e.getErrorCode())
-					.message(e.getMessage()).build();
-
-		} catch (Exception e) {
-			logger.error(ERROR_DURING_LICENSE_VALIDATION, e);
-			validationResult = new LicenseValidationResult.Builder()
-					.valid(false)
-					.errorCode(LicenseErrorCode.UNKNOWN_ERROR)
-					.message(ERROR_DURING_LICENSE_VALIDATION).build();
-		}
-		return validationResult;
-	}
-
-
-	public LicenseValidationResult validateAndRefreshToken(String token, String instanceId) {
-
-		LicenseValidationResult validationResult = null;
-		try {
-			tokenValidationService.validateToken(token, instanceId);
-			validationResult = new LicenseValidationResult.Builder()
-					.valid(true)
-					.message(TOKEN_IS_VALID)
-					.build();
-
-		} catch (TokenInvalidException e) {
-			logger.error(LICENSE_VALIDATION_FAILED, e);
-			validationResult = new LicenseValidationResult.Builder()
-					.valid(false)
-					.errorCode(e.getErrorCode())
-					.message(e.getMessage()).build();
-		} catch (TokenExpiredException e) {
-			validationResult = getTokenLicenseValidationResult(e.getTokenSub(), instanceId);
-		} catch (Exception e) {
-			logger.error(ERROR_DURING_LICENSE_VALIDATION, e);
-			validationResult = new LicenseValidationResult.Builder()
-					.valid(false)
-					.errorCode(LicenseErrorCode.UNKNOWN_ERROR)
-					.message(ERROR_DURING_LICENSE_VALIDATION).build();
-		}
-		return validationResult;
-	}
-
-	private LicenseValidationResult getTokenLicenseValidationResult(String tokenSub, String instanceId) {
-		LicenseValidationResult validationResult = null;
-		try {
-			LicenseInfo licenseInfo = licenseValidationService.validateLicenseForToken(tokenSub, instanceId);
-			validationResult = getValidationResult(instanceId, licenseInfo, LicenseErrorCode.TOKEN_REFRESHED, TOKEN_REFRESHED);
-			
-		} catch (LicenseInvalidException | LicenseInactiveException | LicenseExpiredException
-				| LicenseUsageLimitExceededException le) {
-			logger.error(LICENSE_VALIDATION_FAILED, le);
-			validationResult = new LicenseValidationResult.Builder()
-					.valid(false)
-					.errorCode(le.getErrorCode())
-					.message(le.getMessage()).build();
-
-		} catch (Exception ge) {
-			logger.error(ERROR_DURING_LICENSE_VALIDATION, ge);
-			validationResult = new LicenseValidationResult.Builder()
-					.valid(false)
-					.errorCode(LicenseErrorCode.UNKNOWN_ERROR)
-					.message(ERROR_DURING_LICENSE_VALIDATION).build();
-		}
-		return validationResult;
-	}
-	
-	private LicenseValidationResult getValidationResult(String instanceId, LicenseInfo info, LicenseErrorCode errorCode, String message) {
-		String obfUserID = userIdUtil.obfuscateUserId(info.userId());
-		String licenseTier = info.licenseTier();
-
-		return new LicenseValidationResult.Builder().userId(obfUserID).appInstanceId(instanceId)
-				.valid(true).licenseStatus(info.licenseStatus()).licenseTier(licenseTier)
-				.errorCode(errorCode)
-				.message(message).build();
-		
-	}
-
+	LicenseValidationResult validateAndRefreshToken(String token, String instanceId);
 }

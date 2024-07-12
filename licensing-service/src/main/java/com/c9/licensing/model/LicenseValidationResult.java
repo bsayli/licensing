@@ -1,6 +1,6 @@
 package com.c9.licensing.model;
 
-public record LicenseValidationResult(String userId, String appInstanceId, Boolean valid, String licenseTier, String licenseStatus, LicenseErrorCode errorCode, String message) {
+public record LicenseValidationResult(String userId, String appInstanceId, boolean valid, String licenseTier, String licenseStatus, LicenseErrorCode errorCode, String message) {
 
     // Builder for LicenseValidationResult
     public static class Builder {

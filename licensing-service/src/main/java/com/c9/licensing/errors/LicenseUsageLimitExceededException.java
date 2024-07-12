@@ -13,6 +13,6 @@ public class LicenseUsageLimitExceededException extends RuntimeException impleme
 	}
 
 	public LicenseErrorCode getErrorCode() {
-		return LicenseErrorCode.LICENSE_INVALID;
+		return LicenseErrorCode.LICENSE_USAGE_LIMIT_EXCEEDED;
 	}
 }

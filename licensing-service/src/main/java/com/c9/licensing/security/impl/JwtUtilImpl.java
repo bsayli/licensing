@@ -7,28 +7,29 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
-import org.springframework.beans.factory.annotation.Value;
-
-import com.c9.licensing.errors.TokenInvalidException;
 import com.c9.licensing.model.LicenseValidationResult;
+import com.c9.licensing.security.JwtUtil;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
-public class JwtUtil {
+public class JwtUtilImpl implements JwtUtil {
 
 	private final Key secretKey;
+	private final Integer tokenExpirationInMinute;
 
-	public JwtUtil(@Value("${license.jwt.secret}") String secretKeyString) {
+	public JwtUtilImpl(String secretKeyString, Integer tokenExpirationInMinute) {
 		byte[] keyBytes = Decoders.BASE64.decode(secretKeyString);
 		this.secretKey = Keys.hmacShaKeyFor(keyBytes);
+		this.tokenExpirationInMinute = tokenExpirationInMinute;
 	}
 
+	@Override
 	public String generateToken(LicenseValidationResult result) {
 		Instant now = Instant.now();
-		Instant expiry = now.plus(1, ChronoUnit.MINUTES);
+		Instant expiry = now.plus(tokenExpirationInMinute, ChronoUnit.MINUTES);
 
 		return Jwts.builder()
 				.subject(result.userId())
@@ -41,7 +42,8 @@ public class JwtUtil {
 				.signWith(secretKey).compact();
 	}
 
-    public Claims validateToken(String token) {
+    @Override
+	public Claims validateToken(String token) {
         return Jwts.parser()
                 .verifyWith((SecretKey) secretKey)
                 .build()

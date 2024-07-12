@@ -1,6 +1,5 @@
 package com.c9.licensing.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,22 +11,23 @@ import org.springframework.web.bind.annotation.RestController;
 import com.c9.licensing.model.LicenseErrorCode;
 import com.c9.licensing.model.LicenseValidationResult;
 import com.c9.licensing.response.LicenseValidationResponse;
-import com.c9.licensing.security.impl.JwtUtil;
+import com.c9.licensing.security.JwtUtil;
 import com.c9.licensing.service.LicenseService;
 import com.c9.licensing.service.TokenCacheService;
 
 @RestController
 @RequestMapping("/api/license")
 public class LicenseController {
-
-	@Autowired
-	private LicenseService licenseService;
-
-	@Autowired
-	private JwtUtil jwtUtil;
 	
-	@Autowired
+	private LicenseService licenseService;
+	private JwtUtil jwtUtil;
 	private TokenCacheService tokenCacheService;
+
+	public LicenseController(LicenseService licenseService, JwtUtil jwtUtil, TokenCacheService tokenCacheService) {
+		this.licenseService = licenseService;
+		this.jwtUtil = jwtUtil;
+		this.tokenCacheService = tokenCacheService;
+	}
 
 	@PostMapping("/validate")
 	public ResponseEntity<LicenseValidationResponse> validateLicense(@RequestParam String licenseKey,
