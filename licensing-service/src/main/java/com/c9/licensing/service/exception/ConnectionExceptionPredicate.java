@@ -1,5 +1,6 @@
 package com.c9.licensing.service.exception;
 
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.function.Predicate;
@@ -21,6 +22,7 @@ public class ConnectionExceptionPredicate {
 		return causeClass.isAssignableFrom(HttpHostConnectException.class)
 				|| causeClass.isAssignableFrom(ConnectTimeoutException.class)
 				|| causeClass.isAssignableFrom(SocketTimeoutException.class)
+				|| causeClass.isAssignableFrom(SocketException.class)
 				|| causeClass.isAssignableFrom(UnknownHostException.class);
 	};
 }

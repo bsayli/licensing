@@ -1,5 +1,6 @@
 package com.c9.licensing.service.user.impl;
 
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -7,25 +8,30 @@ import org.springframework.stereotype.Service;
 import com.c9.licensing.errors.LicenseServiceException;
 import com.c9.licensing.model.LicenseInfo;
 import com.c9.licensing.service.exception.ConnectionExceptionPredicate;
-import com.c9.licensing.service.user.UserRecoverService;
-import com.c9.licensing.service.user.cache.UserCacheService;
+import com.c9.licensing.service.user.UserCacheManagementService;
+import com.c9.licensing.service.user.operations.UserRecoverService;
 
 import jakarta.ws.rs.ProcessingException;
 
 @Service
-public class UserRecoverServiceImpl implements UserRecoverService{
-	
-	private final UserCacheService userOfflineCacheService;
-	
-	public UserRecoverServiceImpl(UserCacheService userOfflineCacheService) {
-		this.userOfflineCacheService = userOfflineCacheService;
+public class UserRecoverServiceImpl implements UserRecoverService {
+
+	private final UserCacheManagementService userCacheManagementService;
+
+	public UserRecoverServiceImpl(UserCacheManagementService userCacheManagementService) {
+		this.userCacheManagementService = userCacheManagementService;
 	}
 
 	@Override
 	public Optional<LicenseInfo> recoverGetUser(ProcessingException pe, String userId) {
 		boolean isConnectionBasedException = ConnectionExceptionPredicate.isConnectionBasedException.test(pe);
-		if (isConnectionBasedException && userOfflineCacheService.isUserCached(userId)) {
-			return userOfflineCacheService.getUser(userId);
+		if (isConnectionBasedException) {
+			Map<String, Optional<LicenseInfo>> dataInOffline = userCacheManagementService.getDataInOffline(userId);
+			if (dataInOffline.containsKey(userId)) {
+				return dataInOffline.get(userId);
+			} else {
+				throw new LicenseServiceException("License Service Error", pe);
+			}
 		} else {
 			throw new LicenseServiceException("License Service Error", pe);
 		}
