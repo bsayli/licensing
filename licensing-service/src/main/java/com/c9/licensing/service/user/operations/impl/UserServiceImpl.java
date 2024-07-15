@@ -38,10 +38,10 @@ public class UserServiceImpl implements UserService {
 	@Retryable(recover = "recoverGetUser", retryFor = { 
 			SocketException.class, SocketTimeoutException.class, ConnectTimeoutException.class,
 			UnknownHostException.class, HttpHostConnectException.class }, 
-			maxAttemptsExpression = "${retry.licenseService.maxAttempts}", 
-			backoff = @Backoff(delayExpression = "${retry.licenseService.initialDelay}",
-			maxDelayExpression = "${retry.licenseService.maxDelay}", 
-			multiplierExpression = "${retry.licenseService.multiplier}"))
+			maxAttemptsExpression = "${retry.userService.maxAttempts}", 
+			backoff = @Backoff(delayExpression = "${retry.userService.initialDelay}",
+			maxDelayExpression = "${retry.userService.maxDelay}", 
+			multiplierExpression = "${retry.userService.multiplier}"))
 	public Optional<LicenseInfo> getUser(String userId) throws Exception {
 		return userRepository.getUser(userId);
 	}

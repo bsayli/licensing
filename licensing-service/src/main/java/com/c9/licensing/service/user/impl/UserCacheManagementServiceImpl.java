@@ -28,9 +28,16 @@ public class UserCacheManagementServiceImpl implements UserCacheManagementServic
 	@Override
 	public void updateCachesAsync(String userId) throws Exception {
 		CompletableFuture<Optional<LicenseInfo>> userAsyncResult = userAsyncService.getUser(userId);
-		userAsyncResult.thenAcceptAsync(optionalUserInfo -> {
-			userOnlineCacheService.updateUser(userId, optionalUserInfo);
-			userOfflineCacheService.updateUser(userId, optionalUserInfo);
+		userAsyncResult.handleAsync((optionalUserInfo, throwable) -> {
+		    if (throwable != null) {
+		    	logger.error("Processing completed with exception {} for Thread {}", 
+		    			throwable.getMessage(),
+						Thread.currentThread().getName());
+		    } else {
+		        userOnlineCacheService.updateUser(userId, optionalUserInfo);
+		        userOfflineCacheService.updateUser(userId, optionalUserInfo);
+		    }
+		    return null;
 		});
 	}
 

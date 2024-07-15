@@ -56,7 +56,7 @@ public class UserRepositoryImpl implements UserRepository {
 			}
 
 		} catch (NotFoundException e) {
-			logger.error("User Not Found", e);
+			logger.error("User Not Found: {}", e.getMessage());
 		}
 
 		return userInfoOpt;
