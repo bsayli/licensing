@@ -35,39 +35,25 @@ public class UserRepositoryImpl implements UserRepository {
 
 	@Override
 	public Optional<LicenseInfo> getUser(String userId) {
-		Optional<LicenseInfo> userInfoOpt = Optional.empty();
+		Optional<LicenseInfo> userLicenseInfoOptional = Optional.empty();
 		UsersResource usersResource = getUsersResource();
-		UserResource userResource;
 		try {
-			userResource = usersResource.get(userId);
+			UserResource userResource = usersResource.get(userId);
 			UserRepresentation userRepresentation = userResource.toRepresentation();
-			if (userRepresentation != null) {
-				Map<String, List<String>> customAttributes = userRepresentation.getAttributes();
-				LicenseInfo userInfo = new LicenseInfo.Builder().userId(userRepresentation.getId())
-						.licenseTier(getSingleAttribute(customAttributes, ATTR_LICENSE_TIER))
-						.licenseStatus(getSingleAttribute(customAttributes, ATTR_LICENSE_STATUS))
-						.expirationDate(parseLocalDateTime(getSingleAttribute(customAttributes, ATTR_LICENSE_EXPIRATION)))
-						.maxCount(Integer.parseInt(getSingleAttribute(customAttributes, ATTR_MAX_COUNT)))
-						.remainingUsageCount(
-								Integer.parseInt(getSingleAttribute(customAttributes, ATTR_REMAINING_USAGE_COUNT)))
-						.instanceIds(getAttribute(customAttributes, ATTR_INSTANCE_IDS)).build();
-
-				userInfoOpt = Optional.of(userInfo);
-			}
-
+			userLicenseInfoOptional = getUserLicenseInfo(userRepresentation);
 		} catch (NotFoundException e) {
 			logger.error("User Not Found: {}", e.getMessage());
 		}
-
-		return userInfoOpt;
+		return userLicenseInfoOptional;
 	}
 
 	@Override
-	public void updateLicenseUsage(String userId, String appInstanceId) {
+	public Optional<LicenseInfo> updateLicenseUsage(String userId, String appInstanceId) {
+		Optional<LicenseInfo> userLicenseInfoOptional = Optional.empty();
 		UsersResource usersResource = getUsersResource();
 		try {
-			UserRepresentation user = usersResource.get(userId).toRepresentation();
-			Map<String, List<String>> attributes = user.getAttributes();
+			UserRepresentation userRepresentation = usersResource.get(userId).toRepresentation();
+			Map<String, List<String>> attributes = userRepresentation.getAttributes();
 
 			List<String> instanceIds = attributes.getOrDefault(ATTR_INSTANCE_IDS, new ArrayList<>());
 
@@ -82,13 +68,34 @@ public class UserRepositoryImpl implements UserRepository {
 
 				instanceIds.add(appInstanceId);
 				attributes.put(ATTR_INSTANCE_IDS, instanceIds);
-				keycloak.realm(realm).users().get(userId).update(user);
+				keycloak.realm(realm).users().get(userId).update(userRepresentation);
+				userLicenseInfoOptional = getUserLicenseInfo(userRepresentation);
 			}
-
+			
+			return userLicenseInfoOptional;
 		} catch (NotFoundException e) {
 			throw new UserNotFoundException("User not found", e);
 		}
 	}
+	
+	private Optional<LicenseInfo> getUserLicenseInfo(UserRepresentation userRepresentation) {
+		Optional<LicenseInfo> userLicenseInfoOptional = Optional.empty();
+		if (userRepresentation != null) {
+			Map<String, List<String>> customAttributes = userRepresentation.getAttributes();
+			LicenseInfo userInfo = new LicenseInfo.Builder().userId(userRepresentation.getId())
+					.licenseTier(getSingleAttribute(customAttributes, ATTR_LICENSE_TIER))
+					.licenseStatus(getSingleAttribute(customAttributes, ATTR_LICENSE_STATUS))
+					.expirationDate(parseLocalDateTime(getSingleAttribute(customAttributes, ATTR_LICENSE_EXPIRATION)))
+					.maxCount(Integer.parseInt(getSingleAttribute(customAttributes, ATTR_MAX_COUNT)))
+					.remainingUsageCount(
+							Integer.parseInt(getSingleAttribute(customAttributes, ATTR_REMAINING_USAGE_COUNT)))
+					.instanceIds(getAttribute(customAttributes, ATTR_INSTANCE_IDS)).build();
+
+			userLicenseInfoOptional = Optional.of(userInfo);
+		}
+		return userLicenseInfoOptional;
+	}
+
 
 	private UsersResource getUsersResource() {
 		RealmResource realmResource = keycloak.realm(realm);

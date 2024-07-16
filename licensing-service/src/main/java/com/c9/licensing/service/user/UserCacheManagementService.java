@@ -20,6 +20,8 @@ public interface UserCacheManagementService {
 	
 	void refreshDataInOffline(String userId, Optional<LicenseInfo> licenseInfo);
 	
+	void refreshDataInCaches(String userId, Optional<LicenseInfo> licenseInfo);
+	
 	void evictDataInCaches(String userId);
 
 }

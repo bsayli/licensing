@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
@@ -19,8 +17,6 @@ import com.c9.licensing.service.user.cache.UserCacheService;
 public class UserOfflineCacheServiceImpl implements UserCacheService {
 	
 	private static final String CACHE_NAME_USER_OFFLINE_INFO = "userOfflineInfoCache";
-
-	private final Logger logger = LoggerFactory.getLogger(UserOfflineCacheServiceImpl.class);
 	
 	private CacheManager cacheManager;
 	
@@ -31,8 +27,7 @@ public class UserOfflineCacheServiceImpl implements UserCacheService {
 	@Override
 	@Cacheable(value = CACHE_NAME_USER_OFFLINE_INFO, key = "#userId")
 	public Optional<LicenseInfo> addUser(String userId, Optional<LicenseInfo> licenseInfo){
-		logger.info("userLicenseInfo is cached for offline service: {}", licenseInfo);
-		return licenseInfo; // Store the licenseInFo itself as the cached value
+		return licenseInfo; 
 	}
 	
 	@Override

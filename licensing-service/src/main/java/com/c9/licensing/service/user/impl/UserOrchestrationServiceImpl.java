@@ -38,8 +38,8 @@ public class UserOrchestrationServiceImpl implements UserOrchestrationService {
 
 	@Override
 	public void updateLicenseUsage(String userId, String appInstanceId) {
-		userService.updateLicenseUsage(userId, appInstanceId);
-		userCacheManagementService.evictDataInCaches(userId);
+		Optional<LicenseInfo> updatedLicenseInfo = userService.updateLicenseUsage(userId, appInstanceId);
+		userCacheManagementService.refreshDataInCaches(userId, updatedLicenseInfo);
 	}
 	
 }

@@ -18,7 +18,7 @@ public interface UserRepository {
 	String ATTR_LICENSE_STATUS = "licenseStatus";
 	String ATTR_LICENSE_TIER = "licenseTier";
 
-	void updateLicenseUsage(String userId, String appInstanceId);
+	Optional<LicenseInfo> updateLicenseUsage(String userId, String appInstanceId);
 
 	Optional<LicenseInfo> getUser(String userId);
 

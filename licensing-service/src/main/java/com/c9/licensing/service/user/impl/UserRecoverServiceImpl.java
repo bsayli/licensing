@@ -29,12 +29,9 @@ public class UserRecoverServiceImpl implements UserRecoverService {
 			Map<String, Optional<LicenseInfo>> dataInOffline = userCacheManagementService.getDataInOffline(userId);
 			if (dataInOffline.containsKey(userId)) {
 				return dataInOffline.get(userId);
-			} else {
-				throw new LicenseServiceException("License Service Error", pe);
 			}
-		} else {
-			throw new LicenseServiceException("License Service Error", pe);
-		}
+		} 
+		throw new LicenseServiceException("License Service Error", pe);
 	}
 
 }

@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.HttpHostConnectException;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
@@ -47,9 +48,10 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void updateLicenseUsage(String userId, String appInstanceId) {
+	@CacheEvict(value = "userInfoCache", key = "#userId")
+	public Optional<LicenseInfo> updateLicenseUsage(String userId, String appInstanceId) {
 		try {
-			userRepository.updateLicenseUsage(userId, appInstanceId);
+			return userRepository.updateLicenseUsage(userId, appInstanceId);
 		} catch (UserNotFoundException e) {
 			throw new LicenseInvalidException("License key not found", e);
 		}

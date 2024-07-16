@@ -51,7 +51,6 @@ public class UserAsyncServiceImpl implements UserAsyncService {
 		if (!processAcquired) {
 			CompletableFuture<Optional<LicenseInfo>> future = new CompletableFuture<>();
 			AlreadyProcessingException alreadyProcessingException = new AlreadyProcessingException(userId);
-			logErrorMessage(alreadyProcessingException.getMessage(), Thread.currentThread().getName());
 			future.completeExceptionally(alreadyProcessingException);
 			return future;
 		}
@@ -85,7 +84,6 @@ public class UserAsyncServiceImpl implements UserAsyncService {
 		MaxRetryAttemptsExceededException maxRetryAttemptsExceededException = new MaxRetryAttemptsExceededException(userId);
 		future.completeExceptionally(maxRetryAttemptsExceededException);
 		ongoingProcesses.remove(userId);
-		logErrorMessage(maxRetryAttemptsExceededException.getMessage(), Thread.currentThread().getName());
 		return future;
 	}
 	
@@ -93,12 +91,6 @@ public class UserAsyncServiceImpl implements UserAsyncService {
 		String currentThreadName = Thread.currentThread().getName();
 		String value = ongoingProcesses.putIfAbsent(userId, currentThreadName);
 		return value == null || currentThreadName.equals(value);
-	}
-	
-	private void logErrorMessage(String message, String threadName) {
-		logger.error("Processing completed with exception message {} for Thread {}", 
-				 message,
-				 threadName);
 	}
 	
 }

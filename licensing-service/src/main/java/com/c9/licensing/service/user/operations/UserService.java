@@ -13,7 +13,7 @@ public interface UserService {
 	
 	Logger logger = LoggerFactory.getLogger(UserService.class);
 
-	void updateLicenseUsage(String userId, String appInstanceId);
+	Optional<LicenseInfo> updateLicenseUsage(String userId, String appInstanceId);
 
 	Optional<LicenseInfo> getUser(String userId) throws Exception;
 

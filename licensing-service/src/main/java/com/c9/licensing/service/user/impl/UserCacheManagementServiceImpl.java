@@ -55,6 +55,12 @@ public class UserCacheManagementServiceImpl implements UserCacheManagementServic
 	public void refreshDataInOffline(String userId, Optional<LicenseInfo> licenseInfo) {
 		userOfflineCacheService.updateUser(userId, licenseInfo);
 	}
+	
+	@Override
+	public void refreshDataInCaches(String userId, Optional<LicenseInfo> licenseInfo) {
+		userOfflineCacheService.updateUser(userId, licenseInfo);
+		userOnlineCacheService.updateUser(userId, licenseInfo);
+	}
 
 	@Override
 	public void evictDataInCaches(String userId) {
