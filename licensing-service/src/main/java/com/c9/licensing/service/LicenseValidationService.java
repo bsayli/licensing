@@ -10,10 +10,11 @@ public interface LicenseValidationService {
 	String LICENSE_NOT_ACTIVE = "Your license is currently inactive. Please contact support for assistance.";
 
 	String LICENSE_EXPIRED = "Your license has expired. Please renew it to continue using the application.";
-
+	
+	String TOKEN_ALREADY_EXIST = "Token has already created!, please continue with validateToken!";
 	
 	LicenseInfo validateLicense(String encLicenseKey, String instanceId) throws Exception;
 	
-	LicenseInfo validateLicenseForToken(String tokenSub, String instanceId) throws Exception;
+	LicenseInfo validateLicenseForToken(String tokenSubject, String instanceId) throws Exception;
 
 }

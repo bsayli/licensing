@@ -1,13 +1,15 @@
 package com.c9.licensing.service.impl;
 
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 
 import com.c9.licensing.errors.TokenExpiredException;
 import com.c9.licensing.errors.TokenForbiddenAccessException;
 import com.c9.licensing.errors.TokenInvalidException;
 import com.c9.licensing.security.JwtUtil;
-import com.c9.licensing.service.TokenCacheService;
-import com.c9.licensing.service.TokenValidationService;
+import com.c9.licensing.service.LicenseClientCacheManagementService;
+import com.c9.licensing.service.LicenseTokenValidationService;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -15,29 +17,41 @@ import io.jsonwebtoken.security.MalformedKeyException;
 import io.jsonwebtoken.security.SignatureException;
 
 @Service
-public class TokenValidationServiceImpl implements TokenValidationService{ 
+public class LicenseTokenValidationServiceImpl implements LicenseTokenValidationService {
 
-	private JwtUtil jwtUtil;
-	private TokenCacheService tokenCacheService;
+	private final JwtUtil jwtUtil;
+	private final LicenseClientCacheManagementService clientCacheManagementService;
+
+	public LicenseTokenValidationServiceImpl(JwtUtil jwtUtil, LicenseClientCacheManagementService clientCacheManagementService) {
+		this.jwtUtil = jwtUtil;
+		this.clientCacheManagementService = clientCacheManagementService;
+	}
 
 	public void validateToken(String token, String requestedInstanceId) {
 		try {
-			Claims claims = jwtUtil.validateToken(token);
+			boolean isValidFormat = jwtUtil.validateTokenFormat(token);
+			if(!isValidFormat) {
+				throw new TokenInvalidException(TOKEN_INVALID);
+			}
+			
+			Claims claims = jwtUtil.verifyAndExtractJwtClaims(token);
 
-			String appInstanceId = claims.get("appInstanceId", String.class);
+			String appInstanceId = claims.getSubject();
 			if (!appInstanceId.equals(requestedInstanceId)) {
 				throw new TokenForbiddenAccessException(TOKEN_INVALID_ACCESS);
 			}
 
 			boolean isTokenExpired = isTokenExpired(claims);
 			if (isTokenExpired) {
-				validateAndThrowTokenException(token, claims);
+				validateAndThrowTokenException(token);
 			}
 
 		} catch (ExpiredJwtException e) {
-			validateAndThrowTokenException(token, e.getClaims());
+			validateAndThrowTokenException(token);
 		} catch (SignatureException | MalformedKeyException se) {
 			throw new TokenInvalidException(TOKEN_INVALID, se);
+		} catch (TokenForbiddenAccessException se) {
+			throw new TokenInvalidException(TOKEN_INVALID_ACCESS, se);
 		} catch (Exception e) {
 			logger.error(ERROR_DURING_TOKEN_VALIDATION, e);
 			throw new TokenInvalidException(ERROR_DURING_TOKEN_VALIDATION, e);
@@ -45,10 +59,11 @@ public class TokenValidationServiceImpl implements TokenValidationService{
 
 	}
 
-	private void validateAndThrowTokenException(String token, Claims claims) {
-		boolean tokenValidAndInvalidated = tokenCacheService.isTokenValidAndInvalidate(token);
-		if (tokenValidAndInvalidated) {
-			throw new TokenExpiredException(claims.getSubject(), TOKEN_HAS_EXPIRED);
+	private void validateAndThrowTokenException(String token) {
+		Optional<String> userIdOpt = clientCacheManagementService.getUserIdAndEvictToken(token);
+		if (userIdOpt.isPresent()) {
+			String userId = userIdOpt.get();
+			throw new TokenExpiredException(userId, TOKEN_HAS_EXPIRED);
 		} else {
 			throw new TokenInvalidException(TOKEN_INVALID);
 		}

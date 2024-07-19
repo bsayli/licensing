@@ -1,14 +1,18 @@
 package com.c9.licensing.security;
 
 public interface UserIdUtil {
-
-    static final String LICENSEKEYPREFIX = "C9";
-	static final String ALGORITHM = "AES/CBC/PKCS5Padding";
-	static String DELIMITER = "~";
 	
-	public String extractUserId(String licenseKey);
+	String LICENSEKEYPREFIX = "C9";
+	String ALGORITHM = "AES/GCM/NoPadding"; 
+	int GCM_IV_LENGTH = 12; // Recommended for GCM 
+	int GCM_TAG_LENGTH = 16; // 128 bits
+	String DELIMITER = "~";
 	
-	public String obfuscateUserId(String userId);
+	public String extractPlainTextUserId(String licenseKey) throws Exception;
 	
-	public String deobfuscateUserId(String userId);
+	public String extractEncUserId(String licenseKey) throws Exception;
+	 
+	public String encrypt(String userId) throws Exception;
+	
+	public String decrypt(String userId) throws Exception;
 }

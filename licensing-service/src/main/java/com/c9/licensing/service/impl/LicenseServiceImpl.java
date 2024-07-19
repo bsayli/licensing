@@ -6,6 +6,7 @@ import com.c9.licensing.errors.LicenseExpiredException;
 import com.c9.licensing.errors.LicenseInactiveException;
 import com.c9.licensing.errors.LicenseInvalidException;
 import com.c9.licensing.errors.LicenseUsageLimitExceededException;
+import com.c9.licensing.errors.TokenAlreadyExistException;
 import com.c9.licensing.errors.TokenExpiredException;
 import com.c9.licensing.errors.TokenInvalidException;
 import com.c9.licensing.model.LicenseErrorCode;
@@ -14,23 +15,23 @@ import com.c9.licensing.model.LicenseValidationResult;
 import com.c9.licensing.security.UserIdUtil;
 import com.c9.licensing.service.LicenseService;
 import com.c9.licensing.service.LicenseValidationService;
-import com.c9.licensing.service.TokenValidationService;
+import com.c9.licensing.service.LicenseTokenValidationService;
 
 @Service
 public class LicenseServiceImpl implements LicenseService{
 
-	private LicenseValidationService licenseValidationService;
-	private TokenValidationService tokenValidationService;
-	private UserIdUtil userIdUtil;
+	private final LicenseValidationService licenseValidationService;
+	private final LicenseTokenValidationService tokenValidationService;
+	private final UserIdUtil userIdUtil;
 	
 	public LicenseServiceImpl(LicenseValidationService licenseValidationService,
-			TokenValidationService tokenValidationService, UserIdUtil userIdUtil) {
+			LicenseTokenValidationService tokenValidationService, UserIdUtil userIdUtil) {
 		this.licenseValidationService = licenseValidationService;
 		this.tokenValidationService = tokenValidationService;
 		this.userIdUtil = userIdUtil;
 	}
 
-	public LicenseValidationResult getLicenseResult(String licenseKey, String instanceId) {
+	public LicenseValidationResult getUserLicenseDetails(String licenseKey, String instanceId) {
 		LicenseValidationResult validationResult;
 		try {
 			LicenseInfo info = licenseValidationService.validateLicense(licenseKey, instanceId);
@@ -44,7 +45,14 @@ public class LicenseServiceImpl implements LicenseService{
 					.errorCode(e.getErrorCode())
 					.message(e.getMessage()).build();
 
-		} catch (Exception e) {
+		} catch (TokenAlreadyExistException e) {
+			validationResult = new LicenseValidationResult.Builder()
+					.valid(false)
+					.errorCode(e.getErrorCode())
+					.message(e.getMessage()).build();
+
+		}
+		catch (Exception e) {
 			logger.error(ERROR_DURING_LICENSE_VALIDATION, e);
 			validationResult = new LicenseValidationResult.Builder()
 					.valid(false)
@@ -55,7 +63,7 @@ public class LicenseServiceImpl implements LicenseService{
 	}
 
 
-	public LicenseValidationResult validateAndRefreshToken(String token, String instanceId) {
+	public LicenseValidationResult getUserLicenseDetailsByToken(String token, String instanceId) {
 
 		LicenseValidationResult validationResult = null;
 		try {
@@ -72,7 +80,7 @@ public class LicenseServiceImpl implements LicenseService{
 					.errorCode(e.getErrorCode())
 					.message(e.getMessage()).build();
 		} catch (TokenExpiredException e) {
-			validationResult = getTokenLicenseValidationResult(e.getTokenSub(), instanceId);
+			validationResult = getTokenLicenseValidationResult(e.getEncUserId(), instanceId);
 		} catch (Exception e) {
 			logger.error(ERROR_DURING_LICENSE_VALIDATION, e);
 			validationResult = new LicenseValidationResult.Builder()
@@ -83,10 +91,10 @@ public class LicenseServiceImpl implements LicenseService{
 		return validationResult;
 	}
 
-	private LicenseValidationResult getTokenLicenseValidationResult(String tokenSub, String instanceId) {
+	private LicenseValidationResult getTokenLicenseValidationResult(String tokenSubject, String instanceId) {
 		LicenseValidationResult validationResult = null;
 		try {
-			LicenseInfo licenseInfo = licenseValidationService.validateLicenseForToken(tokenSub, instanceId);
+			LicenseInfo licenseInfo = licenseValidationService.validateLicenseForToken(tokenSubject, instanceId);
 			validationResult = getValidationResult(instanceId, licenseInfo, LicenseErrorCode.TOKEN_REFRESHED, TOKEN_REFRESHED);
 			
 		} catch (LicenseInvalidException | LicenseInactiveException | LicenseExpiredException
@@ -107,8 +115,8 @@ public class LicenseServiceImpl implements LicenseService{
 		return validationResult;
 	}
 	
-	private LicenseValidationResult getValidationResult(String instanceId, LicenseInfo info, LicenseErrorCode errorCode, String message) {
-		String obfUserID = userIdUtil.obfuscateUserId(info.userId());
+	private LicenseValidationResult getValidationResult(String instanceId, LicenseInfo info, LicenseErrorCode errorCode, String message) throws Exception {
+		String obfUserID = userIdUtil.encrypt(info.userId());
 		String licenseTier = info.licenseTier();
 
 		return new LicenseValidationResult.Builder().userId(obfUserID).appInstanceId(instanceId)

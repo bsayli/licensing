@@ -21,8 +21,11 @@ public class CacheConfig {
 	@Value("${caching.spring.userOffLineInfoTTL}")
 	private Integer userOffLineInfoTTL;
 	
-	@Value("${jwt.token.expiration}")
-	private Integer jwtTokenExpiration;
+	@Value("${caching.spring.activeClientsTokenTTL}")
+	private Integer activeClientsTokenTTL;
+	
+	@Value("${caching.spring.activeClientsTTL}")
+	private Integer activeClientsTTL;
 	
 	@Bean
 	CacheManager cacheManager() {
@@ -34,8 +37,11 @@ public class CacheConfig {
 		cacheManager.registerCustomCache("userOfflineInfoCache",  Caffeine.newBuilder()
 				.expireAfterWrite(userOffLineInfoTTL, TimeUnit.HOURS).build());
 		
-		cacheManager.registerCustomCache("validTokens",  Caffeine.newBuilder()
-				.expireAfterWrite(jwtTokenExpiration, TimeUnit.MINUTES).build());
+		cacheManager.registerCustomCache("activeClientsToken",  Caffeine.newBuilder()
+				.expireAfterWrite(activeClientsTokenTTL, TimeUnit.HOURS).build());
+		
+		cacheManager.registerCustomCache("activeClients",  Caffeine.newBuilder()
+				.expireAfterWrite(activeClientsTTL, TimeUnit.MINUTES).build());
 		
 		return cacheManager;
 	}

@@ -6,8 +6,10 @@ import io.jsonwebtoken.Claims;
 
 public interface JwtUtil {
 
-	Claims validateToken(String token);
+	Claims verifyAndExtractJwtClaims(String token);
 
 	String generateToken(LicenseValidationResult result);
+
+	boolean validateTokenFormat(String token);
 
 }

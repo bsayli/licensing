@@ -55,8 +55,7 @@ public class EncryptionUtilImpl implements EncryptionUtil {
 			return new String(decryptedBytes, StandardCharsets.UTF_8);
 		}catch (Exception e) {
 			throw new LicenseInvalidException("License Key not found or invalid", e);
-		}
-		
+		}		
 	}
 
 	private byte[] concatArrays(byte[] a, byte[] b) {
@@ -68,6 +67,6 @@ public class EncryptionUtilImpl implements EncryptionUtil {
 	
 	private boolean isValidBase64(String str) {
 	    String base64Regex = "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$";
-	    return str.matches(base64Regex);
+	    return str != null && str.matches(base64Regex);
 	}
 }

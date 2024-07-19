@@ -8,15 +8,15 @@ public class TokenExpiredException extends JwtException implements LicenseExcept
 
 	private static final long serialVersionUID = 2818307805521893164L;
 	
-	private final String tokenSub;
+	private final String encUserId;
 
-	public TokenExpiredException(String tokenSub, String message) {
+	public TokenExpiredException(String encUserId, String message) {
 		super(message);
-		this.tokenSub = tokenSub;
+		this.encUserId = encUserId;
 	}
 
-	public String getTokenSub() {
-		return tokenSub;
+	public String getEncUserId() {
+		return encUserId;
 	}
 
 	public LicenseErrorCode getErrorCode() {

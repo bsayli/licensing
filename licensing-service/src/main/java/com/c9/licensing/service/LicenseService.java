@@ -14,7 +14,7 @@ public interface LicenseService {
 	String TOKEN_REFRESHED = "Token is refreshed";
 	Logger logger = LoggerFactory.getLogger(LicenseService.class);
 
-	LicenseValidationResult getLicenseResult(String licenseKey, String instanceId);
+	LicenseValidationResult getUserLicenseDetails(String licenseKey, String instanceId);
 	
-	LicenseValidationResult validateAndRefreshToken(String token, String instanceId);
+	LicenseValidationResult getUserLicenseDetailsByToken(String token, String instanceId);
 }
