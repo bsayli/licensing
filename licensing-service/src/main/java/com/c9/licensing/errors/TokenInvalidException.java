@@ -1,10 +1,10 @@
 package com.c9.licensing.errors;
 
-import com.c9.licensing.model.LicenseErrorCode;
+import com.c9.licensing.model.LicenseServiceStatus;
 
 import io.jsonwebtoken.JwtException;
 
-public class TokenInvalidException extends JwtException implements LicenseException{
+public class TokenInvalidException extends JwtException implements LicenseServiceException{
 
 	private static final long serialVersionUID = 4398609211361201185L;
 
@@ -16,7 +16,7 @@ public class TokenInvalidException extends JwtException implements LicenseExcept
 		super(message, e);
 	}
 
-	public LicenseErrorCode getErrorCode() {
-		return LicenseErrorCode.TOKEN_INVALID;
+	public LicenseServiceStatus getStatus() {
+		return LicenseServiceStatus.TOKEN_INVALID;
 	}
 }

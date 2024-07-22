@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.c9.licensing.errors.TokenExpiredException;
 import com.c9.licensing.errors.TokenForbiddenAccessException;
 import com.c9.licensing.errors.TokenInvalidException;
+import com.c9.licensing.errors.TokenIsTooOldForRefreshException;
 import com.c9.licensing.security.JwtUtil;
 import com.c9.licensing.service.LicenseClientCacheManagementService;
 import com.c9.licensing.service.LicenseTokenValidationService;
@@ -65,7 +66,7 @@ public class LicenseTokenValidationServiceImpl implements LicenseTokenValidation
 			String userId = userIdOpt.get();
 			throw new TokenExpiredException(userId, TOKEN_HAS_EXPIRED);
 		} else {
-			throw new TokenInvalidException(TOKEN_INVALID);
+			throw new TokenIsTooOldForRefreshException(TOKEN_IS_TOO_OLD_FOR_REFRESH);
 		}
 	}
 

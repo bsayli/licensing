@@ -17,7 +17,9 @@ import org.springframework.stereotype.Repository;
 
 import com.c9.licensing.errors.LicenseUsageLimitExceededException;
 import com.c9.licensing.errors.repository.UserNotFoundException;
+import com.c9.licensing.model.LicenseChecksumVersionInfo;
 import com.c9.licensing.model.LicenseInfo;
+import com.c9.licensing.model.LicenseServiceIdVersionInfo;
 import com.c9.licensing.service.user.repository.UserRepository;
 
 import jakarta.ws.rs.NotFoundException;
@@ -71,13 +73,13 @@ public class UserRepositoryImpl implements UserRepository {
 				keycloak.realm(realm).users().get(userId).update(userRepresentation);
 				userLicenseInfoOptional = getUserLicenseInfo(userRepresentation);
 			}
-			
+
 			return userLicenseInfoOptional;
 		} catch (NotFoundException e) {
 			throw new UserNotFoundException("User not found", e);
 		}
 	}
-	
+
 	private Optional<LicenseInfo> getUserLicenseInfo(UserRepresentation userRepresentation) {
 		Optional<LicenseInfo> userLicenseInfoOptional = Optional.empty();
 		if (userRepresentation != null) {
@@ -89,13 +91,17 @@ public class UserRepositoryImpl implements UserRepository {
 					.maxCount(Integer.parseInt(getSingleAttribute(customAttributes, ATTR_MAX_COUNT)))
 					.remainingUsageCount(
 							Integer.parseInt(getSingleAttribute(customAttributes, ATTR_REMAINING_USAGE_COUNT)))
-					.instanceIds(getAttribute(customAttributes, ATTR_INSTANCE_IDS)).build();
+					.instanceIds(getAttribute(customAttributes, ATTR_INSTANCE_IDS))
+					.allowedServices(getAttribute(customAttributes, ATTR_ALLOWED_SERVICES))
+					.allowedServiceVersions(getServiceIdVersionInfo(customAttributes, ATTR_ALLOWED_SERVICE_VERSIONS))
+					.checksumsCodegen(getChecksumVersionInfo(customAttributes, ATTR_CHECKSUM_CODEGEN))
+					.checksumsTestAutomation(getChecksumVersionInfo(customAttributes, ATTR_CHECKSUM_TEST_AUTO))
+					.build();
 
 			userLicenseInfoOptional = Optional.of(userInfo);
 		}
 		return userLicenseInfoOptional;
 	}
-
 
 	private UsersResource getUsersResource() {
 		RealmResource realmResource = keycloak.realm(realm);
@@ -107,7 +113,7 @@ public class UserRepositoryImpl implements UserRepository {
 		if (values == null || values.isEmpty()) {
 			throw new IllegalArgumentException("Custom attribute '" + name + "' not found");
 		}
-		return values.get(0); 
+		return values.get(0);
 	}
 
 	private List<String> getAttribute(Map<String, List<String>> attributes, String name) {
@@ -116,6 +122,24 @@ public class UserRepositoryImpl implements UserRepository {
 
 	private LocalDateTime parseLocalDateTime(String dateString) {
 		return LocalDateTime.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+	}
+	
+	private List<LicenseChecksumVersionInfo> getChecksumVersionInfo(Map<String, List<String>> attributes, String name) {
+		List<String> checksumWithVersions = attributes.getOrDefault(name, new ArrayList<>());
+		return checksumWithVersions.stream()
+				.map(checksumWithVersion -> checksumWithVersion.split("~", 2))
+				.filter(parts -> parts.length == 2) 
+				.map(parts -> new LicenseChecksumVersionInfo(parts[0], parts[1]))
+				.toList();
+	}
+	
+	private List<LicenseServiceIdVersionInfo> getServiceIdVersionInfo(Map<String, List<String>> attributes, String name) {
+		List<String> serviceIdMaxVersions = attributes.getOrDefault(name, new ArrayList<>());
+		return serviceIdMaxVersions.stream()
+				.map( serviceIdMaxVersion ->  serviceIdMaxVersion.split("<=", 2))
+				.filter(parts -> parts.length == 2) 
+				.map(parts -> new LicenseServiceIdVersionInfo(parts[0], parts[1]))
+				.toList();
 	}
 
 }

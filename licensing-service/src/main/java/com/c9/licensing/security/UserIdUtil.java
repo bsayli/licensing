@@ -8,9 +8,9 @@ public interface UserIdUtil {
 	int GCM_TAG_LENGTH = 16; // 128 bits
 	String DELIMITER = "~";
 	
-	public String extractPlainTextUserId(String licenseKey) throws Exception;
+	public String extractDecryptedUserId(String licenseKey) throws Exception;
 	
-	public String extractEncUserId(String licenseKey) throws Exception;
+	public String extractEncryptedUserId(String licenseKey) throws Exception;
 	 
 	public String encrypt(String userId) throws Exception;
 	

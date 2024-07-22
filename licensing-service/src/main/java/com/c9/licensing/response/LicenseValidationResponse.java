@@ -2,12 +2,12 @@ package com.c9.licensing.response;
 
 import java.util.List;
 
-public record LicenseValidationResponse(boolean success, String token, String errorCode, String message, List<String> errorDetails) {
+public record LicenseValidationResponse(boolean success, String token, String status, String message, List<String> errorDetails) {
 
     public static class Builder {
         private boolean success;
         private String token;
-        private String errorCode;
+        private String status;
         private String message;
         private List<String> errorDetails;
 
@@ -21,8 +21,8 @@ public record LicenseValidationResponse(boolean success, String token, String er
             return this;
         }
 
-        public Builder errorCode(String errorCode) {
-            this.errorCode = errorCode;
+        public Builder status(String status) {
+            this.status = status;
             return this;
         }
 
@@ -41,11 +41,11 @@ public record LicenseValidationResponse(boolean success, String token, String er
         	if (success && (token == null)) {
         		throw new IllegalArgumentException("When the validation is successful, you have to provide a token!");
         	}
-        	if(!success && (errorCode == null || message == null)) {
+        	if(!success && (status == null || message == null)) {
         		throw new IllegalArgumentException("When the validation is not successful, you have to provide an errorCode and a message!");
         	}
         	
-        	return new LicenseValidationResponse(success, token, errorCode, message, errorDetails);
+        	return new LicenseValidationResponse(success, token, status, message, errorDetails);
         }
     }
 }

@@ -17,6 +17,10 @@ public interface UserRepository {
 	String ATTR_LICENSE_EXPIRATION = "licenseExpiration";
 	String ATTR_LICENSE_STATUS = "licenseStatus";
 	String ATTR_LICENSE_TIER = "licenseTier";
+	String ATTR_ALLOWED_SERVICES = "allowedServices";
+	String ATTR_ALLOWED_SERVICE_VERSIONS = "allowedServiceVersions";
+	String ATTR_CHECKSUM_CODEGEN = "checksumCodegen";
+	String ATTR_CHECKSUM_TEST_AUTO = "checksumTestAuto";
 
 	Optional<LicenseInfo> updateLicenseUsage(String userId, String appInstanceId);
 

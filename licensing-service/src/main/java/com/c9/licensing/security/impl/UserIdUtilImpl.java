@@ -26,7 +26,7 @@ public class UserIdUtilImpl implements UserIdUtil {
  		secretKey = new SecretKeySpec(decodedKey, ALGORITHM);
  	}
  	
-	public String extractEncUserId(String licenseKey) throws Exception {
+	public String extractEncryptedUserId(String licenseKey) throws Exception {
 		String[] components = licenseKey.split(DELIMITER);
 		if (components.length != 3 || !components[0].equals(LICENSEKEYPREFIX)) {
 			throw new LicenseInvalidException("Invalid license key format");
@@ -34,7 +34,7 @@ public class UserIdUtilImpl implements UserIdUtil {
 		return components[2];
 	}
  	
- 	public String extractPlainTextUserId(String licenseKey) throws Exception {
+ 	public String extractDecryptedUserId(String licenseKey) throws Exception {
 		String[] components = licenseKey.split(DELIMITER);
 		if (components.length != 3 || !components[0].equals(LICENSEKEYPREFIX)) {
 			throw new LicenseInvalidException("Invalid license key format");

@@ -3,6 +3,7 @@ package com.c9.licensing.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.c9.licensing.model.LicenseValidationRequest;
 import com.c9.licensing.model.LicenseValidationResult;
 
 public interface LicenseService {
@@ -13,8 +14,9 @@ public interface LicenseService {
 	String TOKEN_IS_VALID = "Token is valid";
 	String TOKEN_REFRESHED = "Token is refreshed";
 	Logger logger = LoggerFactory.getLogger(LicenseService.class);
-
-	LicenseValidationResult getUserLicenseDetails(String licenseKey, String instanceId);
 	
-	LicenseValidationResult getUserLicenseDetailsByToken(String token, String instanceId);
+
+	LicenseValidationResult getUserLicenseDetailsByLicenseKey(LicenseValidationRequest request);
+	
+	LicenseValidationResult getUserLicenseDetailsByToken(LicenseValidationRequest request);
 }

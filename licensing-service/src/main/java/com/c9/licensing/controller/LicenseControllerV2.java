@@ -9,12 +9,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.c9.licensing.model.LicenseErrorCode;
-import com.c9.licensing.model.LicenseValidationResult;
+import com.c9.licensing.model.LicenseValidationRequest;
 import com.c9.licensing.response.LicenseValidationResponse;
-import com.c9.licensing.security.JwtUtil;
-import com.c9.licensing.service.LicenseClientCacheManagementService;
-import com.c9.licensing.service.LicenseService;
+import com.c9.licensing.service.LicenseOrchestrationService;
 
 import jakarta.validation.constraints.Size;
 
@@ -23,66 +20,42 @@ import jakarta.validation.constraints.Size;
 @RequestMapping("/api/license/v2")
 public class LicenseControllerV2 {
 
-	private LicenseService licenseService;
-	private JwtUtil jwtUtil;
-	private LicenseClientCacheManagementService clientCacheManagementService;
+	private final LicenseOrchestrationService licenseOrchestrationService;
 
-	public LicenseControllerV2(LicenseService licenseService, 
-			JwtUtil jwtUtil, 
-			LicenseClientCacheManagementService clientCacheManagementService) {
-		this.licenseService = licenseService;
-		this.jwtUtil = jwtUtil;
-		this.clientCacheManagementService = clientCacheManagementService;
+	public LicenseControllerV2(LicenseOrchestrationService licenseOrchestrationService) {
+		this.licenseOrchestrationService = licenseOrchestrationService;
 	}
 
 	@PostMapping("/validate")
 	public ResponseEntity<LicenseValidationResponse> validateLicense(
-			@RequestParam 
-			@Size(min = 100, max = 300,  message = "License key must be between {min} and {max} characters") 
-			String licenseKey,
-			@RequestParam String serviceId,  
-			@RequestHeader("X-App-Instance-ID") 
-			@Size(min = 10, max = 100,  message = "Application Instance Id header param must be between {min} and {max} characters")
-			String appInstanceId,
-			@RequestHeader("X-Signature") String signature, 
-			@RequestHeader("X-Checksum") String checksum) {
+			@Size(min = 200, max = 400, message = "License Key must be between {min} and {max} characters")
+			@RequestParam(required = false) String licenseKey,
+			@Size(min = 5, max = 50, message = "Service Id must be between {min} and {max} characters")
+			@RequestParam String serviceId,
+			@Size(min = 200, max = 400, message = "License Token header param must be between {min} and {max} characters")
+			@RequestHeader(value = "X-License-Token", required = false) String licenseToken,
+			@Size(min = 20, max = 100, message = "Instance Id header param must be between {min} and {max} characters")
+			@RequestHeader("X-Instance-ID") String instanceId,
+			@Size(min = 20, max = 100, message = "Signature header param must be between {min} and {max} characters")
+			@RequestHeader(value = "X-Signature", required = false) String signature,
+			@Size(min = 20, max = 100, message = "Checksum header param must be between {min} and {max} characters")
+			@RequestHeader(value = "X-Checksum", required = false) String checksum) {
+		
+		LicenseValidationRequest request = new LicenseValidationRequest.Builder()
+				.serviceId(serviceId)
+				.licenseKey(licenseKey)
+				.licenseToken(licenseToken)
+				.instanceId(instanceId)
+				.checksum(checksum)
+				.signature(signature).build();
 
-		LicenseValidationResult result = licenseService.getUserLicenseDetails(licenseKey, appInstanceId);
-		if (result.valid()) {
-			String token = jwtUtil.generateToken(result);
-			clientCacheManagementService.addClientInfo(appInstanceId, token, result.userId());
-			return ResponseEntity.ok(new LicenseValidationResponse.Builder().success(true).token(token)
-					.message(result.message()).build());
+				LicenseValidationResponse response = licenseOrchestrationService.getLicenseDetails(request);
+		if (response.success()) {
+			return ResponseEntity.ok(response);
 		} else {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new LicenseValidationResponse.Builder()
-					.success(false).errorCode(result.errorCode().name()).message(result.message()).build());
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
 		}
 	}
 
-	@PostMapping("/validateToken")
-	public ResponseEntity<LicenseValidationResponse> validateWithToken(
-			@RequestHeader("X-License-Token") 
-			@Size(min = 100, max = 300, message = "License Token header param must be between {min} and {max} characters") 
-			String licenseToken,
-			@RequestHeader("X-App-Instance-ID") 
-			@Size(min = 10, max = 100,  message = "Application Instance Id header param must be between {min} and {max} characters")
-			String appInstanceId) 
-	{
 
-		LicenseValidationResult result = licenseService.getUserLicenseDetailsByToken(licenseToken, appInstanceId);
-		if (result.valid()) {
-			if (LicenseErrorCode.TOKEN_REFRESHED == result.errorCode()) {
-				String newToken = jwtUtil.generateToken(result);
-				clientCacheManagementService.addClientInfo(appInstanceId, newToken, result.userId());
-				return ResponseEntity.ok(new LicenseValidationResponse.Builder().success(true).token(newToken)
-						.errorCode(result.errorCode().name()).message(result.message()).build());
-			}
-			return ResponseEntity.ok(new LicenseValidationResponse.Builder().success(true).token(licenseToken)
-					.message(result.message()).build());
-		} else {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new LicenseValidationResponse.Builder()
-					.success(false).errorCode(result.errorCode().name()).message(result.message()).build());
-		}
-
-	}
 }

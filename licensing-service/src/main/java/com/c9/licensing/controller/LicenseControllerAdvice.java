@@ -8,7 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import com.c9.licensing.model.LicenseErrorCode;
+import com.c9.licensing.errors.InvalidParameterException;
+import com.c9.licensing.model.LicenseServiceStatus;
 import com.c9.licensing.response.LicenseValidationResponse;
 
 import jakarta.validation.ConstraintViolation;
@@ -30,9 +31,19 @@ public class LicenseControllerAdvice {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new LicenseValidationResponse.Builder()
                         .success(false)
-                        .errorCode(LicenseErrorCode.INVALID_REQUEST_PARAM.name())
-                        .message("Invalid Request Params!")
+                        .status(LicenseServiceStatus.INVALID_PARAMETER.name())
+                        .message("Invalid Request Parameters!")
                         .errorDetails(validationErrors)
+                        .build());
+    }
+	
+	@ExceptionHandler(InvalidParameterException.class)
+    public ResponseEntity<LicenseValidationResponse> handleInvalidParameter(InvalidParameterException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new LicenseValidationResponse.Builder()
+                        .success(false)
+                        .status(ex.getStatus().name())
+                        .message(ex.getMessage())
                         .build());
     }
 

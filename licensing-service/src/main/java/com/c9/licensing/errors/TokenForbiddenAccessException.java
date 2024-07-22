@@ -1,8 +1,8 @@
 package com.c9.licensing.errors;
 
-import com.c9.licensing.model.LicenseErrorCode;
+import com.c9.licensing.model.LicenseServiceStatus;
 
-public class TokenForbiddenAccessException extends RuntimeException implements LicenseException{
+public class TokenForbiddenAccessException extends RuntimeException implements LicenseServiceException{
 
 	private static final long serialVersionUID = -2458534544543529495L;
 
@@ -14,7 +14,7 @@ public class TokenForbiddenAccessException extends RuntimeException implements L
 		super(message, e);
 	}
 
-	public LicenseErrorCode getErrorCode() {
-		return LicenseErrorCode.TOKEN_INVALID_ACCESS;
+	public LicenseServiceStatus getStatus() {
+		return LicenseServiceStatus.TOKEN_INVALID_ACCESS;
 	}
 }

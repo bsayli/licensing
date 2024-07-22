@@ -1,8 +1,8 @@
 package com.c9.licensing.errors;
 
-import com.c9.licensing.model.LicenseErrorCode;
+import com.c9.licensing.model.LicenseServiceStatus;
 
-public class LicenseUsageLimitExceededException extends RuntimeException implements LicenseException{
+public class LicenseUsageLimitExceededException extends RuntimeException implements LicenseServiceException{
 
 	private static final long serialVersionUID = -7483968084676456879L;
 
@@ -12,7 +12,7 @@ public class LicenseUsageLimitExceededException extends RuntimeException impleme
 		
 	}
 
-	public LicenseErrorCode getErrorCode() {
-		return LicenseErrorCode.LICENSE_USAGE_LIMIT_EXCEEDED;
+	public LicenseServiceStatus getStatus() {
+		return LicenseServiceStatus.LICENSE_USAGE_LIMIT_EXCEEDED;
 	}
 }

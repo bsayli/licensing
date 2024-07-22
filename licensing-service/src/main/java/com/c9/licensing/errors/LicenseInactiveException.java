@@ -1,8 +1,8 @@
 package com.c9.licensing.errors;
 
-import com.c9.licensing.model.LicenseErrorCode;
+import com.c9.licensing.model.LicenseServiceStatus;
 
-public class LicenseInactiveException extends RuntimeException implements LicenseException{
+public class LicenseInactiveException extends RuntimeException implements LicenseServiceException{
 
     private static final long serialVersionUID = -7483968084676456879L;
 
@@ -10,7 +10,7 @@ public class LicenseInactiveException extends RuntimeException implements Licens
 		super(message);
 	}
 
-	public LicenseErrorCode getErrorCode() {
-		return LicenseErrorCode.LICENSE_INACTIVE;
+	public LicenseServiceStatus getStatus() {
+		return LicenseServiceStatus.LICENSE_INACTIVE;
 	}
 }

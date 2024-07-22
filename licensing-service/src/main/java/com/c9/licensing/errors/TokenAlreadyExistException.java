@@ -1,8 +1,8 @@
 package com.c9.licensing.errors;
 
-import com.c9.licensing.model.LicenseErrorCode;
+import com.c9.licensing.model.LicenseServiceStatus;
 
-public class TokenAlreadyExistException  extends RuntimeException implements LicenseException{
+public class TokenAlreadyExistException extends RuntimeException implements LicenseServiceException{
 	
 	private static final long serialVersionUID = 9039245175884123100L;
 	
@@ -17,7 +17,7 @@ public class TokenAlreadyExistException  extends RuntimeException implements Lic
 		return token;
 	}
 
-	public LicenseErrorCode getErrorCode() {
-		return LicenseErrorCode.TOKEN_ALREADY_EXIST;
+	public LicenseServiceStatus getStatus() {
+		return LicenseServiceStatus.TOKEN_ALREADY_EXIST;
 	}
 }

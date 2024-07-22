@@ -1,11 +1,13 @@
 package com.c9.licensing.service;
 
+import com.c9.licensing.model.LicenseValidationRequest;
 import com.c9.licensing.response.LicenseValidationResponse;
 
 public interface LicenseOrchestrationService {
 
+	LicenseValidationResponse getLicenseDetails(LicenseValidationRequest request);
 	
-	LicenseValidationResponse getLicenseDetails(String licenseKey, String instanceId);
+	LicenseValidationResponse getLicenseDetailsByLicenseKey(LicenseValidationRequest request);
 	
-	LicenseValidationResponse getLicenseDetailsByToken(String token, String instanceId);
+	LicenseValidationResponse getLicenseDetailsByToken(LicenseValidationRequest request);
 }

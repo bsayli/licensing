@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.c9.licensing.model.LicenseValidationRequest;
 import com.c9.licensing.response.LicenseValidationResponse;
 import com.c9.licensing.service.LicenseOrchestrationService;
 
@@ -27,12 +28,17 @@ public class LicenseController {
 
 	@PostMapping("/validate")
 	public ResponseEntity<LicenseValidationResponse> validateLicense(
-			@Size(min = 100, max = 300, message = "License Key must be between {min} and {max} characters")
+			@Size(min = 200, max = 400, message = "License Key must be between {min} and {max} characters")
 			@RequestParam String licenseKey,
-			@Size(min = 10, max = 100, message = "Application Instance Id header param must be between {min} and {max} characters")
-			@RequestHeader("X-App-Instance-ID") String appInstanceId) {
+			@Size(min = 20, max = 100, message = "Instance Id header param must be between {min} and {max} characters")
+			@RequestHeader("X-Instance-ID") String instanceId) {
+		
+		LicenseValidationRequest request = new LicenseValidationRequest.Builder()
+				.licenseKey(licenseKey)
+				.instanceId(instanceId)
+				.build();
 
-		LicenseValidationResponse response = licenseOrchestrationService.getLicenseDetails(licenseKey, appInstanceId);
+		LicenseValidationResponse response = licenseOrchestrationService.getLicenseDetailsByLicenseKey(request);
 		if (response.success()) {
 			return ResponseEntity.ok(response);
 		} else {
@@ -42,13 +48,17 @@ public class LicenseController {
 
 	@PostMapping("/validateToken")
 	public ResponseEntity<LicenseValidationResponse> validateWithToken(
-			@Size(min = 100, max = 300, message = "License Token header param must be between {min} and {max} characters")
+			@Size(min = 200, max = 400, message = "License Token header param must be between {min} and {max} characters")
 			@RequestHeader("X-License-Token") String licenseToken,
-			@Size(min = 10, max = 100, message = "Application Instance Id header param must be between {min} and {max} characters")
-			@RequestHeader("X-App-Instance-ID") String appInstanceId) {
+			@Size(min = 20, max = 100, message = "Instance Id header param must be between {min} and {max} characters")
+			@RequestHeader("X-Instance-ID") String instanceId) {
 
-		LicenseValidationResponse response = licenseOrchestrationService.getLicenseDetailsByToken(licenseToken,
-				appInstanceId);
+		LicenseValidationRequest request = new LicenseValidationRequest.Builder()
+				.licenseToken(licenseToken)
+				.instanceId(instanceId)
+				.build();
+		
+		LicenseValidationResponse response = licenseOrchestrationService.getLicenseDetailsByToken(request);
 
 		if (response.success()) {
 			return ResponseEntity.ok(response);

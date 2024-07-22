@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.c9.licensing.errors.LicenseServiceException;
+import com.c9.licensing.errors.LicenseServiceUnexpectedException;
 import com.c9.licensing.model.LicenseInfo;
 import com.c9.licensing.service.exception.ConnectionExceptionPredicate;
 import com.c9.licensing.service.user.UserCacheManagementService;
@@ -31,7 +31,7 @@ public class UserRecoverServiceImpl implements UserRecoverService {
 				return dataInOffline.get(userId);
 			}
 		} 
-		throw new LicenseServiceException("License Service Error", pe);
+		throw new LicenseServiceUnexpectedException("License Service Unexpected Error", pe);
 	}
 
 }

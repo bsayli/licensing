@@ -32,7 +32,8 @@ public class JwtUtilImpl implements JwtUtil {
 		Instant now = Instant.now();
 		Instant expiry = now.plus(tokenExpirationInMinute, ChronoUnit.MINUTES);
 
-		return Jwts.builder().subject(result.appInstanceId())
+		return Jwts.builder()
+				.subject(result.appInstanceId())
 				.claim("licenseStatus", result.licenseStatus())
 				.claim("licenseTier", result.licenseTier())
 				.issuedAt(Date.from(now)).expiration(Date.from(expiry))
