@@ -13,6 +13,7 @@ import com.c9.licensing.model.LicenseValidationRequest;
 import com.c9.licensing.response.LicenseValidationResponse;
 import com.c9.licensing.service.LicenseOrchestrationService;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 @Validated
@@ -30,10 +31,12 @@ public class LicenseControllerV2 {
 	public ResponseEntity<LicenseValidationResponse> validateLicense(
 			@Size(min = 200, max = 400, message = "License Key must be between {min} and {max} characters")
 			@RequestParam(required = false) String licenseKey,
+			@NotNull(message = "'serviceId' request param is required!")
 			@Size(min = 5, max = 50, message = "Service Id must be between {min} and {max} characters")
 			@RequestParam String serviceId,
 			@Size(min = 200, max = 400, message = "License Token header param must be between {min} and {max} characters")
 			@RequestHeader(value = "X-License-Token", required = false) String licenseToken,
+			@NotNull(message = "'X-Instance-ID' header param is required!")
 			@Size(min = 20, max = 100, message = "Instance Id header param must be between {min} and {max} characters")
 			@RequestHeader("X-Instance-ID") String instanceId,
 			@Size(min = 20, max = 100, message = "Signature header param must be between {min} and {max} characters")

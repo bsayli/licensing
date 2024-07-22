@@ -13,6 +13,7 @@ import com.c9.licensing.model.LicenseValidationRequest;
 import com.c9.licensing.response.LicenseValidationResponse;
 import com.c9.licensing.service.LicenseOrchestrationService;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 @Validated
@@ -28,8 +29,10 @@ public class LicenseController {
 
 	@PostMapping("/validate")
 	public ResponseEntity<LicenseValidationResponse> validateLicense(
+			@NotNull(message = "'licenseKey' request param is required!")
 			@Size(min = 200, max = 400, message = "License Key must be between {min} and {max} characters")
 			@RequestParam String licenseKey,
+			@NotNull(message = "'X-Instance-ID' header param is required!")
 			@Size(min = 20, max = 100, message = "Instance Id header param must be between {min} and {max} characters")
 			@RequestHeader("X-Instance-ID") String instanceId) {
 		
@@ -48,8 +51,10 @@ public class LicenseController {
 
 	@PostMapping("/validateToken")
 	public ResponseEntity<LicenseValidationResponse> validateWithToken(
+			@NotNull(message = "'X-License-Token' header param is required!")
 			@Size(min = 200, max = 400, message = "License Token header param must be between {min} and {max} characters")
 			@RequestHeader("X-License-Token") String licenseToken,
+			@NotNull(message = "'X-Instance-ID' header param is required!")
 			@Size(min = 20, max = 100, message = "Instance Id header param must be between {min} and {max} characters")
 			@RequestHeader("X-Instance-ID") String instanceId) {
 
