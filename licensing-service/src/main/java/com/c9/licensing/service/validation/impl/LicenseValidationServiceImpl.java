@@ -160,7 +160,7 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 
 			Optional<String> supportedMaxVersionOpt = allowedServiceVersions.stream()
 					.filter(serviceVersionInfo -> serviceVersionInfo.serviceId().equals(requestedServiceId))
-					.map(LicenseServiceIdVersionInfo::supportedMaxVersion)
+					.map(LicenseServiceIdVersionInfo::licensedMaxVersion)
 					.findFirst();
 
 			if (SERVICE_ID_C9INE_CODEGEN.equals(requestedServiceId)) {

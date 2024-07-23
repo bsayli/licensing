@@ -21,6 +21,8 @@ import com.c9.licensing.model.LicenseChecksumVersionInfo;
 import com.c9.licensing.model.LicenseInfo;
 import com.c9.licensing.model.LicenseServiceIdVersionInfo;
 import com.c9.licensing.service.user.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.ws.rs.NotFoundException;
 
@@ -123,23 +125,29 @@ public class UserRepositoryImpl implements UserRepository {
 	private LocalDateTime parseLocalDateTime(String dateString) {
 		return LocalDateTime.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 	}
-	
+
 	private List<LicenseChecksumVersionInfo> getChecksumVersionInfo(Map<String, List<String>> attributes, String name) {
-		List<String> checksumWithVersions = attributes.getOrDefault(name, new ArrayList<>());
-		return checksumWithVersions.stream()
-				.map(checksumWithVersion -> checksumWithVersion.split("~", 2))
-				.filter(parts -> parts.length == 2) 
-				.map(parts -> new LicenseChecksumVersionInfo(parts[0], parts[1]))
-				.toList();
-	}
-	
-	private List<LicenseServiceIdVersionInfo> getServiceIdVersionInfo(Map<String, List<String>> attributes, String name) {
-		List<String> serviceIdMaxVersions = attributes.getOrDefault(name, new ArrayList<>());
-		return serviceIdMaxVersions.stream()
-				.map( serviceIdMaxVersion ->  serviceIdMaxVersion.split("<=", 2))
-				.filter(parts -> parts.length == 2) 
-				.map(parts -> new LicenseServiceIdVersionInfo(parts[0], parts[1]))
+		List<String> jsonChecksumWithVersions = attributes.getOrDefault(name, new ArrayList<>());
+		return jsonChecksumWithVersions.stream()
+				.map(jsonChecksumWithVersion -> fromJson(jsonChecksumWithVersion, LicenseChecksumVersionInfo.class))
 				.toList();
 	}
 
+	private List<LicenseServiceIdVersionInfo> getServiceIdVersionInfo(Map<String, List<String>> attributes,
+			String name) {
+		List<String> jsonServiceIdLicensedMaxVersions = attributes.getOrDefault(name, new ArrayList<>());
+		return jsonServiceIdLicensedMaxVersions.stream()
+				.map(jsonServiceIdVersion -> fromJson(jsonServiceIdVersion, LicenseServiceIdVersionInfo.class))
+				.toList();
+	}
+
+	private <T> T fromJson(String json, Class<T> classType) {
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			return mapper.readValue(json, classType);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 }

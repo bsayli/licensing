@@ -2,7 +2,7 @@ package com.c9.licensing.security;
 
 public interface UserIdUtil {
 	
-	String LICENSEKEYPREFIX = "C9";
+	String LICENSEKEYPREFIX = "C9INE";
 	String ALGORITHM = "AES/GCM/NoPadding"; 
 	int GCM_IV_LENGTH = 12; // Recommended for GCM 
 	int GCM_TAG_LENGTH = 16; // 128 bits
