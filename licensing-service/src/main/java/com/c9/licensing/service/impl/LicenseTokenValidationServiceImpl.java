@@ -52,7 +52,7 @@ public class LicenseTokenValidationServiceImpl implements LicenseTokenValidation
 		} catch (SignatureException | MalformedKeyException se) {
 			throw new TokenInvalidException(TOKEN_INVALID, se);
 		} catch (TokenForbiddenAccessException se) {
-			throw new TokenInvalidException(TOKEN_INVALID_ACCESS, se);
+			throw new TokenForbiddenAccessException(TOKEN_INVALID_ACCESS, se);
 		} catch (Exception e) {
 			logger.error(ERROR_DURING_TOKEN_VALIDATION, e);
 			throw new TokenInvalidException(ERROR_DURING_TOKEN_VALIDATION, e);

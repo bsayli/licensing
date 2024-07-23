@@ -12,6 +12,7 @@ import com.c9.licensing.errors.LicenseServiceVersionNotSupportedException;
 import com.c9.licensing.errors.LicenseUsageLimitExceededException;
 import com.c9.licensing.errors.TokenAlreadyExistException;
 import com.c9.licensing.errors.TokenExpiredException;
+import com.c9.licensing.errors.TokenForbiddenAccessException;
 import com.c9.licensing.errors.TokenInvalidException;
 import com.c9.licensing.errors.TokenIsTooOldForRefreshException;
 import com.c9.licensing.model.LicenseInfo;
@@ -75,7 +76,7 @@ public class LicenseServiceImpl implements LicenseService {
 			tokenValidationService.validateToken(request.licenseToken(), request.instanceId());
 			validationResult = new LicenseValidationResult.Builder().valid(true).message(TOKEN_IS_VALID).build();
 
-		} catch (TokenInvalidException | TokenIsTooOldForRefreshException e) {
+		} catch (TokenInvalidException | TokenForbiddenAccessException | TokenIsTooOldForRefreshException e) {
 			logger.error(LICENSE_VALIDATION_FAILED, e);
 			validationResult = new LicenseValidationResult.Builder().valid(false)
 					.serviceStatus(e.getStatus())
