@@ -4,12 +4,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.c9.licensing.security.EncryptionUtil;
-import com.c9.licensing.security.JwtUtil;
-import com.c9.licensing.security.UserIdUtil;
-import com.c9.licensing.security.impl.EncryptionUtilImpl;
-import com.c9.licensing.security.impl.JwtUtilImpl;
-import com.c9.licensing.security.impl.UserIdUtilImpl;
+import com.c9.licensing.security.LicenseKeyEncryptor;
+import com.c9.licensing.security.SignatureValidator;
+import com.c9.licensing.security.UserIdEncryptor;
+import com.c9.licensing.security.impl.LicenseKeyEncryptorImpl;
+import com.c9.licensing.security.impl.SignatureValidatorImpl;
+import com.c9.licensing.security.impl.UserIdEncryptorImpl;
+import com.c9.licensing.service.jwt.JwtService;
+import com.c9.licensing.service.jwt.impl.JwtServiceImpl;
 
 @Configuration
 public class SecretConfig {
@@ -20,6 +22,9 @@ public class SecretConfig {
     @Value("${userid.secret.key}")
     private String userIdSecretKey;
     
+    @Value("${signature.public.key}")
+    private String signaturePublicKey;
+    
     @Value("${license.jwt.secret.key}")
     private String licenseJwtSecretKey;
     
@@ -27,19 +32,25 @@ public class SecretConfig {
     private Integer tokenExpirationInMinute;
     
     @Bean
-    UserIdUtil userIdUti() {
-		return new UserIdUtilImpl(userIdSecretKey);
+    UserIdEncryptor userIdEncryptor() {
+		return new UserIdEncryptorImpl(userIdSecretKey);
 	}
     
     @Bean
-    EncryptionUtil encryptionUtil() {
-		return new EncryptionUtilImpl(licenseSecretKey);
+    LicenseKeyEncryptor licenseKeyEncryptor() {
+		return new LicenseKeyEncryptorImpl(licenseSecretKey);
 	}
     
     @Bean
-    JwtUtil jwtUtil() {
-    	return new JwtUtilImpl(licenseJwtSecretKey, tokenExpirationInMinute);
+    JwtService jwtService() {
+    	return new JwtServiceImpl(licenseJwtSecretKey, tokenExpirationInMinute);
     }
+    
+    @Bean
+    SignatureValidator signatureValidator() {
+    	return new SignatureValidatorImpl(signaturePublicKey);
+    }
+   
    
 
 }

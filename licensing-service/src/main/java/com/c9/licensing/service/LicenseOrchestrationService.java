@@ -1,7 +1,7 @@
 package com.c9.licensing.service;
 
 import com.c9.licensing.model.LicenseValidationRequest;
-import com.c9.licensing.response.LicenseValidationResponse;
+import com.c9.licensing.model.response.LicenseValidationResponse;
 
 public interface LicenseOrchestrationService {
 

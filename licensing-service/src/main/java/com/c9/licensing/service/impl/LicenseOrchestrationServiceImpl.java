@@ -4,24 +4,24 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.c9.licensing.errors.InvalidParameterException;
 import com.c9.licensing.model.LicenseServiceStatus;
 import com.c9.licensing.model.LicenseValidationRequest;
 import com.c9.licensing.model.LicenseValidationResult;
-import com.c9.licensing.response.LicenseValidationResponse;
-import com.c9.licensing.security.JwtUtil;
+import com.c9.licensing.model.errors.InvalidParameterException;
+import com.c9.licensing.model.response.LicenseValidationResponse;
 import com.c9.licensing.service.LicenseClientCacheManagementService;
 import com.c9.licensing.service.LicenseOrchestrationService;
 import com.c9.licensing.service.LicenseService;
+import com.c9.licensing.service.jwt.JwtService;
 
 @Service
 public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationService {
 
 	private LicenseService licenseService;
-	private JwtUtil jwtUtil;
+	private JwtService jwtUtil;
 	private LicenseClientCacheManagementService clientCacheManagementService;
 
-	public LicenseOrchestrationServiceImpl(LicenseService licenseService, JwtUtil jwtUtil,
+	public LicenseOrchestrationServiceImpl(LicenseService licenseService, JwtService jwtUtil,
 			LicenseClientCacheManagementService clientCacheManagementService) {
 		this.licenseService = licenseService;
 		this.jwtUtil = jwtUtil;
@@ -48,7 +48,7 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 			String token = jwtUtil.generateToken(result);
 			clientCacheManagementService.addClientInfo(request.instanceId(), token, result.userId());
 			licenseValidationResponse = new LicenseValidationResponse.Builder().success(true)
-					.token(token)
+					.licenseToken(token)
 					.status(LicenseServiceStatus.TOKEN_CREATED.name())
 					.message(result.message())
 					.build();
@@ -71,13 +71,13 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 				String newToken = jwtUtil.generateToken(result);
 				clientCacheManagementService.addClientInfo(request.instanceId(), newToken, result.userId());
 				licenseValidationResponse = new LicenseValidationResponse.Builder().success(true)
-						.token(newToken)
+						.licenseToken(newToken)
 						.status(result.serviceStatus().name())
 						.message(result.message())
 						.build();
 			} else {
 				licenseValidationResponse = new LicenseValidationResponse.Builder().success(true)
-						.token(request.licenseToken())
+						.licenseToken(request.licenseToken())
 						.status(LicenseServiceStatus.TOKEN_ACTIVE.name())
 						.message(result.message())
 						.build();

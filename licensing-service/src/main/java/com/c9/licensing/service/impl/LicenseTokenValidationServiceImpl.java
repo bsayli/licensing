@@ -4,13 +4,13 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.c9.licensing.errors.TokenExpiredException;
-import com.c9.licensing.errors.TokenForbiddenAccessException;
-import com.c9.licensing.errors.TokenInvalidException;
-import com.c9.licensing.errors.TokenIsTooOldForRefreshException;
-import com.c9.licensing.security.JwtUtil;
+import com.c9.licensing.model.errors.TokenExpiredException;
+import com.c9.licensing.model.errors.TokenForbiddenAccessException;
+import com.c9.licensing.model.errors.TokenInvalidException;
+import com.c9.licensing.model.errors.TokenIsTooOldForRefreshException;
 import com.c9.licensing.service.LicenseClientCacheManagementService;
 import com.c9.licensing.service.LicenseTokenValidationService;
+import com.c9.licensing.service.jwt.JwtService;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -20,10 +20,10 @@ import io.jsonwebtoken.security.SignatureException;
 @Service
 public class LicenseTokenValidationServiceImpl implements LicenseTokenValidationService {
 
-	private final JwtUtil jwtUtil;
+	private final JwtService jwtUtil;
 	private final LicenseClientCacheManagementService clientCacheManagementService;
 
-	public LicenseTokenValidationServiceImpl(JwtUtil jwtUtil, LicenseClientCacheManagementService clientCacheManagementService) {
+	public LicenseTokenValidationServiceImpl(JwtService jwtUtil, LicenseClientCacheManagementService clientCacheManagementService) {
 		this.jwtUtil = jwtUtil;
 		this.clientCacheManagementService = clientCacheManagementService;
 	}

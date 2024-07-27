@@ -1,23 +1,29 @@
 package com.c9.licensing.service.validation.impl;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import com.c9.licensing.errors.LicenseExpiredException;
-import com.c9.licensing.errors.LicenseInactiveException;
-import com.c9.licensing.errors.LicenseInvalidChecksumException;
-import com.c9.licensing.errors.LicenseInvalidServiceIdException;
-import com.c9.licensing.errors.LicenseServiceIdNotSupportedException;
-import com.c9.licensing.errors.LicenseServiceVersionNotSupportedException;
-import com.c9.licensing.errors.LicenseUsageLimitExceededException;
 import com.c9.licensing.model.LicenseChecksumVersionInfo;
 import com.c9.licensing.model.LicenseInfo;
 import com.c9.licensing.model.LicenseServiceIdVersionInfo;
 import com.c9.licensing.model.LicenseValidationRequest;
+import com.c9.licensing.model.SignatureData;
+import com.c9.licensing.model.SignatureData.Builder;
+import com.c9.licensing.model.errors.LicenseExpiredException;
+import com.c9.licensing.model.errors.LicenseInactiveException;
+import com.c9.licensing.model.errors.LicenseInvalidChecksumException;
+import com.c9.licensing.model.errors.LicenseInvalidServiceIdException;
+import com.c9.licensing.model.errors.LicenseServiceIdNotSupportedException;
+import com.c9.licensing.model.errors.LicenseServiceVersionNotSupportedException;
+import com.c9.licensing.model.errors.LicenseUsageLimitExceededException;
+import com.c9.licensing.security.SignatureValidator;
 import com.c9.licensing.service.validation.LicenseValidationService;
 import com.fasterxml.jackson.core.Version;
 
@@ -31,6 +37,12 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 			"c9inePlatform", "c9ineWeb", "c9ineMobile");
 	private static final List<String> checksumSupportedServiceIds = List.of(SERVICE_ID_C9INE_CODEGEN,
 			SERVICE_ID_C9INE_TEST_AUTOMATION);
+	
+	private final SignatureValidator signatureValidator;
+	
+	public LicenseValidationServiceImpl(SignatureValidator signatureValidator) {
+		this.signatureValidator = signatureValidator;
+	}
 
 	@Override
 	public void validate(LicenseInfo licenseInfo, LicenseValidationRequest request) throws Exception {
@@ -40,8 +52,29 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 		validateServiceId(licenseInfo, request);
 		validateChecksumInfo(licenseInfo, request);
 		validateServiceVersion(licenseInfo, request);
+		validateSignature(request);
 	}
 	
+	private void validateSignature(LicenseValidationRequest request) {
+		boolean isSignatureControlNeeded = request.signature() != null;
+		if(isSignatureControlNeeded) {
+			String licenseKey =  request.licenseKey();
+			boolean requestedByLicenseKey = licenseKey != null  && licenseKey.trim().length() > 0;
+			
+			Builder signatureDataBuilder = new SignatureData.Builder()
+					.serviceId(request.serviceId())
+					.instanceId(request.instanceId());
+			
+			if(requestedByLicenseKey) {
+				signatureDataBuilder.encryptedLicenseKeyHash(getDataHash(licenseKey));
+			}else {
+				signatureDataBuilder.licenseTokenHash(getDataHash(request.licenseToken()));
+			}
+			SignatureData signatureData = signatureDataBuilder.build();	
+			signatureValidator.validateSignature(request.signature(), signatureData);
+		}
+	}
+
 	@Override
 	public boolean isInstanceIdNotExist(String instanceId, List<String> instanceIds) {
 		return CollectionUtils.isEmpty(instanceIds) || !instanceIds.contains(instanceId);
@@ -61,15 +94,19 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 	}
 
 	private void validateServiceId(LicenseInfo licenseInfo, LicenseValidationRequest request) {
-		if (!isServiceIdValid(request.serviceId())) {
-			throw new LicenseInvalidServiceIdException(
-					String.format(MESSAGE_LICENSE_INVALID_SERVICE_ID, request.serviceId()));
+		boolean serviceIdControlNeeded = request.serviceId() != null;
+		if(serviceIdControlNeeded) {
+			if (!isServiceIdValid(request.serviceId())) {
+				throw new LicenseInvalidServiceIdException(
+						String.format(MESSAGE_LICENSE_INVALID_SERVICE_ID, request.serviceId()));
+			}
+			
+			if (!isServiceIdSupported(request.serviceId(), licenseInfo.allowedServices())) {
+				throw new LicenseServiceIdNotSupportedException(
+						String.format(MESSAGE_LICENSE_SERVICE_ID_NOT_SUPPORTED, request.serviceId()));
+			}
 		}
-		
-		if (!isServiceIdSupported(request.serviceId(), licenseInfo.allowedServices())) {
-			throw new LicenseServiceIdNotSupportedException(
-					String.format(MESSAGE_LICENSE_SERVICE_ID_NOT_SUPPORTED, request.serviceId()));
-		}
+	
 	}
 
 	private void validateUsageLimit(LicenseInfo licenseInfo, LicenseValidationRequest request) {
@@ -105,7 +142,7 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 	}
 
 	private boolean isServiceIdValid(String serviceId) {
-		boolean isValid = true;
+		boolean isValid = false;
 		if (serviceId != null) {
 			serviceId = serviceId.trim();
 			isValid = serviceIds.contains(serviceId);
@@ -114,7 +151,7 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 	}
 
 	private boolean isServiceIdSupported(String serviceId, List<String> allowedServices) {
-		boolean isSupported = true;
+		boolean isSupported = false;
 		if (!CollectionUtils.isEmpty(allowedServices) && serviceId != null) {
 			serviceId = serviceId.trim();
 			isSupported = allowedServices.contains(serviceId);
@@ -205,5 +242,18 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 		return new int[] { Integer.parseInt(versions[0]), Integer.parseInt(versions[1]),
 				Integer.parseInt(versions[2]) };
 	}
+	
+	private String getDataHash(String data) {
+		MessageDigest digest;
+		try {
+			digest = MessageDigest.getInstance("SHA-256");
+			byte[] hash = digest.digest(data.getBytes());
+			return Base64.getEncoder().encodeToString(hash);
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 
 }

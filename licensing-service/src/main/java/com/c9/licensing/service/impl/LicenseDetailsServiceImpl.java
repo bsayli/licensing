@@ -4,12 +4,12 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.c9.licensing.errors.LicenseInvalidException;
-import com.c9.licensing.errors.TokenAlreadyExistException;
 import com.c9.licensing.model.LicenseInfo;
 import com.c9.licensing.model.LicenseValidationRequest;
-import com.c9.licensing.security.EncryptionUtil;
-import com.c9.licensing.security.UserIdUtil;
+import com.c9.licensing.model.errors.LicenseInvalidException;
+import com.c9.licensing.model.errors.TokenAlreadyExistException;
+import com.c9.licensing.security.LicenseKeyEncryptor;
+import com.c9.licensing.security.UserIdEncryptor;
 import com.c9.licensing.service.LicenseClientCacheManagementService;
 import com.c9.licensing.service.LicenseDetailsService;
 import com.c9.licensing.service.user.UserOrchestrationService;
@@ -18,13 +18,13 @@ import com.c9.licensing.service.validation.LicenseValidationService;
 @Service
 public class LicenseDetailsServiceImpl implements LicenseDetailsService {
 
-	private final EncryptionUtil encryptionUtil;
-	private final UserIdUtil userIdUtil;
+	private final LicenseKeyEncryptor encryptionUtil;
+	private final UserIdEncryptor userIdUtil;
 	private final UserOrchestrationService userService;
 	private final LicenseClientCacheManagementService clientCacheManagementService;
 	private final LicenseValidationService licenseValidationService;
 
-	public LicenseDetailsServiceImpl(EncryptionUtil encryptionUtil, UserIdUtil userIdUtil,
+	public LicenseDetailsServiceImpl(LicenseKeyEncryptor encryptionUtil, UserIdEncryptor userIdUtil,
 			UserOrchestrationService userService, LicenseClientCacheManagementService clientCacheManagementService,
 			LicenseValidationService licenseValidationService) {
 		this.encryptionUtil = encryptionUtil;
@@ -36,7 +36,7 @@ public class LicenseDetailsServiceImpl implements LicenseDetailsService {
 
 	public LicenseInfo validateAndGetLicenseDetailsByLicenseKey(LicenseValidationRequest request) throws Exception {
 		String licenseKey = encryptionUtil.decrypt(request.licenseKey());
-		String userId = userIdUtil.extractDecryptedUserId(licenseKey);
+		String userId = userIdUtil.extractAndDecryptUserId(licenseKey);
 
 		checkAndThrowIfTokenAlreadyExist(request.instanceId(), userId);
 

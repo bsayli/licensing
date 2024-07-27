@@ -14,12 +14,12 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
-import com.c9.licensing.errors.LicenseInvalidException;
-import com.c9.licensing.errors.repository.UserNotFoundException;
 import com.c9.licensing.model.LicenseInfo;
+import com.c9.licensing.model.errors.LicenseInvalidException;
+import com.c9.licensing.model.errors.repository.UserNotFoundException;
+import com.c9.licensing.repository.user.UserRepository;
 import com.c9.licensing.service.user.operations.UserRecoverService;
 import com.c9.licensing.service.user.operations.UserService;
-import com.c9.licensing.service.user.repository.UserRepository;
 
 import jakarta.ws.rs.ProcessingException;
 

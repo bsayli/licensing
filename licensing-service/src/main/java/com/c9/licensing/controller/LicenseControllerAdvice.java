@@ -10,9 +10,9 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import com.c9.licensing.errors.InvalidParameterException;
 import com.c9.licensing.model.LicenseServiceStatus;
-import com.c9.licensing.response.LicenseValidationResponse;
+import com.c9.licensing.model.errors.InvalidParameterException;
+import com.c9.licensing.model.response.LicenseValidationResponse;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;

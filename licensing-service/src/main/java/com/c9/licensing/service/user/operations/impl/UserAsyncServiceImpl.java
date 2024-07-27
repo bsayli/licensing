@@ -17,11 +17,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.c9.licensing.model.LicenseInfo;
+import com.c9.licensing.repository.user.UserRepository;
 import com.c9.licensing.service.exception.ConnectionExceptionPredicate;
 import com.c9.licensing.service.user.operations.UserAsyncService;
 import com.c9.licensing.service.user.operations.errors.AlreadyProcessingException;
 import com.c9.licensing.service.user.operations.errors.MaxRetryAttemptsExceededException;
-import com.c9.licensing.service.user.repository.UserRepository;
 
 import jakarta.ws.rs.ProcessingException;
 

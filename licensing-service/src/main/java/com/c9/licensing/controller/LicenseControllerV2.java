@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.c9.licensing.model.LicenseValidationRequest;
-import com.c9.licensing.response.LicenseValidationResponse;
+import com.c9.licensing.model.response.LicenseValidationResponse;
 import com.c9.licensing.service.LicenseOrchestrationService;
 
 import jakarta.validation.constraints.NotNull;
