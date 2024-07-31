@@ -15,11 +15,11 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 @EnableCaching
 public class CacheConfig {
 	
-	@Value("${caching.spring.userInfoTTL}")
-	private Integer userInfoTTL;
+	@Value("${caching.spring.clientLicenseInfoTTL}")
+	private Integer clientLicenseInfoTTL;
 
-	@Value("${caching.spring.userOffLineInfoTTL}")
-	private Integer userOffLineInfoTTL;
+	@Value("${caching.spring.clientLicenseInfoOffLineSupportTTL}")
+	private Integer clientLicenseInfoOffLineSupportTTL;
 	
 	@Value("${jwt.token.expiration}")
 	private Integer jwtTokenExpiration;
@@ -29,10 +29,10 @@ public class CacheConfig {
 		CaffeineCacheManager cacheManager = new CaffeineCacheManager();
 		
 		cacheManager.registerCustomCache("userInfoCache",  Caffeine.newBuilder()
-				.expireAfterWrite(userInfoTTL, TimeUnit.HOURS).build());
+				.expireAfterWrite(clientLicenseInfoTTL, TimeUnit.HOURS).build());
 		
 		cacheManager.registerCustomCache("userOfflineInfoCache",  Caffeine.newBuilder()
-				.expireAfterWrite(userOffLineInfoTTL, TimeUnit.HOURS).build());
+				.expireAfterWrite(clientLicenseInfoOffLineSupportTTL, TimeUnit.HOURS).build());
 		
 		cacheManager.registerCustomCache("activeClients",  Caffeine.newBuilder()
 				.expireAfterWrite((jwtTokenExpiration * 2), TimeUnit.MINUTES).build());

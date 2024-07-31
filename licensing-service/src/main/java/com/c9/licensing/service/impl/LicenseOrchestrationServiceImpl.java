@@ -2,6 +2,7 @@ package com.c9.licensing.service.impl;
 
 import org.springframework.stereotype.Service;
 
+import com.c9.licensing.generator.ClientIdGenerator;
 import com.c9.licensing.model.ClientInfo;
 import com.c9.licensing.model.LicenseServiceStatus;
 import com.c9.licensing.model.LicenseValidationRequest;
@@ -19,12 +20,14 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 	private LicenseService licenseService;
 	private JwtService jwtUtil;
 	private LicenseClientCacheManagementService clientCacheManagementService;
+	private ClientIdGenerator clientIdGenerator;
 
 	public LicenseOrchestrationServiceImpl(LicenseService licenseService, JwtService jwtUtil,
-			LicenseClientCacheManagementService clientCacheManagementService) {
+			LicenseClientCacheManagementService clientCacheManagementService, ClientIdGenerator clientIdGenerator) {
 		this.licenseService = licenseService;
 		this.jwtUtil = jwtUtil;
 		this.clientCacheManagementService = clientCacheManagementService;
+		this.clientIdGenerator = clientIdGenerator;
 	}
 
 	@Override
@@ -44,7 +47,8 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 		LicenseValidationResponse licenseValidationResponse;
 		LicenseValidationResult result = licenseService.getUserLicenseDetailsByLicenseKey(request);
 		if (result.valid()) {
-			String token = jwtUtil.generateToken(result);
+			String clientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(), request.instanceId());
+			String token = jwtUtil.generateToken(clientId, result.licenseTier(), result.licenseStatus());
 			ClientInfo clientInfo = new ClientInfo.Builder().serviceId(request.serviceId())
 					.licenseToken(token)
 					.serviceVersion(request.serviceVersion())
@@ -75,7 +79,8 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 		LicenseValidationResult result = licenseService.getUserLicenseDetailsByToken(request);
 		if (result.valid()) {
 			if (LicenseServiceStatus.TOKEN_REFRESHED == result.serviceStatus()) {
-				String newToken = jwtUtil.generateToken(result);
+				String clientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(), request.instanceId());
+				String newToken = jwtUtil.generateToken(clientId, result.licenseTier(), result.licenseStatus());
 				ClientInfo clientInfo = new ClientInfo.Builder().serviceId(request.serviceId())
 						.licenseToken(newToken)
 						.serviceVersion(request.serviceVersion())

@@ -33,14 +33,14 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 
 	private static final String SERVICE_ID_C9INE_CODEGEN = "c9ineCodegen";
 	private static final String SERVICE_ID_C9INE_TEST_AUTOMATION = "c9ineTestAutomation";
-	
+
 	private static final List<String> serviceIds = List.of(SERVICE_ID_C9INE_CODEGEN, SERVICE_ID_C9INE_TEST_AUTOMATION,
 			"c9inePlatform", "c9ineWeb", "c9ineMobile");
 	private static final List<String> checksumSupportedServiceIds = List.of(SERVICE_ID_C9INE_CODEGEN,
 			SERVICE_ID_C9INE_TEST_AUTOMATION);
-	
+
 	private final SignatureValidator signatureValidator;
-	
+
 	public LicenseValidationServiceImpl(SignatureValidator signatureValidator) {
 		this.signatureValidator = signatureValidator;
 	}
@@ -55,23 +55,22 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 		validateServiceVersion(licenseInfo, request);
 		validateSignature(request);
 	}
-	
+
 	private void validateSignature(LicenseValidationRequest request) {
 		boolean isSignatureControlNeeded = request.signature() != null;
-		if(isSignatureControlNeeded) {
-			String licenseKey =  request.licenseKey();
-			boolean requestedByLicenseKey = licenseKey != null  && licenseKey.trim().length() > 0;
-			
-			Builder signatureDataBuilder = new SignatureData.Builder()
-					.serviceId(request.serviceId())
+		if (isSignatureControlNeeded) {
+			String licenseKey = request.licenseKey();
+			boolean requestedByLicenseKey = licenseKey != null && licenseKey.trim().length() > 0;
+
+			Builder signatureDataBuilder = new SignatureData.Builder().serviceId(request.serviceId())
 					.instanceId(request.instanceId());
-			
-			if(requestedByLicenseKey) {
+
+			if (requestedByLicenseKey) {
 				signatureDataBuilder.encryptedLicenseKeyHash(getDataHash(licenseKey));
-			}else {
+			} else {
 				signatureDataBuilder.licenseTokenHash(getDataHash(request.licenseToken()));
 			}
-			SignatureData signatureData = signatureDataBuilder.build();	
+			SignatureData signatureData = signatureDataBuilder.build();
 			signatureValidator.validateSignature(request.signature(), signatureData);
 		}
 	}
@@ -82,9 +81,15 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 	}
 
 	private void validateServiceVersion(LicenseInfo licenseInfo, LicenseValidationRequest request) {
-		if (!isVersionInfoValid(licenseInfo, request.serviceVersion(), request.serviceId(), request.checksum())) {
+		boolean isValid = isVersionInfoValid(licenseInfo, request.serviceVersion(), request.serviceId());
+		if (!isValid) {
 			throw new LicenseServiceVersionNotSupportedException(
 					String.format(MESSAGE_LICENSE_SERVICE_VERSION_NOT_SUPPORTED, request.serviceId()));
+		}
+		isValid = isVersionInfoCompatibleWithChecksum(licenseInfo, request.serviceVersion(), request.serviceId(), request.checksum());
+		if (!isValid) {
+			throw new LicenseServiceVersionNotSupportedException(
+					String.format(MESSAGE_LICENSE_CHECKSUM_SERVICE_VERSION_MISMATCH, request.serviceId()));
 		}
 	}
 
@@ -96,18 +101,18 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 
 	private void validateServiceId(LicenseInfo licenseInfo, LicenseValidationRequest request) {
 		boolean serviceIdControlNeeded = request.serviceId() != null;
-		if(serviceIdControlNeeded) {
+		if (serviceIdControlNeeded) {
 			if (!isServiceIdValid(request.serviceId())) {
 				throw new LicenseInvalidServiceIdException(
 						String.format(MESSAGE_LICENSE_INVALID_SERVICE_ID, request.serviceId()));
 			}
-			
+
 			if (!isServiceIdSupported(request.serviceId(), licenseInfo.allowedServices())) {
 				throw new LicenseServiceIdNotSupportedException(
 						String.format(MESSAGE_LICENSE_SERVICE_ID_NOT_SUPPORTED, request.serviceId()));
 			}
 		}
-	
+
 	}
 
 	private void validateUsageLimit(LicenseInfo licenseInfo, LicenseValidationRequest request) {
@@ -188,50 +193,57 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 		return isCheckSumInfoValid;
 	}
 
-	private boolean isVersionInfoValid(LicenseInfo licenseInfo, String requestedServiceVersion, String requestedServiceId, String requestedChecksum) {
+	private boolean isVersionInfoValid(LicenseInfo licenseInfo, String requestedServiceVersion,
+			String requestedServiceId) {
 		boolean isVersionInfoValid = true;
 		List<LicenseServiceIdVersionInfo> allowedServiceVersions = licenseInfo.allowedServiceVersions();
 		boolean isVersionControlNeeded = requestedServiceVersion != null && !allowedServiceVersions.isEmpty();
 		if (isVersionControlNeeded) {
-			
-			Optional<String> checksumServiceVersion = getChecksumServiceVersion(licenseInfo, requestedServiceId,
-					requestedChecksum);
-			
-			if(checksumServiceVersion.isPresent()) {
-				isVersionInfoValid = checksumServiceVersion.get().equals(requestedServiceVersion);
+			Optional<String> supportedMaxVersionOpt = allowedServiceVersions.stream()
+					.filter(serviceVersionInfo -> serviceVersionInfo.serviceId().equals(requestedServiceId))
+					.map(LicenseServiceIdVersionInfo::licensedMaxVersion)
+					.findFirst();
+
+			if (supportedMaxVersionOpt.isPresent()) {
+				String supportedMaxVersionStr = supportedMaxVersionOpt.get();
+				String clientVersionStr = requestedServiceVersion;
+
+				int[] maxVersionParts = getVersionParts(supportedMaxVersionStr);
+				int[] clientVersionParts = getVersionParts(clientVersionStr);
+
+				Version supportedMaxVersion = new Version(maxVersionParts[0], maxVersionParts[1], maxVersionParts[2],
+						null, null, null);
+				Version clientVersion = new Version(clientVersionParts[0], clientVersionParts[1], clientVersionParts[2],
+						null, null, null);
+
+				isVersionInfoValid = clientVersion.compareTo(supportedMaxVersion) <= 0;
 			}
-			
-			if(isVersionInfoValid) {
-				Optional<String> supportedMaxVersionOpt = allowedServiceVersions.stream()
-						.filter(serviceVersionInfo -> serviceVersionInfo.serviceId().equals(requestedServiceId))
-						.map(LicenseServiceIdVersionInfo::licensedMaxVersion)
-						.findFirst();
 
-				if (supportedMaxVersionOpt.isPresent()) {
-					String supportedMaxVersionStr = supportedMaxVersionOpt.get();
-					String clientVersionStr = requestedServiceVersion;
-
-					int[] maxVersionParts = getVersionParts(supportedMaxVersionStr);
-					int[] clientVersionParts = getVersionParts(clientVersionStr);
-
-					Version supportedMaxVersion = new Version(maxVersionParts[0], maxVersionParts[1], maxVersionParts[2],
-							null, null, null);
-					Version clientVersion = new Version(clientVersionParts[0], clientVersionParts[1], clientVersionParts[2],
-							null, null, null);
-
-					isVersionInfoValid = clientVersion.compareTo(supportedMaxVersion) <= 0;
-				}
-			}
-			
-	
 		}
 		return isVersionInfoValid;
+	}
+
+	private boolean isVersionInfoCompatibleWithChecksum(LicenseInfo licenseInfo, String requestedServiceVersion,
+			String requestedServiceId, String requestedChecksum) {
+		boolean isVersionCompatibleWithChecksum = true;
+
+		boolean isVersionControlNeeded = requestedServiceVersion != null && requestedChecksum != null;
+		if (isVersionControlNeeded) {
+
+			Optional<String> checksumServiceVersion = getChecksumServiceVersion(licenseInfo, requestedServiceId,
+					requestedChecksum);
+
+			if (checksumServiceVersion.isPresent()) {
+				isVersionCompatibleWithChecksum = checksumServiceVersion.get().equals(requestedServiceVersion);
+			}
+		}
+		return isVersionCompatibleWithChecksum;
 	}
 
 	private Optional<String> getChecksumServiceVersion(LicenseInfo licenseInfo, String requestedServiceId,
 			String requestedChecksum) {
 		Optional<String> checksumServiceVersion = Optional.empty();
-		if(Objects.nonNull(requestedChecksum)) {
+		if (Objects.nonNull(requestedChecksum)) {
 			if (SERVICE_ID_C9INE_CODEGEN.equals(requestedServiceId)) {
 				checksumServiceVersion = licenseInfo.checksumsCodegen()
 						.stream()
@@ -258,7 +270,7 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 		return new int[] { Integer.parseInt(versions[0]), Integer.parseInt(versions[1]),
 				Integer.parseInt(versions[2]) };
 	}
-	
+
 	private String getDataHash(String data) {
 		MessageDigest digest;
 		try {
@@ -270,6 +282,5 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 		}
 		return null;
 	}
-
 
 }

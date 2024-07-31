@@ -20,6 +20,8 @@ public interface LicenseValidationService {
 	
 	String MESSAGE_LICENSE_INVALID_CHECKSUM = "Checksum validation failed. Please contact support for assistance.";
 	
+	String MESSAGE_LICENSE_CHECKSUM_SERVICE_VERSION_MISMATCH = "Checksum and service version mismatch. Please contact support for assistance.";
+	
 	String MESSAGE_LICENSE_SERVICE_VERSION_NOT_SUPPORTED = "Your license does not support this %s version. Please contact support for assistance.";
 
 	void validate(LicenseInfo licenseInfo, LicenseValidationRequest request);

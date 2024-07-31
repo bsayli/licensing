@@ -75,7 +75,6 @@ public class LicenseServiceImpl implements LicenseService {
 		try {
 			requestValidationService.checkTokenRequestWithCachedData(request);
 			tokenValidationService.validateToken(request);
-			
 
 			validationResult = new LicenseValidationResult.Builder().valid(true).message(TOKEN_IS_VALID).build();
 

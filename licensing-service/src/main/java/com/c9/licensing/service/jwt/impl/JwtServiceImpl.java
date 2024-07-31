@@ -12,14 +12,17 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
+import java.util.Random;
 
-import com.c9.licensing.model.LicenseValidationResult;
 import com.c9.licensing.service.jwt.JwtService;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 
 public class JwtServiceImpl implements JwtService {
+
+	private static final Random random = new Random();
+	private static final long MAX_JITTER = 300000; 
 
 	private final PrivateKey privateKey;
 	private final PublicKey publicKey;
@@ -33,19 +36,20 @@ public class JwtServiceImpl implements JwtService {
 
 		byte[] decodedPublicKey = Base64.getDecoder().decode(publicKeyStr);
 		this.publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(decodedPublicKey));
-
 		this.tokenExpirationInMinute = tokenExpirationInMinute;
 	}
 
 	@Override
-	public String generateToken(LicenseValidationResult result) {
+	public String generateToken(String clientId, String licenseTier, String licenseStatus) {
 		Instant now = Instant.now();
-		Instant expiry = now.plus(tokenExpirationInMinute, ChronoUnit.MINUTES);
+		long jitter = random.nextLong(MAX_JITTER);
+		Integer tokenExpirationWithJitter = (tokenExpirationInMinute * 60) + (int) (jitter / 1000);
+		Instant expiry = now.plus(tokenExpirationWithJitter, ChronoUnit.SECONDS);
 
 		return Jwts.builder()
-				.subject(result.appInstanceId())
-				.claim("licenseStatus", result.licenseStatus())
-				.claim("licenseTier", result.licenseTier())
+				.subject(clientId)
+				.claim("licenseStatus", licenseStatus)
+				.claim("licenseTier", licenseTier)
 				.issuedAt(Date.from(now))
 				.expiration(Date.from(expiry))
 				.signWith(privateKey)

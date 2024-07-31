@@ -29,7 +29,7 @@ public class UserIdEncryptorImpl implements UserIdEncryptor {
  	public String extractAndDecryptUserId(String licenseKey) throws LicenseInvalidException {
 		String[] components = licenseKey.split(DELIMITER);
 		if (components.length != 3 || !components[0].equals(LICENSEKEYPREFIX)) {
-			throw new LicenseInvalidException("Invalid license key format");
+			throw new LicenseInvalidException(MESSAGE_LICENSE_KEY_INVALID);
 		}
 		return decrypt(components[2]);
 	}
@@ -45,7 +45,7 @@ public class UserIdEncryptorImpl implements UserIdEncryptor {
 			byte[] finalCipherText = concatArrays(iv, cipherTextBytes);
 			return Base64.getEncoder().encodeToString(finalCipherText);
 		}catch (Exception e) {
-			throw new LicenseInvalidException("License Key invalid", e);
+			throw new LicenseInvalidException(MESSAGE_LICENSE_KEY_INVALID, e);
 		}
 	
 	}
@@ -53,7 +53,7 @@ public class UserIdEncryptorImpl implements UserIdEncryptor {
 	public String decrypt(String encryptedText) throws LicenseInvalidException {
 		boolean isValidBase64 = isValidBase64(encryptedText);
 		if(!isValidBase64) {
-			throw new LicenseInvalidException("License Key not found or invalid");
+			throw new LicenseInvalidException(MESSAGE_LICENSE_KEY_INVALID);
 		}
 		try {
 			byte[] decoded = Base64.getDecoder().decode(encryptedText);
@@ -67,7 +67,7 @@ public class UserIdEncryptorImpl implements UserIdEncryptor {
 			byte[] decryptedBytes = cipher.doFinal(cipherTextBytes);
 			return new String(decryptedBytes, StandardCharsets.UTF_8);
 		}catch (Exception e) {
-			throw new LicenseInvalidException("License Key not found or invalid", e);
+			throw new LicenseInvalidException(MESSAGE_LICENSE_KEY_INVALID, e);
 		}		
 	}
 	

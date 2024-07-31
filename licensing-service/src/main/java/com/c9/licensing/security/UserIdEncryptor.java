@@ -4,6 +4,8 @@ import com.c9.licensing.model.errors.LicenseInvalidException;
 
 public interface UserIdEncryptor {
 	
+	String MESSAGE_LICENSE_KEY_INVALID = "License Key Invalid!";
+	
 	String LICENSEKEYPREFIX = "C9INE";
 	String ALGORITHM = "AES/GCM/NoPadding"; 
 	int GCM_IV_LENGTH = 12; // Recommended for GCM 

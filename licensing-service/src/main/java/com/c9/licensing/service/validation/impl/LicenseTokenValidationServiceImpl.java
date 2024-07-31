@@ -37,14 +37,15 @@ public class LicenseTokenValidationServiceImpl implements LicenseTokenValidation
 		try {
 			boolean isValidFormat = jwtUtil.validateTokenFormat(request.licenseToken());
 			if(!isValidFormat) {
-				throw new TokenInvalidException(TOKEN_INVALID);
+				throw new TokenInvalidException(MESSAGE_TOKEN_INVALID);
 			}
 			
 			Claims claims = jwtUtil.verifyAndExtractJwtClaims(request.licenseToken());
 
-			String appInstanceId = claims.getSubject();
-			if (!appInstanceId.equals(request.instanceId())) {
-				throw new TokenForbiddenAccessException(TOKEN_INVALID_ACCESS);
+			String clientId = claims.getSubject();
+			String requestedClientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(), request.instanceId());
+			if (!clientId.equals(requestedClientId)) {
+				throw new TokenForbiddenAccessException(MESSAGE_TOKEN_INVALID_ACCESS);
 			}
 
 			boolean isTokenExpired = isTokenExpired(claims);
@@ -55,12 +56,12 @@ public class LicenseTokenValidationServiceImpl implements LicenseTokenValidation
 		} catch (ExpiredJwtException e) {
 			validateAndThrowTokenException(request);
 		} catch (SignatureException | MalformedKeyException se) {
-			throw new TokenInvalidException(TOKEN_INVALID, se);
+			throw new TokenInvalidException(MESSAGE_TOKEN_INVALID, se);
 		} catch (TokenForbiddenAccessException se) {
-			throw new TokenForbiddenAccessException(TOKEN_INVALID_ACCESS, se);
+			throw new TokenForbiddenAccessException(MESSAGE_TOKEN_INVALID_ACCESS, se);
 		} catch (Exception e) {
-			logger.error(ERROR_DURING_TOKEN_VALIDATION, e);
-			throw new TokenInvalidException(ERROR_DURING_TOKEN_VALIDATION, e);
+			logger.error(MESSAGE_ERROR_DURING_TOKEN_VALIDATION, e);
+			throw new TokenInvalidException(MESSAGE_ERROR_DURING_TOKEN_VALIDATION, e);
 		}
 	}
 
@@ -69,9 +70,9 @@ public class LicenseTokenValidationServiceImpl implements LicenseTokenValidation
 		Optional<ClientCachedLicenseData> cachedLicenseDataOpt = cacheService.getClientCachedLicenseData(clientId);
 		if (cachedLicenseDataOpt.isPresent()) {
 			ClientCachedLicenseData data = cachedLicenseDataOpt.get();
-			throw new TokenExpiredException(data.getEncUserId(), TOKEN_HAS_EXPIRED);
+			throw new TokenExpiredException(data.getEncUserId(), MESSAGE_TOKEN_HAS_EXPIRED);
 		} else {
-			throw new TokenIsTooOldForRefreshException(TOKEN_IS_TOO_OLD_FOR_REFRESH);
+			throw new TokenIsTooOldForRefreshException(MESSAGE_TOKEN_IS_TOO_OLD_FOR_REFRESH);
 		}
 	}
 

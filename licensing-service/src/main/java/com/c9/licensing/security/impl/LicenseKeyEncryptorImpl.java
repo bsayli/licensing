@@ -18,7 +18,7 @@ import com.c9.licensing.security.LicenseKeyEncryptor;
 
 public class LicenseKeyEncryptorImpl implements LicenseKeyEncryptor {
 
-    private final SecretKey secretKey;
+	private final SecretKey secretKey;
 
 	public LicenseKeyEncryptorImpl(String encodedSecretKey) {
 		Security.addProvider(new BouncyCastleProvider());
@@ -37,14 +37,14 @@ public class LicenseKeyEncryptorImpl implements LicenseKeyEncryptor {
 			byte[] finalCipherText = concatArrays(iv, cipherTextBytes);
 			return Base64.getEncoder().encodeToString(finalCipherText);
 		}catch (Exception e) {
-			throw new LicenseInvalidException("License Key invalid", e);
+			throw new LicenseInvalidException(MESSAGE_LICENSE_KEY_INVALID, e);
 		}
 	}
 
 	public String decrypt(String encryptedText) throws LicenseInvalidException {
 		boolean isValidBase64 = isValidBase64(encryptedText);
 		if(!isValidBase64) {
-			throw new LicenseInvalidException("License Key not found or invalid");
+			throw new LicenseInvalidException(MESSAGE_LICENSE_KEY_INVALID);
 		}
 		try {
 			byte[] decoded = Base64.getDecoder().decode(encryptedText);
@@ -58,7 +58,7 @@ public class LicenseKeyEncryptorImpl implements LicenseKeyEncryptor {
 			byte[] decryptedBytes = cipher.doFinal(cipherTextBytes);
 			return new String(decryptedBytes, StandardCharsets.UTF_8);
 		}catch (Exception e) {
-			throw new LicenseInvalidException("License Key not found or invalid", e);
+			throw new LicenseInvalidException(MESSAGE_LICENSE_KEY_INVALID, e);
 		}		
 	}
 
