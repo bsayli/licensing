@@ -6,80 +6,52 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
+import com.c9.licensing.generator.ClientIdGenerator;
+import com.c9.licensing.model.ClientCachedLicenseData;
+import com.c9.licensing.model.ClientInfo;
 import com.c9.licensing.service.LicenseClientCacheManagementService;
 
 @Service
 public class LicenseClientCacheManagementServiceImpl implements LicenseClientCacheManagementService {
 
-	private static final String CACHE_NAME_ACTIVE_CLIENTS_TOKEN = "activeClientsToken";
 	private static final String CACHE_NAME_ACTIVE_CLIENTS = "activeClients";
 
 	private final CacheManager cacheManager;
+	private final ClientIdGenerator clientIdGenerator;
 
-	public LicenseClientCacheManagementServiceImpl(CacheManager cacheManager) {
+	public LicenseClientCacheManagementServiceImpl(CacheManager cacheManager, ClientIdGenerator clientIdGenerator) {
 		this.cacheManager = cacheManager;
+		this.clientIdGenerator = clientIdGenerator;
 	}
 
 	@Override
-	public void addClientInfo(String clientId, String token, String encUserId) {
+	public void addClientInfo(ClientInfo clientInfo) {
 		Cache activeClientsCache = cacheManager.getCache(CACHE_NAME_ACTIVE_CLIENTS);
 		if (activeClientsCache != null) {
-			activeClientsCache.put(clientId, token);
-		}
-		
-		Cache activeClientsTokenCache = cacheManager.getCache(CACHE_NAME_ACTIVE_CLIENTS_TOKEN);
-		if (activeClientsTokenCache != null) {
-			activeClientsTokenCache.put(token, encUserId);
+			String clientId = clientIdGenerator.getClientId(clientInfo.serviceId(), clientInfo.serviceVersion(), clientInfo.instanceId());
+			ClientCachedLicenseData clientCachedLicenseData = new ClientCachedLicenseData.Builder()
+					.licenseToken(clientInfo.licenseToken())
+					.encUserId(clientInfo.encUserId())
+					.serviceId(clientInfo.serviceId())
+					.serviceVersion(clientInfo.serviceVersion())
+					.checksum(clientInfo.checksum())
+					.build();
+
+			activeClientsCache.put(clientId, clientCachedLicenseData);
 		}
 	}
-	
+
 	@Override
-	public Optional<String> getToken(String clientId) {
-		Optional<String> tokenOpt= Optional.empty();
+	public Optional<ClientCachedLicenseData> getClientCachedLicenseData(String clientId) {
+		Optional<ClientCachedLicenseData> tokenOpt = Optional.empty();
 		Cache activeClientsCache = cacheManager.getCache(CACHE_NAME_ACTIVE_CLIENTS);
 		if (activeClientsCache != null) {
 			Cache.ValueWrapper cachedValueWrapper = activeClientsCache.get(clientId);
 			if (cachedValueWrapper != null && cachedValueWrapper.get() != null) {
-				tokenOpt = Optional.of((String)cachedValueWrapper.get());
+				tokenOpt = Optional.of((ClientCachedLicenseData) cachedValueWrapper.get());
 			}
 		}
 		return tokenOpt;
 	}
-	
-	@Override
-	public Optional<String> getUserIdByClientId(String clientId) {
-		Optional<String> userIdOpt = Optional.empty();
-		Optional<String> tokenOpt = getToken(clientId);
-		if(tokenOpt.isPresent()) {
-			String token = tokenOpt.get();
-			userIdOpt = getUserId(token);
-		}
-		return userIdOpt;
-	}
-	
-	@Override
-	public Optional<String> getUserId(String token) {
-		Optional<String> userIdOpt = Optional.empty();
-		Cache activeClientsTokenCache = cacheManager.getCache(CACHE_NAME_ACTIVE_CLIENTS_TOKEN);
-		if (activeClientsTokenCache != null) {
-			Cache.ValueWrapper cachedValueWrapper = activeClientsTokenCache.get(token);
-			if (cachedValueWrapper != null && cachedValueWrapper.get() != null) {
-				userIdOpt = Optional.of((String)cachedValueWrapper.get());
-			}
-		}
-		return userIdOpt;
-	}
-	
-	@Override
-	public Optional<String> getUserIdAndEvictToken(String token) {
-		Optional<String> userIdOpt = getUserId(token);
-		if(userIdOpt.isPresent()) {
-			Cache activeClientsTokenCache = cacheManager.getCache(CACHE_NAME_ACTIVE_CLIENTS_TOKEN);
-			if (activeClientsTokenCache != null) {
-				activeClientsTokenCache.evict(token);
-			}
-		}
-		return userIdOpt;
-	}
-	
+
 }

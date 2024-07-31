@@ -1,7 +1,9 @@
-package com.c9.licensing.service;
+package com.c9.licensing.service.validation;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.c9.licensing.model.LicenseValidationRequest;
 
 public interface LicenseTokenValidationService {
 
@@ -12,5 +14,5 @@ public interface LicenseTokenValidationService {
 	String TOKEN_IS_TOO_OLD_FOR_REFRESH = "The provided token is no longer valid for refresh due to exceeding its refresh window. Please request a new token";
 	Logger logger = LoggerFactory.getLogger(LicenseTokenValidationService.class);
 
-	void validateToken(String token, String requestedInstanceId);
+	void validateToken(LicenseValidationRequest request);
 }

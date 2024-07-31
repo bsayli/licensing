@@ -1,9 +1,8 @@
 package com.c9.licensing.service.impl;
 
-import java.util.Optional;
-
 import org.springframework.stereotype.Service;
 
+import com.c9.licensing.model.ClientInfo;
 import com.c9.licensing.model.LicenseServiceStatus;
 import com.c9.licensing.model.LicenseValidationRequest;
 import com.c9.licensing.model.LicenseValidationResult;
@@ -46,7 +45,15 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 		LicenseValidationResult result = licenseService.getUserLicenseDetailsByLicenseKey(request);
 		if (result.valid()) {
 			String token = jwtUtil.generateToken(result);
-			clientCacheManagementService.addClientInfo(request.instanceId(), token, result.userId());
+			ClientInfo clientInfo = new ClientInfo.Builder().serviceId(request.serviceId())
+					.licenseToken(token)
+					.serviceVersion(request.serviceVersion())
+					.instanceId(request.instanceId())
+					.encUserId(result.userId())
+					.checksum(request.checksum())
+					.signature(request.signature())
+					.build();
+			clientCacheManagementService.addClientInfo(clientInfo);
 			licenseValidationResponse = new LicenseValidationResponse.Builder().success(true)
 					.licenseToken(token)
 					.status(LicenseServiceStatus.TOKEN_CREATED.name())
@@ -69,7 +76,15 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 		if (result.valid()) {
 			if (LicenseServiceStatus.TOKEN_REFRESHED == result.serviceStatus()) {
 				String newToken = jwtUtil.generateToken(result);
-				clientCacheManagementService.addClientInfo(request.instanceId(), newToken, result.userId());
+				ClientInfo clientInfo = new ClientInfo.Builder().serviceId(request.serviceId())
+						.licenseToken(newToken)
+						.serviceVersion(request.serviceVersion())
+						.instanceId(request.instanceId())
+						.encUserId(result.userId())
+						.checksum(request.checksum())
+						.signature(request.signature())
+						.build();
+				clientCacheManagementService.addClientInfo(clientInfo);
 				licenseValidationResponse = new LicenseValidationResponse.Builder().success(true)
 						.licenseToken(newToken)
 						.status(result.serviceStatus().name())
@@ -91,22 +106,14 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 		}
 		return licenseValidationResponse;
 	}
-	
+
 	private void validateParameterPresence(String licenseKey, String licenseToken) {
-	    if (licenseKey == null && licenseToken == null) {
-	        throw new InvalidParameterException("Either licenseKey or licenseToken is required");
-	    }
-	    if (licenseKey != null && licenseToken != null) {
-	        throw new InvalidParameterException("Only one of licenseKey or licenseToken can be provided");
-	    }
-	}
-	
-	private Optional<String> getCachedTokenIfAlreadyExist(String instanceId, LicenseValidationResult result) {
-		Optional<String> tokenOpt = Optional.empty();
-		if (LicenseServiceStatus.TOKEN_ALREADY_EXIST == result.serviceStatus()) {
-			tokenOpt = clientCacheManagementService.getToken(instanceId);
+		if (licenseKey == null && licenseToken == null) {
+			throw new InvalidParameterException("Either licenseKey or licenseToken is required");
 		}
-		return tokenOpt;
+		if (licenseKey != null && licenseToken != null) {
+			throw new InvalidParameterException("Only one of licenseKey or licenseToken can be provided");
+		}
 	}
 
 }

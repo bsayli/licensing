@@ -1,5 +1,9 @@
 package com.c9.licensing.config;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.spec.InvalidKeySpecException;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,11 +29,14 @@ public class SecretConfig {
     @Value("${signature.public.key}")
     private String signaturePublicKey;
     
-    @Value("${license.jwt.secret.key}")
-    private String licenseJwtSecretKey;
-    
     @Value("${jwt.token.expiration}")
     private Integer tokenExpirationInMinute;
+    
+    @Value("${license.jwt.private.key}")
+    private String licenseJwtPrivateKey;
+    
+    @Value("${license.jwt.public.key}")
+    private String licenseJwtPublicKey;
     
     @Bean
     UserIdEncryptor userIdEncryptor() {
@@ -42,8 +49,8 @@ public class SecretConfig {
 	}
     
     @Bean
-    JwtService jwtService() {
-    	return new JwtServiceImpl(licenseJwtSecretKey, tokenExpirationInMinute);
+    JwtService jwtService() throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
+    	return new JwtServiceImpl(licenseJwtPrivateKey, licenseJwtPublicKey, tokenExpirationInMinute);
     }
     
     @Bean

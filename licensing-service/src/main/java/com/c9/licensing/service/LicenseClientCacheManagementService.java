@@ -2,17 +2,13 @@ package com.c9.licensing.service;
 
 import java.util.Optional;
 
+import com.c9.licensing.model.ClientCachedLicenseData;
+import com.c9.licensing.model.ClientInfo;
+
 public interface LicenseClientCacheManagementService {
 
-	void addClientInfo(String applicationInstanceId, String token, String encUserId);
+	void addClientInfo(ClientInfo clientInfo);
 
-	Optional<String> getToken(String applicationInstanceId);
-
-	Optional<String> getUserId(String token);
-
-	Optional<String> getUserIdAndEvictToken(String token);
-
-	Optional<String> getUserIdByClientId(String clientId);
-
+	Optional<ClientCachedLicenseData> getClientCachedLicenseData(String clientId);
 
 }

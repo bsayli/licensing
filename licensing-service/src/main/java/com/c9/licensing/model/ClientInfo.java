@@ -1,34 +1,23 @@
 package com.c9.licensing.model;
 
-public record LicenseValidationRequest(String serviceId, String serviceVersion, String licenseKey, String licenseToken,
-		String instanceId, String signature, String checksum) {
+public record ClientInfo(String serviceId, String serviceVersion, String instanceId, String licenseToken, String encUserId, String signature, String checksum) {
 
 	public static class Builder {
-		private String licenseKey;
 		private String serviceId;
 		private String serviceVersion;
-		private String licenseToken;
 		private String instanceId;
+		private String licenseToken;
+		private String encUserId;
 		private String signature;
 		private String checksum;
-
-		public Builder licenseKey(String licenseKey) {
-			this.licenseKey = licenseKey;
-			return this;
-		}
-
+		
 		public Builder serviceId(String serviceId) {
 			this.serviceId = serviceId;
 			return this;
 		}
-
+		
 		public Builder serviceVersion(String serviceVersion) {
 			this.serviceVersion = serviceVersion;
-			return this;
-		}
-
-		public Builder licenseToken(String licenseToken) {
-			this.licenseToken = licenseToken;
 			return this;
 		}
 
@@ -36,20 +25,29 @@ public record LicenseValidationRequest(String serviceId, String serviceVersion, 
 			this.instanceId = instanceId;
 			return this;
 		}
-
+		
+		public Builder licenseToken(String licenseToken) {
+			this.licenseToken = licenseToken;
+			return this;
+		}
+		
+		public Builder encUserId(String encUserId) {
+			this.encUserId = encUserId;
+			return this;
+		}
+		
 		public Builder signature(String signature) {
 			this.signature = signature;
 			return this;
 		}
-
+		
 		public Builder checksum(String checksum) {
 			this.checksum = checksum;
 			return this;
 		}
 
-		public LicenseValidationRequest build() {
-			return new LicenseValidationRequest(serviceId, serviceVersion, licenseKey, licenseToken, instanceId,
-					signature, checksum);
+		public ClientInfo build() {
+			return new ClientInfo(serviceId, serviceVersion, instanceId, licenseToken, encUserId, signature, checksum);
 		}
 	}
 }

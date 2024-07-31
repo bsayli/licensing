@@ -7,10 +7,6 @@ import org.springframework.stereotype.Service;
 import com.c9.licensing.model.LicenseInfo;
 import com.c9.licensing.model.LicenseValidationRequest;
 import com.c9.licensing.model.errors.LicenseInvalidException;
-import com.c9.licensing.model.errors.TokenAlreadyExistException;
-import com.c9.licensing.security.LicenseKeyEncryptor;
-import com.c9.licensing.security.UserIdEncryptor;
-import com.c9.licensing.service.LicenseClientCacheManagementService;
 import com.c9.licensing.service.LicenseDetailsService;
 import com.c9.licensing.service.user.UserOrchestrationService;
 import com.c9.licensing.service.validation.LicenseValidationService;
@@ -18,38 +14,16 @@ import com.c9.licensing.service.validation.LicenseValidationService;
 @Service
 public class LicenseDetailsServiceImpl implements LicenseDetailsService {
 
-	private final LicenseKeyEncryptor encryptionUtil;
-	private final UserIdEncryptor userIdUtil;
 	private final UserOrchestrationService userService;
-	private final LicenseClientCacheManagementService clientCacheManagementService;
 	private final LicenseValidationService licenseValidationService;
 
-	public LicenseDetailsServiceImpl(LicenseKeyEncryptor encryptionUtil, UserIdEncryptor userIdUtil,
-			UserOrchestrationService userService, LicenseClientCacheManagementService clientCacheManagementService,
+	public LicenseDetailsServiceImpl(UserOrchestrationService userService,
 			LicenseValidationService licenseValidationService) {
-		this.encryptionUtil = encryptionUtil;
-		this.userIdUtil = userIdUtil;
 		this.userService = userService;
-		this.clientCacheManagementService = clientCacheManagementService;
 		this.licenseValidationService = licenseValidationService;
 	}
 
-	public LicenseInfo validateAndGetLicenseDetailsByLicenseKey(LicenseValidationRequest request) throws Exception {
-		String licenseKey = encryptionUtil.decrypt(request.licenseKey());
-		String userId = userIdUtil.extractAndDecryptUserId(licenseKey);
-
-		checkAndThrowIfTokenAlreadyExist(request.instanceId(), userId);
-
-		return getValidateAndUpdate(userId, request);
-	}
-
-	public LicenseInfo validateAndGetLicenseDetailsByUserId(String encUserId, LicenseValidationRequest request)
-			throws Exception {
-		String userId = userIdUtil.decrypt(encUserId);
-		return getValidateAndUpdate(userId, request);
-	}
-
-	private LicenseInfo getValidateAndUpdate(String userId, LicenseValidationRequest request) throws Exception {
+	public LicenseInfo getAndValidateLicenseDetails(LicenseValidationRequest request, String userId) throws Exception {
 		Optional<LicenseInfo> user = userService.getUser(userId);
 		if (user.isPresent()) {
 			LicenseInfo licenseInfo = user.get();
@@ -57,7 +31,7 @@ public class LicenseDetailsServiceImpl implements LicenseDetailsService {
 			licenseValidationService.validate(licenseInfo, request);
 			boolean isInstanceIdNotExist = licenseValidationService.isInstanceIdNotExist(request.instanceId(),
 					licenseInfo.instanceIds());
-			
+
 			if (isInstanceIdNotExist) {
 				userService.updateLicenseUsage(userId, request.instanceId());
 			}
@@ -65,21 +39,6 @@ public class LicenseDetailsServiceImpl implements LicenseDetailsService {
 			return licenseInfo;
 		} else {
 			throw new LicenseInvalidException("License Key not found or invalid");
-		}
-	}
-
-	private void checkAndThrowIfTokenAlreadyExist(String instanceId, String userId) throws Exception {
-		Optional<String> tokenOpt = clientCacheManagementService.getToken(instanceId);
-		if (tokenOpt.isPresent()) {
-			String token = tokenOpt.get();
-			Optional<String> userIdOpt = clientCacheManagementService.getUserIdByClientId(instanceId);
-			if (userIdOpt.isPresent()) {
-				String cachedEncUserId = userIdOpt.get();
-				String cachedUserId = userIdUtil.decrypt(cachedEncUserId);
-				if (userId.equals(cachedUserId)) {
-					throw new TokenAlreadyExistException(token, TOKEN_ALREADY_EXIST);
-				}
-			}
 		}
 	}
 

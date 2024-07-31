@@ -1,7 +1,5 @@
 package com.c9.licensing.model;
 
-import java.util.Optional;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,12 +27,12 @@ public class SignatureData {
         return serviceId;
     }
 
-    public Optional<String> getEncryptedLicenseKeyHash() {
-        return Optional.ofNullable(encryptedLicenseKeyHash);
+    public String getEncryptedLicenseKeyHash() {
+        return encryptedLicenseKeyHash;
     }
 
-    public Optional<String> getLicenseTokenHash() {
-        return Optional.ofNullable(licenseTokenHash);
+    public String getLicenseTokenHash() {
+        return licenseTokenHash;
     }
 
     public String getInstanceId() {

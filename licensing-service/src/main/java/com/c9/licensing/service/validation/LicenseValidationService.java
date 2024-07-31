@@ -22,7 +22,7 @@ public interface LicenseValidationService {
 	
 	String MESSAGE_LICENSE_SERVICE_VERSION_NOT_SUPPORTED = "Your license does not support this %s version. Please contact support for assistance.";
 
-	void validate(LicenseInfo licenseInfo, LicenseValidationRequest request) throws Exception;
+	void validate(LicenseInfo licenseInfo, LicenseValidationRequest request);
 
 	boolean isInstanceIdNotExist(String instanceId, List<String> instanceIds);
 

@@ -1,16 +1,19 @@
-package com.c9.licensing.service.impl;
+package com.c9.licensing.service.validation.impl;
 
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.c9.licensing.generator.ClientIdGenerator;
+import com.c9.licensing.model.ClientCachedLicenseData;
+import com.c9.licensing.model.LicenseValidationRequest;
 import com.c9.licensing.model.errors.TokenExpiredException;
 import com.c9.licensing.model.errors.TokenForbiddenAccessException;
 import com.c9.licensing.model.errors.TokenInvalidException;
 import com.c9.licensing.model.errors.TokenIsTooOldForRefreshException;
 import com.c9.licensing.service.LicenseClientCacheManagementService;
-import com.c9.licensing.service.LicenseTokenValidationService;
 import com.c9.licensing.service.jwt.JwtService;
+import com.c9.licensing.service.validation.LicenseTokenValidationService;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -21,34 +24,36 @@ import io.jsonwebtoken.security.SignatureException;
 public class LicenseTokenValidationServiceImpl implements LicenseTokenValidationService {
 
 	private final JwtService jwtUtil;
-	private final LicenseClientCacheManagementService clientCacheManagementService;
+	private final LicenseClientCacheManagementService cacheService;
+	private final ClientIdGenerator clientIdGenerator;
 
-	public LicenseTokenValidationServiceImpl(JwtService jwtUtil, LicenseClientCacheManagementService clientCacheManagementService) {
+	public LicenseTokenValidationServiceImpl(JwtService jwtUtil, LicenseClientCacheManagementService cacheService, ClientIdGenerator clientIdGenerator) {
 		this.jwtUtil = jwtUtil;
-		this.clientCacheManagementService = clientCacheManagementService;
+		this.cacheService = cacheService;
+		this.clientIdGenerator = clientIdGenerator;
 	}
 
-	public void validateToken(String token, String requestedInstanceId) {
+	public void validateToken(LicenseValidationRequest request) {
 		try {
-			boolean isValidFormat = jwtUtil.validateTokenFormat(token);
+			boolean isValidFormat = jwtUtil.validateTokenFormat(request.licenseToken());
 			if(!isValidFormat) {
 				throw new TokenInvalidException(TOKEN_INVALID);
 			}
 			
-			Claims claims = jwtUtil.verifyAndExtractJwtClaims(token);
+			Claims claims = jwtUtil.verifyAndExtractJwtClaims(request.licenseToken());
 
 			String appInstanceId = claims.getSubject();
-			if (!appInstanceId.equals(requestedInstanceId)) {
+			if (!appInstanceId.equals(request.instanceId())) {
 				throw new TokenForbiddenAccessException(TOKEN_INVALID_ACCESS);
 			}
 
 			boolean isTokenExpired = isTokenExpired(claims);
 			if (isTokenExpired) {
-				validateAndThrowTokenException(token);
+				validateAndThrowTokenException(request);
 			}
 
 		} catch (ExpiredJwtException e) {
-			validateAndThrowTokenException(token);
+			validateAndThrowTokenException(request);
 		} catch (SignatureException | MalformedKeyException se) {
 			throw new TokenInvalidException(TOKEN_INVALID, se);
 		} catch (TokenForbiddenAccessException se) {
@@ -57,14 +62,14 @@ public class LicenseTokenValidationServiceImpl implements LicenseTokenValidation
 			logger.error(ERROR_DURING_TOKEN_VALIDATION, e);
 			throw new TokenInvalidException(ERROR_DURING_TOKEN_VALIDATION, e);
 		}
-
 	}
 
-	private void validateAndThrowTokenException(String token) {
-		Optional<String> userIdOpt = clientCacheManagementService.getUserIdAndEvictToken(token);
-		if (userIdOpt.isPresent()) {
-			String userId = userIdOpt.get();
-			throw new TokenExpiredException(userId, TOKEN_HAS_EXPIRED);
+	private void validateAndThrowTokenException(LicenseValidationRequest request) {
+		String clientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(), request.instanceId());
+		Optional<ClientCachedLicenseData> cachedLicenseDataOpt = cacheService.getClientCachedLicenseData(clientId);
+		if (cachedLicenseDataOpt.isPresent()) {
+			ClientCachedLicenseData data = cachedLicenseDataOpt.get();
+			throw new TokenExpiredException(data.getEncUserId(), TOKEN_HAS_EXPIRED);
 		} else {
 			throw new TokenIsTooOldForRefreshException(TOKEN_IS_TOO_OLD_FOR_REFRESH);
 		}

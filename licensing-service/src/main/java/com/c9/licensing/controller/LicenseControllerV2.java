@@ -34,6 +34,9 @@ public class LicenseControllerV2 {
 			@NotNull(message = "'serviceId' request param is required!")
 			@Size(min = 5, max = 50, message = "Service Id must be between {min} and {max} characters")
 			@RequestParam String serviceId,
+			@NotNull(message = "'serviceVersion' request param is required!")
+			@Size(min = 5, max = 10, message = "Service Version must be between {min} and {max} characters")
+			@RequestParam String serviceVersion,
 			@Size(min = 200, max = 400, message = "License Token header param must be between {min} and {max} characters")
 			@RequestHeader(value = "X-License-Token", required = false) String licenseToken,
 			@NotNull(message = "'X-Instance-ID' header param is required!")
@@ -46,6 +49,7 @@ public class LicenseControllerV2 {
 		
 		LicenseValidationRequest request = new LicenseValidationRequest.Builder()
 				.serviceId(serviceId)
+				.serviceVersion(serviceVersion)
 				.licenseKey(licenseKey)
 				.licenseToken(licenseToken)
 				.instanceId(instanceId)

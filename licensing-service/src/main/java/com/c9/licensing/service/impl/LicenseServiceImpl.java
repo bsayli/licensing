@@ -9,29 +9,41 @@ import com.c9.licensing.model.LicenseValidationResult;
 import com.c9.licensing.model.errors.LicenseServiceExceptionImpl;
 import com.c9.licensing.model.errors.TokenAlreadyExistException;
 import com.c9.licensing.model.errors.TokenExpiredException;
+import com.c9.licensing.security.LicenseKeyEncryptor;
 import com.c9.licensing.security.UserIdEncryptor;
 import com.c9.licensing.service.LicenseDetailsService;
 import com.c9.licensing.service.LicenseService;
-import com.c9.licensing.service.LicenseTokenValidationService;
+import com.c9.licensing.service.validation.LicenseRequestValidationService;
+import com.c9.licensing.service.validation.LicenseTokenValidationService;
 
 @Service
 public class LicenseServiceImpl implements LicenseService {
 
 	private final LicenseDetailsService licenseDetailsService;
 	private final LicenseTokenValidationService tokenValidationService;
-	private final UserIdEncryptor userIdUtil;
+	private final LicenseRequestValidationService requestValidationService;
+	private final LicenseKeyEncryptor licenseKeyEncryptor;
+	private final UserIdEncryptor userIdEncryptor;
 
 	public LicenseServiceImpl(LicenseDetailsService licenseDetailsService,
-			LicenseTokenValidationService tokenValidationService, UserIdEncryptor userIdUtil) {
+			LicenseTokenValidationService tokenValidationService,
+			LicenseRequestValidationService requestValidationService, LicenseKeyEncryptor licenseKeyEncryptor,
+			UserIdEncryptor userIdEncryptor) {
 		this.licenseDetailsService = licenseDetailsService;
 		this.tokenValidationService = tokenValidationService;
-		this.userIdUtil = userIdUtil;
+		this.requestValidationService = requestValidationService;
+		this.userIdEncryptor = userIdEncryptor;
+		this.licenseKeyEncryptor = licenseKeyEncryptor;
 	}
 
 	public LicenseValidationResult getUserLicenseDetailsByLicenseKey(LicenseValidationRequest request) {
 		LicenseValidationResult validationResult;
 		try {
-			LicenseInfo info = licenseDetailsService.validateAndGetLicenseDetailsByLicenseKey(request);
+			String licenseKey = licenseKeyEncryptor.decrypt(request.licenseKey());
+			String userId = userIdEncryptor.extractAndDecryptUserId(licenseKey);
+			requestValidationService.checkLicenseKeyRequestWithCachedData(request, userId);
+
+			LicenseInfo info = licenseDetailsService.getAndValidateLicenseDetails(request, userId);
 			validationResult = getValidationResult(request.instanceId(), info, null, LICENSE_KEY_IS_VALID);
 
 		} catch (TokenAlreadyExistException e) {
@@ -61,11 +73,14 @@ public class LicenseServiceImpl implements LicenseService {
 
 		LicenseValidationResult validationResult = null;
 		try {
-			tokenValidationService.validateToken(request.licenseToken(), request.instanceId());
+			requestValidationService.checkTokenRequestWithCachedData(request);
+			tokenValidationService.validateToken(request);
+			
+
 			validationResult = new LicenseValidationResult.Builder().valid(true).message(TOKEN_IS_VALID).build();
 
 		} catch (TokenExpiredException e) {
-			validationResult = getTokenLicenseValidationResult(e.getEncUserId(), request);
+			validationResult = getTokenLicenseValidationResult(request, e.getEncUserId());
 		} catch (LicenseServiceExceptionImpl e) {
 			logger.error(LICENSE_VALIDATION_FAILED, e);
 			validationResult = new LicenseValidationResult.Builder().valid(false)
@@ -82,11 +97,12 @@ public class LicenseServiceImpl implements LicenseService {
 		return validationResult;
 	}
 
-	private LicenseValidationResult getTokenLicenseValidationResult(String encUserId,
-			LicenseValidationRequest request) {
+	private LicenseValidationResult getTokenLicenseValidationResult(LicenseValidationRequest request,
+			String encUserId) {
 		LicenseValidationResult validationResult = null;
 		try {
-			LicenseInfo licenseInfo = licenseDetailsService.validateAndGetLicenseDetailsByUserId(encUserId, request);
+			String userId = userIdEncryptor.decrypt(encUserId);
+			LicenseInfo licenseInfo = licenseDetailsService.getAndValidateLicenseDetails(request, userId);
 			validationResult = getValidationResult(request.instanceId(), licenseInfo,
 					LicenseServiceStatus.TOKEN_REFRESHED, TOKEN_REFRESHED);
 
@@ -109,7 +125,7 @@ public class LicenseServiceImpl implements LicenseService {
 
 	private LicenseValidationResult getValidationResult(String instanceId, LicenseInfo info,
 			LicenseServiceStatus errorCode, String message) {
-		String obfUserID = userIdUtil.encrypt(info.userId());
+		String obfUserID = userIdEncryptor.encrypt(info.userId());
 		String licenseTier = info.licenseTier();
 
 		return new LicenseValidationResult.Builder().userId(obfUserID)

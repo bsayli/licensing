@@ -13,5 +13,5 @@ public interface UserOrchestrationService {
 
 	void updateLicenseUsage(String userId, String appInstanceId);
 
-	Optional<LicenseInfo> getUser(String userId) throws Exception;
+	Optional<LicenseInfo> getUser(String userId)  throws Exception;
 }

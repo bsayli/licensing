@@ -5,6 +5,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -45,7 +46,7 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 	}
 
 	@Override
-	public void validate(LicenseInfo licenseInfo, LicenseValidationRequest request) throws Exception {
+	public void validate(LicenseInfo licenseInfo, LicenseValidationRequest request) {
 		validateLicenseExpiration(licenseInfo);
 		validateLicenseStatus(licenseInfo);
 		validateUsageLimit(licenseInfo, request);
@@ -81,7 +82,7 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 	}
 
 	private void validateServiceVersion(LicenseInfo licenseInfo, LicenseValidationRequest request) {
-		if (!isVersionInfoValid(licenseInfo, request.serviceId(), request.checksum())) {
+		if (!isVersionInfoValid(licenseInfo, request.serviceVersion(), request.serviceId(), request.checksum())) {
 			throw new LicenseServiceVersionNotSupportedException(
 					String.format(MESSAGE_LICENSE_SERVICE_VERSION_NOT_SUPPORTED, request.serviceId()));
 		}
@@ -187,51 +188,66 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 		return isCheckSumInfoValid;
 	}
 
-	private boolean isVersionInfoValid(LicenseInfo licenseInfo, String requestedServiceId, String requestedChecksum) {
+	private boolean isVersionInfoValid(LicenseInfo licenseInfo, String requestedServiceVersion, String requestedServiceId, String requestedChecksum) {
 		boolean isVersionInfoValid = true;
 		List<LicenseServiceIdVersionInfo> allowedServiceVersions = licenseInfo.allowedServiceVersions();
-		boolean isVersionControlNeeded = requestedChecksum != null && !allowedServiceVersions.isEmpty()
-				&& isServiceIdChecksumCheckSupports(requestedServiceId);
+		boolean isVersionControlNeeded = requestedServiceVersion != null && !allowedServiceVersions.isEmpty();
 		if (isVersionControlNeeded) {
-			Optional<String> version = Optional.empty();
+			
+			Optional<String> checksumServiceVersion = getChecksumServiceVersion(licenseInfo, requestedServiceId,
+					requestedChecksum);
+			
+			if(checksumServiceVersion.isPresent()) {
+				isVersionInfoValid = checksumServiceVersion.get().equals(requestedServiceVersion);
+			}
+			
+			if(isVersionInfoValid) {
+				Optional<String> supportedMaxVersionOpt = allowedServiceVersions.stream()
+						.filter(serviceVersionInfo -> serviceVersionInfo.serviceId().equals(requestedServiceId))
+						.map(LicenseServiceIdVersionInfo::licensedMaxVersion)
+						.findFirst();
 
-			Optional<String> supportedMaxVersionOpt = allowedServiceVersions.stream()
-					.filter(serviceVersionInfo -> serviceVersionInfo.serviceId().equals(requestedServiceId))
-					.map(LicenseServiceIdVersionInfo::licensedMaxVersion)
-					.findFirst();
+				if (supportedMaxVersionOpt.isPresent()) {
+					String supportedMaxVersionStr = supportedMaxVersionOpt.get();
+					String clientVersionStr = requestedServiceVersion;
 
+					int[] maxVersionParts = getVersionParts(supportedMaxVersionStr);
+					int[] clientVersionParts = getVersionParts(clientVersionStr);
+
+					Version supportedMaxVersion = new Version(maxVersionParts[0], maxVersionParts[1], maxVersionParts[2],
+							null, null, null);
+					Version clientVersion = new Version(clientVersionParts[0], clientVersionParts[1], clientVersionParts[2],
+							null, null, null);
+
+					isVersionInfoValid = clientVersion.compareTo(supportedMaxVersion) <= 0;
+				}
+			}
+			
+	
+		}
+		return isVersionInfoValid;
+	}
+
+	private Optional<String> getChecksumServiceVersion(LicenseInfo licenseInfo, String requestedServiceId,
+			String requestedChecksum) {
+		Optional<String> checksumServiceVersion = Optional.empty();
+		if(Objects.nonNull(requestedChecksum)) {
 			if (SERVICE_ID_C9INE_CODEGEN.equals(requestedServiceId)) {
-				version = licenseInfo.checksumsCodegen()
+				checksumServiceVersion = licenseInfo.checksumsCodegen()
 						.stream()
 						.filter(checksumInfo -> checksumInfo.checksum().equals(requestedChecksum))
 						.map(LicenseChecksumVersionInfo::version)
 						.findFirst();
 
 			} else if (SERVICE_ID_C9INE_TEST_AUTOMATION.equals(requestedServiceId)) {
-				version = licenseInfo.checksumsTestAutomation()
+				checksumServiceVersion = licenseInfo.checksumsTestAutomation()
 						.stream()
 						.filter(checksumInfo -> checksumInfo.checksum().equals(requestedChecksum))
 						.map(LicenseChecksumVersionInfo::version)
 						.findFirst();
 			}
-
-			if (version.isPresent() && supportedMaxVersionOpt.isPresent()) {
-				String supportedMaxVersionStr = supportedMaxVersionOpt.get();
-				String clientVersionStr = version.get();
-
-				int[] maxVersionParts = getVersionParts(supportedMaxVersionStr);
-				int[] clientVersionParts = getVersionParts(clientVersionStr);
-
-				Version supportedMaxVersion = new Version(maxVersionParts[0], maxVersionParts[1], maxVersionParts[2],
-						null, null, null);
-				Version clientVersion = new Version(clientVersionParts[0], clientVersionParts[1], clientVersionParts[2],
-						null, null, null);
-
-				isVersionInfoValid = clientVersion.compareTo(supportedMaxVersion) <= 0;
-
-			}
 		}
-		return isVersionInfoValid;
+		return checksumServiceVersion;
 	}
 
 	private int[] getVersionParts(String version) {
