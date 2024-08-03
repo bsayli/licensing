@@ -14,19 +14,19 @@ import com.c9.licensing.security.UserIdEncryptor;
 import com.c9.licensing.service.LicenseDetailsService;
 import com.c9.licensing.service.LicenseService;
 import com.c9.licensing.service.validation.LicenseRequestValidationService;
-import com.c9.licensing.service.validation.LicenseTokenValidationService;
+import com.c9.licensing.service.validation.LicenseTokenRequestValidationService;
 
 @Service
 public class LicenseServiceImpl implements LicenseService {
 
 	private final LicenseDetailsService licenseDetailsService;
-	private final LicenseTokenValidationService tokenValidationService;
+	private final LicenseTokenRequestValidationService tokenValidationService;
 	private final LicenseRequestValidationService requestValidationService;
 	private final LicenseKeyEncryptor licenseKeyEncryptor;
 	private final UserIdEncryptor userIdEncryptor;
 
 	public LicenseServiceImpl(LicenseDetailsService licenseDetailsService,
-			LicenseTokenValidationService tokenValidationService,
+			LicenseTokenRequestValidationService tokenValidationService,
 			LicenseRequestValidationService requestValidationService, LicenseKeyEncryptor licenseKeyEncryptor,
 			UserIdEncryptor userIdEncryptor) {
 		this.licenseDetailsService = licenseDetailsService;
@@ -41,7 +41,10 @@ public class LicenseServiceImpl implements LicenseService {
 		try {
 			String licenseKey = licenseKeyEncryptor.decrypt(request.licenseKey());
 			String userId = userIdEncryptor.extractAndDecryptUserId(licenseKey);
-			requestValidationService.checkLicenseKeyRequestWithCachedData(request, userId);
+			
+			if(!request.forceTokenRefresh()) {
+				requestValidationService.checkLicenseKeyRequestWithCachedData(request, userId);
+			}
 
 			LicenseInfo info = licenseDetailsService.getAndValidateLicenseDetails(request, userId);
 			validationResult = getValidationResult(request.instanceId(), info, null, LICENSE_KEY_IS_VALID);
@@ -73,7 +76,6 @@ public class LicenseServiceImpl implements LicenseService {
 
 		LicenseValidationResult validationResult = null;
 		try {
-			requestValidationService.checkTokenRequestWithCachedData(request);
 			tokenValidationService.validateToken(request);
 
 			validationResult = new LicenseValidationResult.Builder().valid(true).message(TOKEN_IS_VALID).build();

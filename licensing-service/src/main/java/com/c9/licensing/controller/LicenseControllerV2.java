@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.c9.licensing.model.LicenseServiceStatus;
 import com.c9.licensing.model.LicenseValidationRequest;
 import com.c9.licensing.model.response.LicenseValidationResponse;
 import com.c9.licensing.service.LicenseOrchestrationService;
@@ -45,24 +46,32 @@ public class LicenseControllerV2 {
 			@Size(min = 20, max = 100, message = "Signature header param must be between {min} and {max} characters")
 			@RequestHeader(value = "X-Signature", required = false) String signature,
 			@Size(min = 20, max = 100, message = "Checksum header param must be between {min} and {max} characters")
-			@RequestHeader(value = "X-Checksum", required = false) String checksum) {
-		
-		LicenseValidationRequest request = new LicenseValidationRequest.Builder()
-				.serviceId(serviceId)
+			@RequestHeader(value = "X-Checksum", required = false) String checksum,
+			@RequestHeader(value = "X-Force-Token-Refresh", required = false) boolean forceTokenRefresh) {
+
+		LicenseValidationRequest request = new LicenseValidationRequest.Builder().serviceId(serviceId)
 				.serviceVersion(serviceVersion)
 				.licenseKey(licenseKey)
 				.licenseToken(licenseToken)
 				.instanceId(instanceId)
 				.checksum(checksum)
-				.signature(signature).build();
+				.signature(signature)
+				.forceTokenRefresh(forceTokenRefresh)
+				.build();
 
-				LicenseValidationResponse response = licenseOrchestrationService.getLicenseDetails(request);
+		LicenseValidationResponse response = licenseOrchestrationService.getLicenseDetails(request);
+		return getHttpResponse(response);
+	}
+
+	private ResponseEntity<LicenseValidationResponse> getHttpResponse(LicenseValidationResponse response) {
 		if (response.success()) {
 			return ResponseEntity.ok(response);
 		} else {
+			if(LicenseServiceStatus.UNKNOWN_ERROR.name().equals(response.status())) {
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+			}
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
 		}
 	}
-
 
 }

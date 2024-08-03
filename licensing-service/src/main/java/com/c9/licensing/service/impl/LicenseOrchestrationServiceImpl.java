@@ -12,22 +12,26 @@ import com.c9.licensing.model.response.LicenseValidationResponse;
 import com.c9.licensing.service.LicenseClientCacheManagementService;
 import com.c9.licensing.service.LicenseOrchestrationService;
 import com.c9.licensing.service.LicenseService;
+import com.c9.licensing.service.jwt.JwtBlacklistService;
 import com.c9.licensing.service.jwt.JwtService;
 
 @Service
 public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationService {
 
-	private LicenseService licenseService;
-	private JwtService jwtUtil;
-	private LicenseClientCacheManagementService clientCacheManagementService;
-	private ClientIdGenerator clientIdGenerator;
+	private final LicenseService licenseService;
+	private final JwtService jwtUtil;
+	private final LicenseClientCacheManagementService clientCacheManagementService;
+	private final ClientIdGenerator clientIdGenerator;
+	private final JwtBlacklistService jwtBlacklistService;
 
 	public LicenseOrchestrationServiceImpl(LicenseService licenseService, JwtService jwtUtil,
-			LicenseClientCacheManagementService clientCacheManagementService, ClientIdGenerator clientIdGenerator) {
+			LicenseClientCacheManagementService clientCacheManagementService, ClientIdGenerator clientIdGenerator,
+			JwtBlacklistService jwtBlacklistService) {
 		this.licenseService = licenseService;
 		this.jwtUtil = jwtUtil;
 		this.clientCacheManagementService = clientCacheManagementService;
 		this.clientIdGenerator = clientIdGenerator;
+		this.jwtBlacklistService = jwtBlacklistService;
 	}
 
 	@Override
@@ -47,17 +51,16 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 		LicenseValidationResponse licenseValidationResponse;
 		LicenseValidationResult result = licenseService.getUserLicenseDetailsByLicenseKey(request);
 		if (result.valid()) {
-			String clientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(), request.instanceId());
-			String token = jwtUtil.generateToken(clientId, result.licenseTier(), result.licenseStatus());
-			ClientInfo clientInfo = new ClientInfo.Builder().serviceId(request.serviceId())
-					.licenseToken(token)
-					.serviceVersion(request.serviceVersion())
-					.instanceId(request.instanceId())
-					.encUserId(result.userId())
-					.checksum(request.checksum())
-					.signature(request.signature())
-					.build();
-			clientCacheManagementService.addClientInfo(clientInfo);
+
+			String clientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(),
+					request.instanceId());
+
+			if (request.forceTokenRefresh()) {
+				jwtBlacklistService.addCurrentTokenToBlacklist(clientId);
+			}
+
+			String token = generateTokenAndAddToCache(clientId, request, result);
+
 			licenseValidationResponse = new LicenseValidationResponse.Builder().success(true)
 					.licenseToken(token)
 					.status(LicenseServiceStatus.TOKEN_CREATED.name())
@@ -79,17 +82,9 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 		LicenseValidationResult result = licenseService.getUserLicenseDetailsByToken(request);
 		if (result.valid()) {
 			if (LicenseServiceStatus.TOKEN_REFRESHED == result.serviceStatus()) {
-				String clientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(), request.instanceId());
-				String newToken = jwtUtil.generateToken(clientId, result.licenseTier(), result.licenseStatus());
-				ClientInfo clientInfo = new ClientInfo.Builder().serviceId(request.serviceId())
-						.licenseToken(newToken)
-						.serviceVersion(request.serviceVersion())
-						.instanceId(request.instanceId())
-						.encUserId(result.userId())
-						.checksum(request.checksum())
-						.signature(request.signature())
-						.build();
-				clientCacheManagementService.addClientInfo(clientInfo);
+				String clientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(),
+						request.instanceId());
+				String newToken = generateTokenAndAddToCache(clientId, request, result);
 				licenseValidationResponse = new LicenseValidationResponse.Builder().success(true)
 						.licenseToken(newToken)
 						.status(result.serviceStatus().name())
@@ -119,6 +114,21 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 		if (licenseKey != null && licenseToken != null) {
 			throw new InvalidParameterException("Only one of licenseKey or licenseToken can be provided");
 		}
+	}
+
+	private String generateTokenAndAddToCache(String clientId, LicenseValidationRequest request,
+			LicenseValidationResult result) {
+		String token = jwtUtil.generateToken(clientId, result.licenseTier(), result.licenseStatus());
+		ClientInfo clientInfo = new ClientInfo.Builder().serviceId(request.serviceId())
+				.licenseToken(token)
+				.serviceVersion(request.serviceVersion())
+				.instanceId(request.instanceId())
+				.encUserId(result.userId())
+				.checksum(request.checksum())
+				.signature(request.signature())
+				.build();
+		clientCacheManagementService.addClientInfo(clientInfo);
+		return token;
 	}
 
 }

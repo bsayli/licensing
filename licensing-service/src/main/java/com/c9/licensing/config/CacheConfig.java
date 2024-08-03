@@ -37,6 +37,9 @@ public class CacheConfig {
 		cacheManager.registerCustomCache("activeClients",  Caffeine.newBuilder()
 				.expireAfterWrite((jwtTokenExpiration * 2), TimeUnit.MINUTES).build());
 		
+		cacheManager.registerCustomCache("blacklistedTokens",  Caffeine.newBuilder()
+				.expireAfterWrite((jwtTokenExpiration * 2), TimeUnit.MINUTES).build());
+		
 		return cacheManager;
 	}
 	

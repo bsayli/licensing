@@ -22,7 +22,7 @@ import io.jsonwebtoken.Jwts;
 public class JwtServiceImpl implements JwtService {
 
 	private static final Random random = new Random();
-	private static final long MAX_JITTER = 300000; 
+	private static final long MAX_JITTER = 10000; 
 
 	private final PrivateKey privateKey;
 	private final PublicKey publicKey;

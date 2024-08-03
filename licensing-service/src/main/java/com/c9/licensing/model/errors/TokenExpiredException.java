@@ -2,9 +2,7 @@ package com.c9.licensing.model.errors;
 
 import com.c9.licensing.model.LicenseServiceStatus;
 
-import io.jsonwebtoken.JwtException;
-
-public class TokenExpiredException extends JwtException implements LicenseServiceException{
+public class TokenExpiredException extends LicenseServiceExceptionImpl{
 
 	private static final long serialVersionUID = 2818307805521893164L;
 	

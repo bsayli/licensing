@@ -42,28 +42,11 @@ public class LicenseRequestValidationServiceImpl implements LicenseRequestValida
 			boolean isValidRequest =  isServiceIdEqual && isServiceVersionEqual && isChecksumEqual && isUserIdEqual;
 			
 			if(isValidRequest) {
-				throw new TokenAlreadyExistException(TOKEN_ALREADY_EXIST);
+				throw new TokenAlreadyExistException(MESSAGE_TOKEN_ALREADY_EXIST);
 			}else {
-				throw new InvalidRequestException(INVALID_REQUEST);
+				throw new InvalidRequestException(MESSAGE_INVALID_REQUEST);
 			}
 		}
 	}
-	
-	@Override
-	public void checkTokenRequestWithCachedData(LicenseValidationRequest request) {
-		String clientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(), request.instanceId());
-		Optional<ClientCachedLicenseData> cachedLicenseDataOpt = clientCacheManagementService.getClientCachedLicenseData(clientId);
-		if (cachedLicenseDataOpt.isPresent()) {
-			ClientCachedLicenseData cachedData = cachedLicenseDataOpt.get();
-			boolean isTokenEqual = Objects.equals(cachedData.getLicenseToken(), request.licenseToken());
-			boolean isServiceIdEqual = Objects.equals(cachedData.getServiceId(), request.serviceId());
-			boolean isServiceVersionEqual = Objects.equals(cachedData.getServiceVersion(), request.serviceVersion());
-			boolean isChecksumEqual = Objects.equals(cachedData.getChecksum(), request.checksum());
-			boolean isValidRequest = isTokenEqual && isServiceIdEqual && isServiceVersionEqual && isChecksumEqual;
-			
-			if(!isValidRequest) {
-				throw new InvalidRequestException(INVALID_REQUEST);
-			}
-		}
-	}
+
 }

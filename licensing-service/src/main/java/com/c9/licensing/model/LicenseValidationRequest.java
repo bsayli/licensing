@@ -1,7 +1,7 @@
 package com.c9.licensing.model;
 
 public record LicenseValidationRequest(String serviceId, String serviceVersion, String licenseKey, String licenseToken,
-		String instanceId, String signature, String checksum) {
+		String instanceId, String signature, String checksum, boolean forceTokenRefresh) {
 
 	public static class Builder {
 		private String licenseKey;
@@ -11,6 +11,7 @@ public record LicenseValidationRequest(String serviceId, String serviceVersion, 
 		private String instanceId;
 		private String signature;
 		private String checksum;
+		private boolean forceTokenRefresh;
 
 		public Builder licenseKey(String licenseKey) {
 			this.licenseKey = licenseKey;
@@ -46,10 +47,15 @@ public record LicenseValidationRequest(String serviceId, String serviceVersion, 
 			this.checksum = checksum;
 			return this;
 		}
+		
+		public Builder forceTokenRefresh(boolean forceTokenRefresh) {
+			this.forceTokenRefresh = forceTokenRefresh;
+			return this;
+		}
 
 		public LicenseValidationRequest build() {
 			return new LicenseValidationRequest(serviceId, serviceVersion, licenseKey, licenseToken, instanceId,
-					signature, checksum);
+					signature, checksum, forceTokenRefresh);
 		}
 	}
 }
