@@ -1,4 +1,4 @@
-package com.c9.licensing.config;
+package com.c9.licensing.config.security;
 
 import java.io.IOException;
 

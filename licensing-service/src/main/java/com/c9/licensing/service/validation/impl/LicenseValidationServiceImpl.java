@@ -62,7 +62,9 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 			String licenseKey = request.licenseKey();
 			boolean requestedByLicenseKey = licenseKey != null && licenseKey.trim().length() > 0;
 
-			Builder signatureDataBuilder = new SignatureData.Builder().serviceId(request.serviceId())
+			Builder signatureDataBuilder = new SignatureData.Builder()
+					.serviceId(request.serviceId())
+					.serviceVersion(request.serviceVersion())
 					.instanceId(request.instanceId());
 
 			if (requestedByLicenseKey) {

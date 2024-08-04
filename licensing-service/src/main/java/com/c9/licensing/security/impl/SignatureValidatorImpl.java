@@ -3,12 +3,9 @@ package com.c9.licensing.security.impl;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.Security;
 import java.security.Signature;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import com.c9.licensing.model.SignatureData;
 import com.c9.licensing.model.errors.SignatureInvalidException;
@@ -19,7 +16,6 @@ public class SignatureValidatorImpl implements SignatureValidator {
 	private final byte[] signaturePublicKey;
 
 	public SignatureValidatorImpl(String signaturePublicKeyStr) {
-		Security.addProvider(new BouncyCastleProvider());
 		this.signaturePublicKey = Base64.getDecoder().decode(signaturePublicKeyStr);
 	}
 

@@ -57,8 +57,7 @@ public class LicenseTokenRequestValidationServiceImpl implements LicenseTokenReq
 		try {
 			Claims claims = jwtUtil.verifyAndExtractJwtClaims(request.licenseToken());
 			String clientId = claims.getSubject();
-			String requestedClientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(),
-					request.instanceId());
+			String requestedClientId = clientIdGenerator.getClientId(request);
 			
 			if (!clientId.equals(requestedClientId)) {
 				throw new TokenForbiddenAccessException(MESSAGE_TOKEN_INVALID_ACCESS);
@@ -82,7 +81,7 @@ public class LicenseTokenRequestValidationServiceImpl implements LicenseTokenReq
 	}
 	
 	private void checkTokenRequestWithCachedData(LicenseValidationRequest request) {
-		String clientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(), request.instanceId());
+		String clientId = clientIdGenerator.getClientId(request);
 		Optional<ClientCachedLicenseData> cachedLicenseDataOpt = cacheService.getClientCachedLicenseData(clientId);
 		if (cachedLicenseDataOpt.isPresent()) {
 			ClientCachedLicenseData cachedData = cachedLicenseDataOpt.get();
@@ -103,8 +102,7 @@ public class LicenseTokenRequestValidationServiceImpl implements LicenseTokenReq
 	}
 
 	private void validateAndThrowTokenException(LicenseValidationRequest request) {
-		String clientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(),
-				request.instanceId());
+		String clientId = clientIdGenerator.getClientId(request);
 		Optional<ClientCachedLicenseData> cachedLicenseDataOpt = cacheService.getClientCachedLicenseData(clientId);
 		if (cachedLicenseDataOpt.isPresent()) {
 			ClientCachedLicenseData data = cachedLicenseDataOpt.get();

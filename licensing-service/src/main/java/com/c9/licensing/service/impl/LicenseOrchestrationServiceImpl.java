@@ -52,8 +52,7 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 		LicenseValidationResult result = licenseService.getUserLicenseDetailsByLicenseKey(request);
 		if (result.valid()) {
 
-			String clientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(),
-					request.instanceId());
+			String clientId = clientIdGenerator.getClientId(request);
 
 			if (request.forceTokenRefresh()) {
 				jwtBlacklistService.addCurrentTokenToBlacklist(clientId);
@@ -82,8 +81,7 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 		LicenseValidationResult result = licenseService.getUserLicenseDetailsByToken(request);
 		if (result.valid()) {
 			if (LicenseServiceStatus.TOKEN_REFRESHED == result.serviceStatus()) {
-				String clientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(),
-						request.instanceId());
+				String clientId = clientIdGenerator.getClientId(request);
 				String newToken = generateTokenAndAddToCache(clientId, request, result);
 				licenseValidationResponse = new LicenseValidationResponse.Builder().success(true)
 						.licenseToken(newToken)

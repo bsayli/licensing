@@ -1,4 +1,4 @@
-package com.c9.licensing.config;
+package com.c9.licensing.config.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -28,7 +28,7 @@ public class LicenseClientCacheManagementServiceImpl implements LicenseClientCac
 	public void addClientInfo(ClientInfo clientInfo) {
 		Cache activeClientsCache = cacheManager.getCache(CACHE_NAME_ACTIVE_CLIENTS);
 		if (activeClientsCache != null) {
-			String clientId = clientIdGenerator.getClientId(clientInfo.serviceId(), clientInfo.serviceVersion(), clientInfo.instanceId());
+			String clientId = clientIdGenerator.getClientId(clientInfo);
 			ClientCachedLicenseData clientCachedLicenseData = new ClientCachedLicenseData.Builder()
 					.licenseToken(clientInfo.licenseToken())
 					.encUserId(clientInfo.encUserId())

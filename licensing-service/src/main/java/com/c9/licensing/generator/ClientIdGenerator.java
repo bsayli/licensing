@@ -1,7 +1,12 @@
 package com.c9.licensing.generator;
 
+import com.c9.licensing.model.ClientInfo;
+import com.c9.licensing.model.LicenseValidationRequest;
+
 public interface ClientIdGenerator {
 	
-	String getClientId(String serviceId, String serviceVersion, String instanceId);
+	String getClientId(LicenseValidationRequest request);
+	
+	String getClientId(ClientInfo clientInfo);
 
 }

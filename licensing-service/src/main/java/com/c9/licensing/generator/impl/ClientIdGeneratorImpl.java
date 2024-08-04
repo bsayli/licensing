@@ -9,26 +9,36 @@ import java.util.Objects;
 import org.springframework.stereotype.Component;
 
 import com.c9.licensing.generator.ClientIdGenerator;
+import com.c9.licensing.model.ClientInfo;
+import com.c9.licensing.model.LicenseValidationRequest;
 
 @Component
 public class ClientIdGeneratorImpl implements ClientIdGenerator {
-	
+
 	private static final String ALGORITHM = "SHA-256";
 
-	public String getClientId(String serviceId, String serviceVersion, String instanceId) {
+	@Override
+	public String getClientId(LicenseValidationRequest request) {
+		return getClientId(request.serviceId(), request.serviceVersion(), request.checksum(), request.instanceId());
+	}
+
+	@Override
+	public String getClientId(ClientInfo clientInfo) {
+		return getClientId(clientInfo.serviceId(), clientInfo.serviceVersion(), clientInfo.checksum(),
+				clientInfo.instanceId());
+	}
+
+	private String getClientId(String serviceId, String serviceVersion, String checksum, String instanceId) {
 		StringBuilder clientIdBuilder = new StringBuilder();
+		clientIdBuilder.append(serviceId);
+		clientIdBuilder.append(serviceVersion);
 
-		if (Objects.nonNull(serviceId)) {
-			clientIdBuilder.append(serviceId);
+		if (Objects.nonNull(checksum)) {
+			clientIdBuilder.append(checksum);
 		}
 
-		if (Objects.nonNull(serviceVersion)) {
-			clientIdBuilder.append(serviceVersion);
-		}
+		clientIdBuilder.append(instanceId);
 
-		if (Objects.nonNull(instanceId)) {
-			clientIdBuilder.append(instanceId);
-		}
 		try {
 			MessageDigest digest = MessageDigest.getInstance(ALGORITHM);
 			byte[] hashedBytes = digest.digest(clientIdBuilder.toString().getBytes(StandardCharsets.UTF_8));
@@ -36,7 +46,6 @@ public class ClientIdGeneratorImpl implements ClientIdGenerator {
 		} catch (NoSuchAlgorithmException e) {
 			return null;
 		}
-	
 	}
 
 }

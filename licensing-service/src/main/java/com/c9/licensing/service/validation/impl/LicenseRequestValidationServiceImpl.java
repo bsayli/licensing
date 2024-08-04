@@ -30,7 +30,7 @@ public class LicenseRequestValidationServiceImpl implements LicenseRequestValida
 
 	@Override
 	public void checkLicenseKeyRequestWithCachedData(LicenseValidationRequest request, String userId) {
-		String clientId = clientIdGenerator.getClientId(request.serviceId(), request.serviceVersion(), request.instanceId());
+		String clientId = clientIdGenerator.getClientId(request);
 		Optional<ClientCachedLicenseData> cachedLicenseDataOpt = clientCacheManagementService.getClientCachedLicenseData(clientId);
 		if (cachedLicenseDataOpt.isPresent()) {
 			ClientCachedLicenseData cachedData = cachedLicenseDataOpt.get();

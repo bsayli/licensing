@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class SignatureData {
 
     private final String serviceId;
+    private final String serviceVersion;
     @JsonInclude(Include.NON_NULL)
     private final String encryptedLicenseKeyHash;
     @JsonInclude(Include.NON_NULL)
@@ -16,15 +17,18 @@ public class SignatureData {
 
     private SignatureData(Builder builder) {
         this.serviceId = builder.serviceId;
+        this.serviceVersion = builder.serviceVersion;
         this.encryptedLicenseKeyHash = builder.encryptedLicenseKeyHash;
         this.licenseTokenHash = builder.licenseTokenHash;
         this.instanceId = builder.instanceId;
     }
 
-    // Getters for accessing individual fields (optional)
-
     public String getServiceId() {
         return serviceId;
+    }
+    
+    public String getServiceVersion() {
+        return serviceVersion;
     }
 
     public String getEncryptedLicenseKeyHash() {
@@ -46,12 +50,18 @@ public class SignatureData {
     
     public static class Builder {
         private String serviceId;
+        private String serviceVersion;
         private String encryptedLicenseKeyHash;
         private String licenseTokenHash;
         private String instanceId;
 
         public Builder serviceId(String serviceId) {
             this.serviceId = serviceId;
+            return this;
+        }
+        
+        public Builder serviceVersion(String serviceVersion) {
+            this.serviceVersion = serviceVersion;
             return this;
         }
 

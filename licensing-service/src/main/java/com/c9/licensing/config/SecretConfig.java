@@ -32,6 +32,9 @@ public class SecretConfig {
     @Value("${jwt.token.expiration}")
     private Integer tokenExpirationInMinute;
     
+    @Value("${jwt.token.max.jitter}")
+    private Long tokenMaxJitter;
+    
     @Value("${license.jwt.private.key}")
     private String licenseJwtPrivateKey;
     
@@ -50,7 +53,7 @@ public class SecretConfig {
     
     @Bean
     JwtService jwtService() throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
-    	return new JwtServiceImpl(licenseJwtPrivateKey, licenseJwtPublicKey, tokenExpirationInMinute);
+    	return new JwtServiceImpl(licenseJwtPrivateKey, licenseJwtPublicKey, tokenExpirationInMinute, tokenMaxJitter);
     }
     
     @Bean
@@ -58,6 +61,4 @@ public class SecretConfig {
     	return new SignatureValidatorImpl(signaturePublicKey);
     }
    
-   
-
 }

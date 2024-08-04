@@ -7,7 +7,7 @@ import com.c9.licensing.model.LicenseValidationRequest;
 
 public interface LicenseTokenRequestValidationService {
 
-	String MESSAGE_INVALID_REQUEST = "Invalid request, client request parameters were changed unexpectedly!";
+	String MESSAGE_INVALID_REQUEST = "Invalid request, client request parameters were changed!";
 	String MESSAGE_TOKEN_HAS_EXPIRED = "Token has expired!";
 	String MESSAGE_ERROR_DURING_TOKEN_VALIDATION = "An unexpected error occurred during token validation";
 	String MESSAGE_TOKEN_INVALID = "Token is invalid!";
