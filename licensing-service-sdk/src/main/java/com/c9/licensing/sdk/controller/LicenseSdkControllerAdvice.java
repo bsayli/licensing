@@ -1,5 +1,6 @@
 package com.c9.licensing.sdk.controller;
 
+import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import com.c9.licensing.sdk.exception.LicenseServiceClientErrorException;
 import com.c9.licensing.sdk.exception.LicenseServiceServerErrorException;
+import com.c9.licensing.sdk.exception.LicenseServiceUnhandledErrorException;
 import com.c9.licensing.sdk.model.LicenseStatus;
 import com.c9.licensing.sdk.model.LicenseValidationResponse;
 import com.c9.licensing.sdk.model.server.LicenseServerValidationResponse;
@@ -66,7 +68,8 @@ public class LicenseSdkControllerAdvice {
 	}
 
 	@ExceptionHandler(LicenseServiceClientErrorException.class)
-	public ResponseEntity<LicenseValidationResponse> handleInvalidParameter(LicenseServiceClientErrorException ex) {
+	public ResponseEntity<LicenseValidationResponse> handleServiceClientErrorException(
+			LicenseServiceClientErrorException ex) {
 		LicenseServerValidationResponse serverResponse = ex.getServerResponse();
 		String status = serverResponse.status();
 		String message = serverResponse.message();
@@ -79,12 +82,32 @@ public class LicenseSdkControllerAdvice {
 	}
 
 	@ExceptionHandler(LicenseServiceServerErrorException.class)
-	public ResponseEntity<LicenseValidationResponse> handleInvalidParameter(LicenseServiceServerErrorException ex) {
+	public ResponseEntity<LicenseValidationResponse> handleServiceServerErrorException(
+			LicenseServiceServerErrorException ex) {
 		LicenseServerValidationResponse serverResponse = ex.getServerResponse();
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(new LicenseValidationResponse.Builder().success(false)
 						.status(serverResponse.status())
 						.message(serverResponse.message())
+						.build());
+	}
+
+	@ExceptionHandler(LicenseServiceUnhandledErrorException.class)
+	public ResponseEntity<LicenseValidationResponse> handleServiceServerErrorException(
+			LicenseServiceUnhandledErrorException ex) {
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(new LicenseValidationResponse.Builder().success(false)
+						.status(LicenseStatus.INTERNAL_SERVER_ERROR.name())
+						.message(ex.getMessage())
+						.build());
+	}
+
+	@ExceptionHandler(ClosedChannelException.class)
+	public ResponseEntity<LicenseValidationResponse> handleClosedChannelException(ClosedChannelException ex) {
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(new LicenseValidationResponse.Builder().success(false)
+						.status(LicenseStatus.LICENSE_SERVER_CANNOT_BE_REACHED.name())
+						.message("Internal Server Error, License Server cannot be reached")
 						.build());
 	}
 

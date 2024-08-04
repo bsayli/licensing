@@ -15,6 +15,6 @@ public class LicenseServiceUnexpectedException extends LicenseServiceExceptionIm
   	}
 
 	public LicenseServiceStatus getStatus() {
-		return LicenseServiceStatus.UNKNOWN_ERROR;
+		return LicenseServiceStatus.INTERNAL_SERVER_ERROR;
 	}
 }

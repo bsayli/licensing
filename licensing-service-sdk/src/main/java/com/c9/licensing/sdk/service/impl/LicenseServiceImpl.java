@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpResponse;
@@ -19,6 +20,7 @@ import org.springframework.web.client.RestClient;
 
 import com.c9.licensing.sdk.exception.LicenseServiceClientErrorException;
 import com.c9.licensing.sdk.exception.LicenseServiceServerErrorException;
+import com.c9.licensing.sdk.exception.LicenseServiceUnhandledErrorException;
 import com.c9.licensing.sdk.exception.TokenAlreadyExistException;
 import com.c9.licensing.sdk.exception.TokenIsTooOldForRefreshException;
 import com.c9.licensing.sdk.generator.SignatureGenerator;
@@ -28,16 +30,16 @@ import com.c9.licensing.sdk.service.LicenseService;
 
 @Service
 public class LicenseServiceImpl implements LicenseService {
-
+	
 	private final RestClient licensingRestClient;
 	private final SignatureGenerator signatureGenerator;
-	private final MappingJackson2HttpMessageConverter converter;
+	private final MappingJackson2HttpMessageConverter httpMessageConverter;
 
 	public LicenseServiceImpl(RestClient licensingRestClient, SignatureGenerator signatureGenerator,
-			MappingJackson2HttpMessageConverter converter) {
+			MappingJackson2HttpMessageConverter httpMessageConverter) {
 		this.licensingRestClient = licensingRestClient;
 		this.signatureGenerator = signatureGenerator;
-		this.converter = converter;
+		this.httpMessageConverter = httpMessageConverter;
 	}
 
 	public LicenseServerValidationResponse getLicenseDetails(LicenseServerValidationRequest request) {
@@ -86,24 +88,42 @@ public class LicenseServiceImpl implements LicenseService {
 
 	}
 
-	private void handleClientError(HttpRequest request, ClientHttpResponse response)
-			throws HttpMessageNotReadableException, IOException {
-		LicenseServerValidationResponse serverResponse = (LicenseServerValidationResponse) converter
-				.read(LicenseServerValidationResponse.class, response);
-		String status = serverResponse.status();
-		if (TOKEN_IS_TOO_OLD_FOR_REFRESH.name().equals(status)) {
-			throw new TokenIsTooOldForRefreshException("Token is too old for refresh");
-		} else if (TOKEN_ALREADY_EXIST.name().equals(status)) {
-			throw new TokenAlreadyExistException("Token is already exist");
+	private void handleClientError(HttpRequest request, ClientHttpResponse response) {
+		if (response != null) {
+			try {
+				if(HttpStatus.UNAUTHORIZED.isSameCodeAs(response.getStatusCode())) {
+					LicenseServerValidationResponse serverResponse = (LicenseServerValidationResponse) httpMessageConverter
+							.read(LicenseServerValidationResponse.class, response);
+					String status = serverResponse.status();
+					if (TOKEN_IS_TOO_OLD_FOR_REFRESH.name().equals(status)) {
+						throw new TokenIsTooOldForRefreshException("Token is too old for refresh");
+					} else if (TOKEN_ALREADY_EXIST.name().equals(status)) {
+						throw new TokenAlreadyExistException("Token is already exist");
+					}
+					throw new LicenseServiceClientErrorException(serverResponse, "License service client error message");
+				}
+			} catch (HttpMessageNotReadableException | IOException e) {
+				e.printStackTrace();
+				throw new LicenseServiceUnhandledErrorException(MESSAGE_LICENSE_SERVICE_CLIENT_UNHANDLED_ERROR);
+			}
 		}
-		throw new LicenseServiceClientErrorException(serverResponse, "License service 401 error message");
+		throw new LicenseServiceUnhandledErrorException(MESSAGE_LICENSE_SERVICE_CLIENT_UNHANDLED_ERROR);
 	}
 
-	private void handleServerError(HttpRequest request, ClientHttpResponse response)
-			throws HttpMessageNotReadableException, IOException {
-		LicenseServerValidationResponse serverResponse = (LicenseServerValidationResponse) converter
-				.read(LicenseServerValidationResponse.class, response);
-		throw new LicenseServiceServerErrorException(serverResponse, "License service 500 error message");
+	private void handleServerError(HttpRequest request, ClientHttpResponse response) {
+		if (response != null) {
+			try {
+				if(HttpStatus.INTERNAL_SERVER_ERROR.isSameCodeAs(response.getStatusCode())) {
+					LicenseServerValidationResponse serverResponse = (LicenseServerValidationResponse) httpMessageConverter
+							.read(LicenseServerValidationResponse.class, response);
+					throw new LicenseServiceServerErrorException(serverResponse, "License service server error message");
+				}
+			} catch (HttpMessageNotReadableException | IOException e) {
+				e.printStackTrace();
+				throw new LicenseServiceUnhandledErrorException(MESSAGE_LICENSE_SERVICE_SERVER_UNHANDLED_ERROR);
+			}
+		}
+		throw new LicenseServiceUnhandledErrorException(MESSAGE_LICENSE_SERVICE_SERVER_UNHANDLED_ERROR);
 	}
 
 	private MultiValueMap<String, String> getRequestParams(LicenseServerValidationRequest request) {

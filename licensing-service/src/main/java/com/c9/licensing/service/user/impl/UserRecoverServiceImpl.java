@@ -31,7 +31,7 @@ public class UserRecoverServiceImpl implements UserRecoverService {
 				return dataInOffline.get(userId);
 			}
 		} 
-		throw new LicenseServiceUnexpectedException("License Service Unexpected Error", pe);
+		throw new LicenseServiceUnexpectedException("License Server is currently unavailable", pe);
 	}
 
 }

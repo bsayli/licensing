@@ -1,8 +1,8 @@
 package com.c9.licensing.sdk.service.impl;
 
+import static com.c9.licensing.sdk.model.server.LicenseServerServiceStatus.TOKEN_ACTIVE;
 import static com.c9.licensing.sdk.model.server.LicenseServerServiceStatus.TOKEN_CREATED;
 import static com.c9.licensing.sdk.model.server.LicenseServerServiceStatus.TOKEN_REFRESHED;
-import static com.c9.licensing.sdk.model.server.LicenseServerServiceStatus.TOKEN_ACTIVE;
 
 import org.springframework.stereotype.Service;
 
@@ -38,15 +38,22 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 
 		LicenseServerValidationRequest serverRequest = createServerRequest(clientId, request);
 		LicenseServerValidationResponse serverResponse = licenseService.getLicenseDetails(serverRequest);
-		refreshLicenseToken(clientId, serverResponse);
 
 		if (serverResponse != null) {
 			String status = serverResponse.status();
 			String message = serverResponse.message();
 			String serverStatus = serverResponse.status();
 
-			if (serverResponse.success() && (TOKEN_CREATED.name().equals(serverStatus)
-					|| TOKEN_REFRESHED.name().equals(serverStatus) || TOKEN_ACTIVE.name().equals(serverStatus))) {
+			boolean isTokenBasedSuccessStatus = TOKEN_CREATED.name().equals(serverStatus)
+					|| TOKEN_REFRESHED.name().equals(serverStatus) || TOKEN_ACTIVE.name().equals(serverStatus);
+
+			if (serverResponse.success() && isTokenBasedSuccessStatus) {
+				boolean isNewlyCreatedToken = TOKEN_CREATED.name().equals(status)
+						|| TOKEN_REFRESHED.name().equals(status);
+				if (isNewlyCreatedToken) {
+					licenseTokenService.storeLicenseToken(clientId, serverResponse.licenseToken());
+				}
+
 				status = LicenseStatus.LICENSE_ACTIVE.name();
 				message = "License is active";
 			}
@@ -77,18 +84,6 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 		}
 
 		return serverRequestBuilder.build();
-	}
-
-	private void refreshLicenseToken(String clientId, LicenseServerValidationResponse serverResponse) {
-		if (serverResponse != null) {
-			String status = serverResponse.status();
-			if (serverResponse.success()) {
-				boolean isValidToken = TOKEN_CREATED.name().equals(status) || TOKEN_REFRESHED.name().equals(status);
-				if (isValidToken) {
-					licenseTokenService.storeLicenseToken(clientId, serverResponse.licenseToken());
-				}
-			}
-		}
 	}
 
 }

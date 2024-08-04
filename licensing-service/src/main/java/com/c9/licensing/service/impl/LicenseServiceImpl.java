@@ -65,7 +65,7 @@ public class LicenseServiceImpl implements LicenseService {
 		} catch (Exception e) {
 			logger.error(ERROR_DURING_LICENSE_VALIDATION, e);
 			validationResult = new LicenseValidationResult.Builder().valid(false)
-					.serviceStatus(LicenseServiceStatus.UNKNOWN_ERROR)
+					.serviceStatus(LicenseServiceStatus.INTERNAL_SERVER_ERROR)
 					.message(ERROR_DURING_LICENSE_VALIDATION)
 					.build();
 		}
