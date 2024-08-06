@@ -30,14 +30,22 @@ public class ClientIdGeneratorImpl implements ClientIdGenerator {
 
 	private String getClientId(String serviceId, String serviceVersion, String checksum, String instanceId) {
 		StringBuilder clientIdBuilder = new StringBuilder();
-		clientIdBuilder.append(serviceId);
-		clientIdBuilder.append(serviceVersion);
+		
+		if (Objects.nonNull(serviceId)) {
+			clientIdBuilder.append(serviceId);
+		}
+		
+		if (Objects.nonNull(serviceVersion)) {
+			clientIdBuilder.append(serviceVersion);
+		}
 
 		if (Objects.nonNull(checksum)) {
 			clientIdBuilder.append(checksum);
 		}
-
-		clientIdBuilder.append(instanceId);
+		
+		if (Objects.nonNull(instanceId)) {
+			clientIdBuilder.append(instanceId);
+		}
 
 		try {
 			MessageDigest digest = MessageDigest.getInstance(ALGORITHM);

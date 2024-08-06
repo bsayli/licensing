@@ -3,6 +3,8 @@ package com.c9.licensing.controller;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingRequestHeaderException;
@@ -19,6 +21,8 @@ import jakarta.validation.ConstraintViolationException;
 
 @ControllerAdvice
 public class LicenseControllerAdvice {
+	
+	Logger logger = LoggerFactory.getLogger(LicenseControllerAdvice.class);
 
 	@ExceptionHandler(ConstraintViolationException.class)
 	public ResponseEntity<LicenseValidationResponse> handleConstraintViolation(ConstraintViolationException ex) {
@@ -69,6 +73,16 @@ public class LicenseControllerAdvice {
 				.body(new LicenseValidationResponse.Builder().success(false)
 						.status(ex.getStatus().name())
 						.message(ex.getMessage())
+						.build());
+	}
+	
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<LicenseValidationResponse> handleGenericException(Exception ex) {
+		logger.error("License Server Internal Error", ex);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(new LicenseValidationResponse.Builder().success(false)
+						.status(LicenseServiceStatus.INTERNAL_SERVER_ERROR.name())
+						.message("License Server Internal Error")
 						.build());
 	}
 

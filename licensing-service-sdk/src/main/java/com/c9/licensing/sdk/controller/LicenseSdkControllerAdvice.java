@@ -1,15 +1,19 @@
 package com.c9.licensing.sdk.controller;
 
+import java.net.SocketTimeoutException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.client.ResourceAccessException;
 
 import com.c9.licensing.sdk.exception.LicenseServiceClientErrorException;
 import com.c9.licensing.sdk.exception.LicenseServiceServerErrorException;
@@ -23,6 +27,8 @@ import jakarta.validation.ConstraintViolationException;
 
 @ControllerAdvice
 public class LicenseSdkControllerAdvice {
+	
+	Logger logger = LoggerFactory.getLogger(LicenseSdkControllerAdvice.class);
 
 	@ExceptionHandler(ConstraintViolationException.class)
 	public ResponseEntity<LicenseValidationResponse> handleConstraintViolation(ConstraintViolationException ex) {
@@ -104,10 +110,42 @@ public class LicenseSdkControllerAdvice {
 
 	@ExceptionHandler(ClosedChannelException.class)
 	public ResponseEntity<LicenseValidationResponse> handleClosedChannelException(ClosedChannelException ex) {
+		logger.error("License Server Cannot Be Reached Error", ex);
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(new LicenseValidationResponse.Builder().success(false)
 						.status(LicenseStatus.LICENSE_SERVER_CANNOT_BE_REACHED.name())
 						.message("Internal Server Error, License Server cannot be reached")
+						.build());
+	}
+	
+
+	@ExceptionHandler(SocketTimeoutException.class)
+	public ResponseEntity<LicenseValidationResponse> handleSocketTimeoutException(SocketTimeoutException ex) {
+		logger.error("License Server Request Timed Out Error", ex);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(new LicenseValidationResponse.Builder().success(false)
+						.status(LicenseStatus.LICENSE_SERVER_CANNOT_BE_REACHED.name())
+						.message("License Server is currently unavailable")
+						.build());
+	}
+	
+	@ExceptionHandler(ResourceAccessException.class)
+	public ResponseEntity<LicenseValidationResponse> handleResourceAccessException(ResourceAccessException ex) {
+		logger.error("License Server Response Timed Out Error", ex);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(new LicenseValidationResponse.Builder().success(false)
+						.status(LicenseStatus.LICENSE_SERVER_CANNOT_BE_REACHED.name())
+						.message("License Server is currently unavailable")
+						.build());
+	}
+	
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<LicenseValidationResponse> handleGenericException(Exception ex) {
+		logger.error("License Server Internal Error", ex);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(new LicenseValidationResponse.Builder().success(false)
+						.status(LicenseStatus.INTERNAL_SERVER_ERROR.name())
+						.message("License SDK server internal error")
 						.build());
 	}
 
