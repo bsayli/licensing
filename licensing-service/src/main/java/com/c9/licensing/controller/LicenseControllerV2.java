@@ -43,8 +43,9 @@ public class LicenseControllerV2 {
 			@NotNull(message = "'X-Instance-ID' header param is required!")
 			@Size(min = 20, max = 100, message = "Instance Id header param must be between {min} and {max} characters")
 			@RequestHeader("X-Instance-ID") String instanceId,
+			@NotNull(message = "'Signature' header param is required!")
 			@Size(min = 20, max = 100, message = "Signature header param must be between {min} and {max} characters")
-			@RequestHeader(value = "X-Signature", required = false) String signature,
+			@RequestHeader(value = "X-Signature") String signature,
 			@Size(min = 20, max = 100, message = "Checksum header param must be between {min} and {max} characters")
 			@RequestHeader(value = "X-Checksum", required = false) String checksum,
 			@RequestHeader(value = "X-Force-Token-Refresh", required = false) boolean forceTokenRefresh) {

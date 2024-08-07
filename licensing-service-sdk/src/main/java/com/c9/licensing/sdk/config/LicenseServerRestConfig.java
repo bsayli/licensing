@@ -9,6 +9,8 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.core5.util.Timeout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,8 +21,10 @@ import org.springframework.web.client.RestClient;
 
 @Configuration
 public class LicenseServerRestConfig {
+	
+	Logger logger = LoggerFactory.getLogger(LicenseServerRestConfig.class);
 
-	@Value("${licensing.server.base.url}")
+	@Value("${LICENSE_SERVICE_BASE_URL:${licensing.server.base.url}}")
 	private String licensingServerBaseUrl;
 
 	@Value("${licensing.server.app.user}")
@@ -31,6 +35,7 @@ public class LicenseServerRestConfig {
 
 	@Bean
 	RestClient licensingRestClient() {
+		logger.info("Licensing Server Base Url: {}", licensingServerBaseUrl);
 		ClientHttpRequestFactory clientHttpRequestFactory = getClientHttpRequestFactory();
 		return RestClient.builder()
 				.baseUrl(licensingServerBaseUrl)
