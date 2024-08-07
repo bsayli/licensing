@@ -11,7 +11,7 @@ services:
     command: start-dev
 
   licensing-service:
-    build: .  # Replace with path to your Dockerfile if it's not in the current directory
+    build: ./licensing-service  # Replace with path to your Dockerfile if it's not in the current directory
     environment:
       # Define environment variables here
       SPRING_PROFILES_ACTIVE: dev  # Replace with your desired values
@@ -21,7 +21,7 @@ services:
       - keycloak  # Ensure Keycloak starts before your application
   
   licensing-service-sdk:
-    build: ../licensing-service-sdk  # Replace with path to your Dockerfile if it's not in the current directory
+    build: ./licensing-service-sdk  # Replace with path to your Dockerfile if it's not in the current directory
     environment:
       SPRING_PROFILES_ACTIVE: dev  # Replace with your desired values
       LICENSE_SERVICE_BASE_URL: http://licensing-service:8081  # Replace with the correct URL
