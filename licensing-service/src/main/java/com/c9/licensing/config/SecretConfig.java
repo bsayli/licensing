@@ -1,14 +1,21 @@
 package com.c9.licensing.config;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.spec.InvalidKeySpecException;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.c9.licensing.security.EncryptionUtil;
-import com.c9.licensing.security.UserIdUtil;
-import com.c9.licensing.security.impl.EncryptionUtilImpl;
-import com.c9.licensing.security.impl.JwtUtil;
-import com.c9.licensing.security.impl.UserIdUtilImpl;
+import com.c9.licensing.security.LicenseKeyEncryptor;
+import com.c9.licensing.security.SignatureValidator;
+import com.c9.licensing.security.UserIdEncryptor;
+import com.c9.licensing.security.impl.LicenseKeyEncryptorImpl;
+import com.c9.licensing.security.impl.SignatureValidatorImpl;
+import com.c9.licensing.security.impl.UserIdEncryptorImpl;
+import com.c9.licensing.service.jwt.JwtService;
+import com.c9.licensing.service.jwt.impl.JwtServiceImpl;
 
 @Configuration
 public class SecretConfig {
@@ -19,24 +26,39 @@ public class SecretConfig {
     @Value("${userid.secret.key}")
     private String userIdSecretKey;
     
-    @Value("${license.jwt.secret.key}")
-    private String licenseJwtSecretKey;
+    @Value("${signature.public.key}")
+    private String signaturePublicKey;
     
+    @Value("${jwt.token.expiration}")
+    private Integer tokenExpirationInMinute;
+    
+    @Value("${jwt.token.max.jitter}")
+    private Long tokenMaxJitter;
+    
+    @Value("${license.jwt.private.key}")
+    private String licenseJwtPrivateKey;
+    
+    @Value("${license.jwt.public.key}")
+    private String licenseJwtPublicKey;
     
     @Bean
-    UserIdUtil userIdUti() {
-		return new UserIdUtilImpl(userIdSecretKey);
+    UserIdEncryptor userIdEncryptor() {
+		return new UserIdEncryptorImpl(userIdSecretKey);
 	}
     
     @Bean
-    EncryptionUtil encryptionUtil() {
-		return new EncryptionUtilImpl(licenseSecretKey);
+    LicenseKeyEncryptor licenseKeyEncryptor() {
+		return new LicenseKeyEncryptorImpl(licenseSecretKey);
 	}
     
     @Bean
-    JwtUtil jwtUtil() {
-    	return new JwtUtil(licenseJwtSecretKey);
+    JwtService jwtService() throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
+    	return new JwtServiceImpl(licenseJwtPrivateKey, licenseJwtPublicKey, tokenExpirationInMinute, tokenMaxJitter);
+    }
+    
+    @Bean
+    SignatureValidator signatureValidator() {
+    	return new SignatureValidatorImpl(signaturePublicKey);
     }
    
-
 }
