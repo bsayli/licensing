@@ -1,5 +1,6 @@
 package com.c9.licensing.config;
 
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -36,12 +37,22 @@ public class KeyCloakConfig {
 	@Bean
 	Keycloak keycloak() {
 		PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-    	CloseableHttpClient httpClient = HttpClients.custom().setConnectionManager(cm).build();
+		RequestConfig defaultRequestConfig = RequestConfig.custom()
+			    .setSocketTimeout(10000)
+			    .setConnectTimeout(10000)
+			    .setConnectionRequestTimeout(10000)
+			    .build();
+    	CloseableHttpClient httpClient = HttpClients.custom()
+    			.setConnectionManager(cm)
+    			.setDefaultRequestConfig(defaultRequestConfig)
+    			.build();
     	cm.setMaxTotal(10); // Increase max total connection to 200
     	cm.setDefaultMaxPerRoute(5); // Increase default max connection per route to 20
+    	
     	ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
 
-    	ResteasyClient client = ((ResteasyClientBuilder) ClientBuilder.newBuilder()).httpEngine(engine).build();
+    	ResteasyClient client = ((ResteasyClientBuilder) ClientBuilder.newBuilder()).httpEngine(engine). build();
+    	
         keycloak = KeycloakBuilder.builder()
                 .serverUrl(authServerUrl)
                 .realm(realm)
