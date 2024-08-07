@@ -12,6 +12,7 @@ services:
 
   licensing-service:
     build: ./licensing-service  # Replace with path to your Dockerfile if it's not in the current directory
+    image: licensing-service:1.0.1
     environment:
       # Define environment variables here
       SPRING_PROFILES_ACTIVE: dev  # Replace with your desired values
@@ -22,6 +23,7 @@ services:
   
   licensing-service-sdk:
     build: ./licensing-service-sdk  # Replace with path to your Dockerfile if it's not in the current directory
+    image: licensing-service-sdk:1.0.1
     environment:
       SPRING_PROFILES_ACTIVE: dev  # Replace with your desired values
       LICENSE_SERVICE_BASE_URL: http://licensing-service:8081  # Replace with the correct URL
