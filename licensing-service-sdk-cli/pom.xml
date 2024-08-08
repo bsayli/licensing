@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.c9.licensing</groupId>
 	<artifactId>licensing-service-sdk-cli</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.1</version>
 	<name>licensing-service-sdk-cli</name>
 	<description>Licensing Service Sdk Cli</description>
 
@@ -66,7 +66,6 @@
 							<goal>repackage</goal>
 						</goals>
 						<configuration>
-							<classifier>spring-boot</classifier>
 							<mainClass>
 								com.c9.licensing.sdk.cli.LicenseSdkCli
 							</mainClass>
