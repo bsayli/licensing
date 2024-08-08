@@ -1,4 +1,4 @@
-package com.c9.licensing.sdk.cli;
+package com.c9.licensing.sdk.cli.model;
 
 import java.util.List;
 

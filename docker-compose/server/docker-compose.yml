@@ -1,0 +1,47 @@
+networks:
+  network:
+    driver: bridge
+    name: license_network
+  
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    networks:
+       - network
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin 
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${HOME}/docker_volumes/keycloak:/opt/keycloak/data  
+    command: start-dev
+
+  licensing-service:
+    build: ./licensing-service  
+    image: licensing-service:1.0.1
+    networks:
+       - network
+    container_name: licensing-service
+    environment:
+      SPRING_PROFILES_ACTIVE: dev  
+      KEYCLOAK_SERVER_URL: http://keycloak:8080 
+    ports:
+      - "8081:8081"  
+    depends_on:
+      - keycloak 
+  
+  licensing-service-sdk:
+    build: ./licensing-service-sdk 
+    image: licensing-service-sdk:1.0.1
+    networks:
+       - network
+    container_name: licensing-service-sdk
+    environment:
+      SPRING_PROFILES_ACTIVE: dev  
+      LICENSE_SERVICE_URL: http://licensing-service:8081  
+    ports:
+      - "8082:8082" 
+    depends_on:
+      - licensing-service  
+      

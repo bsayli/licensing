@@ -19,8 +19,8 @@ import jakarta.ws.rs.client.ClientBuilder;
 
 @Configuration
 public class KeyCloakConfig {
-
-	@Value("${keycloak.auth-server-url}")
+	
+	@Value("${KEYCLOAK_SERVER_URL:${keycloak.auth-server-url}}")
 	private String authServerUrl;
 
 	@Value("${keycloak.realm}")
