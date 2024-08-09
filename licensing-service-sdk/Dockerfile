@@ -1,21 +1,12 @@
-# Use a Java 21 base image
-FROM openjdk:21-slim
-
-RUN apt-get update && apt-get install -y maven
-
-# Set a working directory for the application
+FROM maven:3.9.8-amazoncorretto-21-al2023 AS builder
 WORKDIR /app
-
-# Copy the project source code
 COPY src/main/java ./src/main/java
 COPY src/main/resources ./src/main/resources
 COPY pom.xml .
-
-# Install Maven dependencies
 RUN mvn clean package
 
-# Expose the application port (replace 8080 with your actual port)
+FROM eclipse-temurin:21-jre-ubi9-minimal
+WORKDIR /app
+COPY --from=builder /app/target/*.jar licensing-service-sdk.jar
 EXPOSE 8082
-
-# Specify the command to run the application (replace "your.main.class" with your actual main class)
-CMD ["java", "-jar", "target/licensing-service-sdk-1.0.1.jar"]
+CMD ["java", "-jar", "licensing-service-sdk.jar"]

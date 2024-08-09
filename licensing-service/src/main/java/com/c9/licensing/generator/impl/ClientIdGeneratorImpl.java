@@ -19,32 +19,22 @@ public class ClientIdGeneratorImpl implements ClientIdGenerator {
 
 	@Override
 	public String getClientId(LicenseValidationRequest request) {
-		return getClientId(request.serviceId(), request.serviceVersion(), request.checksum(), request.instanceId());
+		return getClientId(request.instanceId(), request.serviceId(), request.serviceVersion(), request.checksum());
 	}
 
 	@Override
 	public String getClientId(ClientInfo clientInfo) {
-		return getClientId(clientInfo.serviceId(), clientInfo.serviceVersion(), clientInfo.checksum(),
-				clientInfo.instanceId());
+		return getClientId(clientInfo.instanceId(), clientInfo.serviceId(), clientInfo.serviceVersion(), clientInfo.checksum());
 	}
 
-	private String getClientId(String serviceId, String serviceVersion, String checksum, String instanceId) {
+	private String getClientId(String instanceId, String serviceId, String serviceVersion, String checksum) {
 		StringBuilder clientIdBuilder = new StringBuilder();
+		clientIdBuilder.append(instanceId);
+		clientIdBuilder.append(serviceId);
+		clientIdBuilder.append(serviceVersion);
 		
-		if (Objects.nonNull(serviceId)) {
-			clientIdBuilder.append(serviceId);
-		}
-		
-		if (Objects.nonNull(serviceVersion)) {
-			clientIdBuilder.append(serviceVersion);
-		}
-
 		if (Objects.nonNull(checksum)) {
 			clientIdBuilder.append(checksum);
-		}
-		
-		if (Objects.nonNull(instanceId)) {
-			clientIdBuilder.append(instanceId);
 		}
 
 		try {

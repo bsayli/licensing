@@ -16,5 +16,5 @@ public interface LicenseTokenRequestValidationService {
 	String MESSAGE_TOKEN_IS_TOO_OLD_FOR_REFRESH = "The provided token is no longer valid for refresh due to exceeding its refresh window. Please request a new token";
 	Logger logger = LoggerFactory.getLogger(LicenseTokenRequestValidationService.class);
 
-	void validateToken(LicenseValidationRequest request);
+	void validateTokenRequest(LicenseValidationRequest request);
 }

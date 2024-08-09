@@ -1,17 +1,11 @@
-# Use a Java 21 base image
-FROM openjdk:21-slim
-
-RUN apt-get update && apt-get install -y maven
-
-# Set a working directory for the application
+FROM maven:3.9.8-amazoncorretto-21-al2023 AS builder
 WORKDIR /app
-
-# Copy the project source code
 COPY src/main/java ./src/main/java
 COPY src/main/resources ./src/main/resources
 COPY pom.xml .
-
-# Install Maven dependencies
 RUN mvn clean package
 
-ENTRYPOINT ["java", "-jar", "target/licensing-service-sdk-cli-1.0.1.jar"]
+FROM eclipse-temurin:21-jre-ubi9-minimal
+WORKDIR /app
+COPY --from=builder /app/target/*.jar licensing-service-sdk-cli.jar
+ENTRYPOINT ["java", "-jar", "licensing-service-sdk-cli.jar"]

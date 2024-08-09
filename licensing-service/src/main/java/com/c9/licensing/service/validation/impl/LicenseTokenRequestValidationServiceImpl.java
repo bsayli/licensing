@@ -13,6 +13,7 @@ import com.c9.licensing.model.errors.TokenExpiredException;
 import com.c9.licensing.model.errors.TokenForbiddenAccessException;
 import com.c9.licensing.model.errors.TokenInvalidException;
 import com.c9.licensing.model.errors.TokenIsTooOldForRefreshException;
+import com.c9.licensing.security.SignatureValidator;
 import com.c9.licensing.service.LicenseClientCacheManagementService;
 import com.c9.licensing.service.jwt.JwtBlacklistService;
 import com.c9.licensing.service.jwt.JwtService;
@@ -30,18 +31,21 @@ public class LicenseTokenRequestValidationServiceImpl implements LicenseTokenReq
 	private final LicenseClientCacheManagementService cacheService;
 	private final JwtBlacklistService jwtBlacklistService;
 	private final ClientIdGenerator clientIdGenerator;
+	private final SignatureValidator signatureValidator;
 
 	public LicenseTokenRequestValidationServiceImpl(JwtService jwtUtil,
 			LicenseClientCacheManagementService cacheService, ClientIdGenerator clientIdGenerator,
-			JwtBlacklistService jwtBlacklistService) {
+			JwtBlacklistService jwtBlacklistService, SignatureValidator signatureValidator) {
 		this.jwtUtil = jwtUtil;
 		this.cacheService = cacheService;
 		this.jwtBlacklistService = jwtBlacklistService;
 		this.clientIdGenerator = clientIdGenerator;
+		this.signatureValidator = signatureValidator;
 	}
 
-	public void validateToken(LicenseValidationRequest request) {
-
+	public void validateTokenRequest(LicenseValidationRequest request) {
+		signatureValidator.validateSignature(request);
+		
 		boolean isValidFormat = jwtUtil.validateTokenFormat(request.licenseToken());
 		if (!isValidFormat) {
 			throw new TokenInvalidException(MESSAGE_TOKEN_INVALID);

@@ -1,6 +1,6 @@
 package com.c9.licensing.security;
 
-import com.c9.licensing.model.SignatureData;
+import com.c9.licensing.model.LicenseValidationRequest;
 import com.c9.licensing.model.errors.SignatureInvalidException;
 
 public interface SignatureValidator {
@@ -10,5 +10,5 @@ public interface SignatureValidator {
 	String ALGORITHM_DSA = "DSA";
 	String ALGORITHM_SHA256WITHDSA = "SHA256withDSA";
 	
-	void validateSignature(String signature, SignatureData signatureData) throws SignatureInvalidException;
+	void validateSignature(LicenseValidationRequest validationRequest) throws SignatureInvalidException;
 }

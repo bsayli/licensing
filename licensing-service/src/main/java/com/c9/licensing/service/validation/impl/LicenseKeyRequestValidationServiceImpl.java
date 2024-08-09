@@ -10,22 +10,25 @@ import com.c9.licensing.model.ClientCachedLicenseData;
 import com.c9.licensing.model.LicenseValidationRequest;
 import com.c9.licensing.model.errors.InvalidRequestException;
 import com.c9.licensing.model.errors.TokenAlreadyExistException;
+import com.c9.licensing.security.SignatureValidator;
 import com.c9.licensing.security.UserIdEncryptor;
 import com.c9.licensing.service.LicenseClientCacheManagementService;
-import com.c9.licensing.service.validation.LicenseRequestValidationService;
+import com.c9.licensing.service.validation.LicenseKeyRequestValidationService;
 
 @Service
-public class LicenseRequestValidationServiceImpl implements LicenseRequestValidationService{
+public class LicenseKeyRequestValidationServiceImpl implements LicenseKeyRequestValidationService{
 	
 	private final LicenseClientCacheManagementService clientCacheManagementService;
 	private final ClientIdGenerator clientIdGenerator;
 	private final UserIdEncryptor userIdEncryptor;
+	private final SignatureValidator signatureValidator;
 	
-	public LicenseRequestValidationServiceImpl(LicenseClientCacheManagementService clientCacheManagementService,
-			ClientIdGenerator clientIdGenerator, UserIdEncryptor userIdEncryptor) {
+	public LicenseKeyRequestValidationServiceImpl(LicenseClientCacheManagementService clientCacheManagementService,
+			ClientIdGenerator clientIdGenerator, UserIdEncryptor userIdEncryptor, SignatureValidator signatureValidator) {
 		this.clientCacheManagementService = clientCacheManagementService;
 		this.clientIdGenerator = clientIdGenerator;
 		this.userIdEncryptor = userIdEncryptor;
+		this.signatureValidator = signatureValidator;
 	}
 
 	@Override
@@ -47,6 +50,11 @@ public class LicenseRequestValidationServiceImpl implements LicenseRequestValida
 				throw new InvalidRequestException(MESSAGE_INVALID_REQUEST);
 			}
 		}
+	}
+
+	@Override
+	public void checkSignature(LicenseValidationRequest request) {
+		signatureValidator.validateSignature(request);
 	}
 
 }
