@@ -7,7 +7,7 @@ public interface LicenseService {
 	
 	String MESSAGE_LICENSE_SERVICE_CLIENT_UNHANDLED_ERROR = "License service client unhandled error";
 	String MESSAGE_LICENSE_SERVICE_SERVER_UNHANDLED_ERROR = "License service server unhandled error";
-	String URI_LICENSE_VALIDATE = "/api/license/v2/validate";
+	String URI_LICENSE_VALIDATE = "/api/license/validate";
 	String REQUEST_PARAM_SERVICE_ID = "serviceId";
 	String REQUEST_PARAM_SERVICE_VERSION = "serviceVersion";
 	String REQUEST_PARAM_LICENSE_KEY = "licenseKey";

@@ -1,5 +1,6 @@
 package com.c9.licensing.sdk.generator.impl;
 
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
@@ -78,7 +79,7 @@ public class SignatureGeneratorImpl implements SignatureGenerator {
 		MessageDigest digest;
 		try {
 			digest = MessageDigest.getInstance("SHA-256");
-			byte[] hash = digest.digest(data.getBytes());
+			byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
 			return Base64.getEncoder().encodeToString(hash);
 		} catch (NoSuchAlgorithmException e) {
 			return null;

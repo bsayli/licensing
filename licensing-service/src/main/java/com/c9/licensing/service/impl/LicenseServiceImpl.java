@@ -13,7 +13,7 @@ import com.c9.licensing.security.LicenseKeyEncryptor;
 import com.c9.licensing.security.UserIdEncryptor;
 import com.c9.licensing.service.LicenseDetailsService;
 import com.c9.licensing.service.LicenseService;
-import com.c9.licensing.service.validation.LicenseRequestValidationService;
+import com.c9.licensing.service.validation.LicenseKeyRequestValidationService;
 import com.c9.licensing.service.validation.LicenseTokenRequestValidationService;
 
 @Service
@@ -21,17 +21,17 @@ public class LicenseServiceImpl implements LicenseService {
 
 	private final LicenseDetailsService licenseDetailsService;
 	private final LicenseTokenRequestValidationService tokenValidationService;
-	private final LicenseRequestValidationService requestValidationService;
+	private final LicenseKeyRequestValidationService licenseKeyValidationService;
 	private final LicenseKeyEncryptor licenseKeyEncryptor;
 	private final UserIdEncryptor userIdEncryptor;
 
 	public LicenseServiceImpl(LicenseDetailsService licenseDetailsService,
 			LicenseTokenRequestValidationService tokenValidationService,
-			LicenseRequestValidationService requestValidationService, LicenseKeyEncryptor licenseKeyEncryptor,
+			LicenseKeyRequestValidationService licenseKeyValidationService, LicenseKeyEncryptor licenseKeyEncryptor,
 			UserIdEncryptor userIdEncryptor) {
 		this.licenseDetailsService = licenseDetailsService;
 		this.tokenValidationService = tokenValidationService;
-		this.requestValidationService = requestValidationService;
+		this.licenseKeyValidationService = licenseKeyValidationService;
 		this.userIdEncryptor = userIdEncryptor;
 		this.licenseKeyEncryptor = licenseKeyEncryptor;
 	}
@@ -39,13 +39,14 @@ public class LicenseServiceImpl implements LicenseService {
 	public LicenseValidationResult getUserLicenseDetailsByLicenseKey(LicenseValidationRequest request) {
 		LicenseValidationResult validationResult;
 		try {
+			licenseKeyValidationService.checkSignature(request);
+			
 			String licenseKey = licenseKeyEncryptor.decrypt(request.licenseKey());
 			String userId = userIdEncryptor.extractAndDecryptUserId(licenseKey);
-			
-			if(!request.forceTokenRefresh()) {
-				requestValidationService.checkLicenseKeyRequestWithCachedData(request, userId);
+			if (!request.forceTokenRefresh()) {
+				licenseKeyValidationService.checkLicenseKeyRequestWithCachedData(request, userId);
 			}
-
+			
 			LicenseInfo info = licenseDetailsService.getAndValidateLicenseDetails(request, userId);
 			validationResult = getValidationResult(request.instanceId(), info, null, LICENSE_KEY_IS_VALID);
 
@@ -76,7 +77,7 @@ public class LicenseServiceImpl implements LicenseService {
 
 		LicenseValidationResult validationResult = null;
 		try {
-			tokenValidationService.validateToken(request);
+			tokenValidationService.validateTokenRequest(request);
 
 			validationResult = new LicenseValidationResult.Builder().valid(true).message(TOKEN_IS_VALID).build();
 

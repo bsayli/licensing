@@ -30,42 +30,40 @@ public class LicenseController {
 
 	@PostMapping("/validate")
 	public ResponseEntity<LicenseValidationResponse> validateLicense(
-			@NotNull(message = "'licenseKey' request param is required!")
 			@Size(min = 200, max = 400, message = "License Key must be between {min} and {max} characters")
-			@RequestParam String licenseKey,
-			@NotNull(message = "'X-Instance-ID' header param is required!")
-			@Size(min = 20, max = 100, message = "Instance Id header param must be between {min} and {max} characters")
-			@RequestHeader("X-Instance-ID") String instanceId) {
-		
-		LicenseValidationRequest request = new LicenseValidationRequest.Builder()
-				.licenseKey(licenseKey)
-				.instanceId(instanceId)
-				.build();
-
-		LicenseValidationResponse response = licenseOrchestrationService.getLicenseDetailsByLicenseKey(request);
-		return getHttpResponse(response);
-	}
-
-	@PostMapping("/validateToken")
-	public ResponseEntity<LicenseValidationResponse> validateWithToken(
-			@NotNull(message = "'X-License-Token' header param is required!")
+			@RequestParam(required = false) String licenseKey,
+			@NotNull(message = "'serviceId' request param is required!")
+			@Size(min = 5, max = 50, message = "Service Id must be between {min} and {max} characters")
+			@RequestParam String serviceId,
+			@NotNull(message = "'serviceVersion' request param is required!")
+			@Size(min = 5, max = 10, message = "Service Version must be between {min} and {max} characters")
+			@RequestParam String serviceVersion,
 			@Size(min = 200, max = 400, message = "License Token header param must be between {min} and {max} characters")
-			@RequestHeader("X-License-Token") String licenseToken,
+			@RequestHeader(value = "X-License-Token", required = false) String licenseToken,
 			@NotNull(message = "'X-Instance-ID' header param is required!")
 			@Size(min = 20, max = 100, message = "Instance Id header param must be between {min} and {max} characters")
-			@RequestHeader("X-Instance-ID") String instanceId) {
+			@RequestHeader("X-Instance-ID") String instanceId,
+			@NotNull(message = "'Signature' header param is required!")
+			@Size(min = 20, max = 100, message = "Signature header param must be between {min} and {max} characters")
+			@RequestHeader(value = "X-Signature") String signature,
+			@Size(min = 20, max = 100, message = "Checksum header param must be between {min} and {max} characters")
+			@RequestHeader(value = "X-Checksum", required = false) String checksum,
+			@RequestHeader(value = "X-Force-Token-Refresh", required = false) boolean forceTokenRefresh) {
 
-		LicenseValidationRequest request = new LicenseValidationRequest.Builder()
+		LicenseValidationRequest request = new LicenseValidationRequest.Builder().serviceId(serviceId)
+				.serviceVersion(serviceVersion)
+				.licenseKey(licenseKey)
 				.licenseToken(licenseToken)
 				.instanceId(instanceId)
+				.checksum(checksum)
+				.signature(signature)
+				.forceTokenRefresh(forceTokenRefresh)
 				.build();
-		
-		LicenseValidationResponse response = licenseOrchestrationService.getLicenseDetailsByToken(request);
 
+		LicenseValidationResponse response = licenseOrchestrationService.getLicenseDetails(request);
 		return getHttpResponse(response);
 	}
 
-	
 	private ResponseEntity<LicenseValidationResponse> getHttpResponse(LicenseValidationResponse response) {
 		if (response.success()) {
 			return ResponseEntity.ok(response);
@@ -76,4 +74,5 @@ public class LicenseController {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
 		}
 	}
+
 }
