@@ -13,49 +13,32 @@ import picocli.CommandLine.Option;
 @Command(name = "licenseSdkCli", mixinStandardHelpOptions = true, version = "1.0", description = "Licensing Sdk Cli")
 public class LicenseSdkCli implements Callable<Integer> {
 
-	// Optional environment variable
-	private static final String ENV_VAR_LICENSE_KEY = "LICENSE_KEY";
-	private static final String ENV_VAR_SERVICE_ID = "SERVICE_ID";
-	private static final String ENV_VAR_SERVICE_VERSION = "SERVICE_VERSION";
-	private static final String ENV_VAR_INSTANCE_ID = "INSTANCE_ID";
-
-	@Option(names = { "-k", "--key" }, description = "License Key")
+	@Option(names = { "-k",
+			"--key" }, description = "License Key", required = true, defaultValue = "${env:LICENSE_KEY}")
 	private String licenseKey;
 
-	@Option(names = { "-s", "--service-id" }, description = "Service Id")
+	@Option(names = { "-s",
+			"--service-id" }, description = "Service Id", required = true, defaultValue = "${env:SERVICE_ID}")
 	private String serviceId;
 
-	@Option(names = { "-v", "--service-version" }, description = "Service Version")
+	@Option(names = { "-v",
+			"--service-version" }, description = "Service Version", required = true, defaultValue = "${env:SERVICE_VERSION}")
 	private String serviceVersion;
 
-	@Option(names = { "-i", "--instance-id" }, description = "Instance Id")
+	@Option(names = { "-i",
+			"--instance-id" }, description = "Instance Id", required = true, defaultValue = "${env:INSTANCE_ID}")
 	private String instanceId;
-
-	public LicenseSdkCli() {
-		licenseKey = getEnvOrOption(licenseKey, ENV_VAR_LICENSE_KEY);
-		serviceId = getEnvOrOption(serviceId, ENV_VAR_SERVICE_ID);
-		serviceVersion = getEnvOrOption(serviceVersion, ENV_VAR_SERVICE_VERSION);
-		instanceId = getEnvOrOption(instanceId, ENV_VAR_INSTANCE_ID);
-	}
-
-	private String getEnvOrOption(String optionValue, String envVarName) {
-		String value = optionValue != null ? optionValue : System.getenv(envVarName);
-		if (value == null) {
-	        throw new IllegalArgumentException(envVarName + " is required");
-	    }
-		return value;
-	}
-
-	public static void main(String[] args) {
-		int exitCode = new CommandLine(new LicenseSdkCli()).execute(args);
-		System.exit(exitCode);
-	}
 
 	@Override
 	public Integer call() throws Exception {
 		LicenseSdkClientConfig clientConfig = new LicenseSdkClientConfig();
 		LicenseSdkClientService clientService = new LicenseSdkClientServiceImpl(clientConfig.getClientProperties());
 		return clientService.validateLicense(instanceId, licenseKey, serviceId, serviceVersion);
+	}
+
+	public static void main(String[] args) {
+		int exitCode = new CommandLine(new LicenseSdkCli()).execute(args);
+		System.exit(exitCode);
 	}
 
 }
