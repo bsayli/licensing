@@ -5,7 +5,7 @@ networks:
   
 services:
   licensing-service-sdk-cli:
-    build: ./licensing-service-sdk-cli  
+    build: ./../../licensing-service-sdk-cli  
     image: licensing-service-sdk-cli:1.0.1
     networks:
       - licensing-service-sdk-cli
