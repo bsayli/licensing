@@ -9,4 +9,4 @@ FROM eclipse-temurin:21-jre-ubi9-minimal
 WORKDIR /app
 COPY --from=builder /app/target/*.jar licensing-service-sdk.jar
 EXPOSE 8082
-CMD ["java", "-jar", "licensing-service-sdk.jar"]
+ENTRYPOINT ["java", "-jar", "licensing-service-sdk.jar"]

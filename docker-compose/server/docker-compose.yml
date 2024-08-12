@@ -18,7 +18,7 @@ services:
     command: start-dev
 
   licensing-service:
-    build: ./licensing-service  
+    build: ./../../licensing-service  
     image: licensing-service:1.0.1
     networks:
        - network
@@ -32,7 +32,7 @@ services:
       - keycloak 
   
   licensing-service-sdk:
-    build: ./licensing-service-sdk 
+    build: ./../../licensing-service-sdk 
     image: licensing-service-sdk:1.0.1
     networks:
        - network
