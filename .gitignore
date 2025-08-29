@@ -51,7 +51,9 @@ release.properties
 .sts4-cache
 
 ### IntelliJ IDEA ###
+# IntelliJ IDEA
 .idea/
+*.iml
 /*.iws
 /*.iml
 /*.ipr
