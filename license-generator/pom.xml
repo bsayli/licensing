@@ -7,6 +7,9 @@
     <artifactId>license-generator</artifactId>
     <version>1.0.1</version>
     <properties>
+        <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jjwt.version>0.12.5</jjwt.version>
         <bcprov-jdk18on.version>1.78.1</bcprov-jdk18on.version>
         <jackson-databind.version>2.15.4</jackson-databind.version>
@@ -58,7 +61,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <release>21</release>
+                    <release>${java.version}</release>
+                    <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
         </plugins>
