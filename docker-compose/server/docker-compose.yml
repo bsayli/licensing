@@ -12,9 +12,9 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
-      - "8180:8080"   #
+      - "8180:8080"
     volumes:
-      - ${HOME}/docker_volumes/licensing-keycloak:/opt/keycloak/data  #
+      - ${HOME}/docker_volumes/licensing-keycloak:/opt/keycloak/data
     command: start-dev
 
   licensing-service:
@@ -24,7 +24,7 @@ services:
     networks: [network]
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      KEYCLOAK_SERVER_URL: http://keycloak:8080   # container içinden service name ile erişim (değiştirme)
+      KEYCLOAK_SERVER_URL: http://keycloak:8080
     ports:
       - "8081:8081"
     depends_on: [keycloak]
