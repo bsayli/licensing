@@ -5,12 +5,9 @@ import org.springframework.stereotype.Service;
 @Service
 public interface LicenseTokenService {
 
-	void storeLicenseToken(String clientId, String licenseToken);
+  void storeLicenseToken(String clientId, String licenseToken);
 
-	String getLicenseToken(String clientId);
+  String getLicenseToken(String clientId);
 
-	void removeLicenseToken(String clientId);
-	
-	
-
+  void removeLicenseToken(String clientId);
 }

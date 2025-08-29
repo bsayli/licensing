@@ -2,7 +2,6 @@ package com.c9.licensing.sdk.config;
 
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -19,54 +18,58 @@ import org.springframework.web.client.RestClient;
 
 @Configuration
 public class LicenseServerRestConfig {
-	
-	@Value("${LICENSE_SERVICE_URL:${licensing.server.url}}")
-	private String licensingServerUrl;
 
-	@Value("${licensing.server.app.user}")
-	private String licensingServerAppUser;
+  @Value("${LICENSE_SERVICE_URL:${licensing.server.url}}")
+  private String licensingServerUrl;
 
-	@Value("${licensing.server.app.pass}")
-	private String licensingServerAppPass;
+  @Value("${licensing.server.app.user}")
+  private String licensingServerAppUser;
 
-	@Bean
-	RestClient licensingRestClient() {
-		ClientHttpRequestFactory clientHttpRequestFactory = getClientHttpRequestFactory();
-		return RestClient.builder()
-				.baseUrl(licensingServerUrl)
-				.requestFactory(clientHttpRequestFactory)
-				.defaultHeader(HttpHeaders.AUTHORIZATION,
-						createBasicAuthHeader(licensingServerAppUser, licensingServerAppPass))
-				.build();
-	}
+  @Value("${licensing.server.app.pass}")
+  private String licensingServerAppPass;
 
-	private ClientHttpRequestFactory getClientHttpRequestFactory() {
-		PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
-		ConnectionConfig connectionConfig = ConnectionConfig.custom()
-				.setConnectTimeout(Timeout.of(35, TimeUnit.SECONDS))
-				.setSocketTimeout(Timeout.of(35, TimeUnit.SECONDS))
-				.build();
+  @Bean
+  RestClient licensingRestClient() {
+    ClientHttpRequestFactory clientHttpRequestFactory = getClientHttpRequestFactory();
+    return RestClient.builder()
+        .baseUrl(licensingServerUrl)
+        .requestFactory(clientHttpRequestFactory)
+        .defaultHeader(
+            HttpHeaders.AUTHORIZATION,
+            createBasicAuthHeader(licensingServerAppUser, licensingServerAppPass))
+        .build();
+  }
 
-		connectionManager.setDefaultConnectionConfig(connectionConfig);
-		connectionManager.setMaxTotal(20);
-		connectionManager.setDefaultMaxPerRoute(5);
+  private ClientHttpRequestFactory getClientHttpRequestFactory() {
+    PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+    ConnectionConfig connectionConfig =
+        ConnectionConfig.custom()
+            .setConnectTimeout(Timeout.of(35, TimeUnit.SECONDS))
+            .setSocketTimeout(Timeout.of(35, TimeUnit.SECONDS))
+            .build();
 
-		RequestConfig requestConfig = RequestConfig.custom()
-				.setConnectionRequestTimeout(Timeout.of(10, TimeUnit.SECONDS))
-				.setResponseTimeout(Timeout.of(35, TimeUnit.SECONDS))
-				.build();
+    connectionManager.setDefaultConnectionConfig(connectionConfig);
+    connectionManager.setMaxTotal(20);
+    connectionManager.setDefaultMaxPerRoute(5);
 
-		CloseableHttpClient httpClient = HttpClientBuilder.create()
-				.setConnectionManager(connectionManager)
-				.setDefaultRequestConfig(requestConfig)
-				.build();
+    RequestConfig requestConfig =
+        RequestConfig.custom()
+            .setConnectionRequestTimeout(Timeout.of(10, TimeUnit.SECONDS))
+            .setResponseTimeout(Timeout.of(35, TimeUnit.SECONDS))
+            .build();
 
-		return new HttpComponentsClientHttpRequestFactory(httpClient);
-	}
+    CloseableHttpClient httpClient =
+        HttpClientBuilder.create()
+            .setConnectionManager(connectionManager)
+            .setDefaultRequestConfig(requestConfig)
+            .build();
 
-	private String createBasicAuthHeader(String appUser, String appPass) {
-		String authString = appUser + ":" + appPass;
-		byte[] authEncBytes = Base64.getEncoder().encode(authString.getBytes());
-		return "Basic " + new String(authEncBytes);
-	}
+    return new HttpComponentsClientHttpRequestFactory(httpClient);
+  }
+
+  private String createBasicAuthHeader(String appUser, String appPass) {
+    String authString = appUser + ":" + appPass;
+    byte[] authEncBytes = Base64.getEncoder().encode(authString.getBytes());
+    return "Basic " + new String(authEncBytes);
+  }
 }

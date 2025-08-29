@@ -1,5 +1,7 @@
 package com.c9.licensing.config;
 
+import jakarta.annotation.PreDestroy;
+import jakarta.ws.rs.client.ClientBuilder;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -14,61 +16,62 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import jakarta.annotation.PreDestroy;
-import jakarta.ws.rs.client.ClientBuilder;
-
 @Configuration
 public class KeyCloakConfig {
-	
-	@Value("${KEYCLOAK_SERVER_URL:${keycloak.auth-server-url}}")
-	private String authServerUrl;
 
-	@Value("${keycloak.realm}")
-	private String realm;
+  Keycloak keycloak;
 
-	@Value("${keycloak.resource}")
-	private String clientId;
+  @Value("${KEYCLOAK_SERVER_URL:${keycloak.auth-server-url}}")
+  private String authServerUrl;
 
-	@Value("${keycloak.credentials.secret}")
-	private String clientSecret;
-	
-	Keycloak keycloak;
+  @Value("${keycloak.realm}")
+  private String realm;
 
-	@Bean
-	Keycloak keycloak() {
-		PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-		RequestConfig defaultRequestConfig = RequestConfig.custom()
-			    .setSocketTimeout(10000)
-			    .setConnectTimeout(10000)
-			    .setConnectionRequestTimeout(10000)
-			    .build();
-    	CloseableHttpClient httpClient = HttpClients.custom()
-    			.setConnectionManager(cm)
-    			.setDefaultRequestConfig(defaultRequestConfig)
-    			.build();
-    	cm.setMaxTotal(10); // Increase max total connection to 200
-    	cm.setDefaultMaxPerRoute(5); // Increase default max connection per route to 20
-    	
-    	ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
+  @Value("${keycloak.resource}")
+  private String clientId;
 
-    	ResteasyClient client = ((ResteasyClientBuilder) ClientBuilder.newBuilder()).httpEngine(engine). build();
-    	
-        keycloak = KeycloakBuilder.builder()
-                .serverUrl(authServerUrl)
-                .realm(realm)
-                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-                .clientId(clientId)
-                .clientSecret(clientSecret)
-                .resteasyClient(client)
-                .build();
-        
-        return keycloak;
-	}
-	
-	 @PreDestroy
-     public void closeKeycloak() {
-		 if(keycloak != null) {
-			 keycloak.close();
-		 }
-     }
+  @Value("${keycloak.credentials.secret}")
+  private String clientSecret;
+
+  @Bean
+  Keycloak keycloak() {
+    PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+    RequestConfig defaultRequestConfig =
+        RequestConfig.custom()
+            .setSocketTimeout(10000)
+            .setConnectTimeout(10000)
+            .setConnectionRequestTimeout(10000)
+            .build();
+    CloseableHttpClient httpClient =
+        HttpClients.custom()
+            .setConnectionManager(cm)
+            .setDefaultRequestConfig(defaultRequestConfig)
+            .build();
+    cm.setMaxTotal(10); // Increase max total connection to 200
+    cm.setDefaultMaxPerRoute(5); // Increase default max connection per route to 20
+
+    ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
+
+    ResteasyClient client =
+        ((ResteasyClientBuilder) ClientBuilder.newBuilder()).httpEngine(engine).build();
+
+    keycloak =
+        KeycloakBuilder.builder()
+            .serverUrl(authServerUrl)
+            .realm(realm)
+            .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+            .clientId(clientId)
+            .clientSecret(clientSecret)
+            .resteasyClient(client)
+            .build();
+
+    return keycloak;
+  }
+
+  @PreDestroy
+  public void closeKeycloak() {
+    if (keycloak != null) {
+      keycloak.close();
+    }
+  }
 }

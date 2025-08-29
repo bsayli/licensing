@@ -5,6 +5,6 @@ import com.c9.licensing.model.LicenseValidationRequest;
 
 public interface LicenseDetailsService {
 
-	LicenseInfo getAndValidateLicenseDetails(LicenseValidationRequest request, String userId) throws Exception;
-
+  LicenseInfo getAndValidateLicenseDetails(LicenseValidationRequest request, String userId)
+      throws Exception;
 }

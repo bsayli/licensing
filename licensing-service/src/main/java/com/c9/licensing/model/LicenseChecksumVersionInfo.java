@@ -1,5 +1,3 @@
 package com.c9.licensing.model;
 
-public record LicenseChecksumVersionInfo(String version, String checksum) {
-
-}
+public record LicenseChecksumVersionInfo(String version, String checksum) {}

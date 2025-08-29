@@ -5,9 +5,9 @@ import com.c9.licensing.model.response.LicenseValidationResponse;
 
 public interface LicenseOrchestrationService {
 
-	LicenseValidationResponse getLicenseDetails(LicenseValidationRequest request);
-	
-	LicenseValidationResponse getLicenseDetailsByLicenseKey(LicenseValidationRequest request);
-	
-	LicenseValidationResponse getLicenseDetailsByToken(LicenseValidationRequest request);
+  LicenseValidationResponse getLicenseDetails(LicenseValidationRequest request);
+
+  LicenseValidationResponse getLicenseDetailsByLicenseKey(LicenseValidationRequest request);
+
+  LicenseValidationResponse getLicenseDetailsByToken(LicenseValidationRequest request);
 }
