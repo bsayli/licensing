@@ -29,7 +29,7 @@
 
 1. Clone the Full Repository:
 
-git clone https://gitlab.com/c9ine1/backend/poc/licensing
+git clone https://github.com/bsayli/licensing.git
 
 2. Extract KeyCloak DB:
 
