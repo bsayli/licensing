@@ -5,5 +5,5 @@ import com.c9.licensing.sdk.model.LicenseValidationResponse;
 
 public interface LicenseOrchestrationService {
 
-	LicenseValidationResponse getLicenseDetails(LicenseValidationRequest request);
+  LicenseValidationResponse getLicenseDetails(LicenseValidationRequest request);
 }

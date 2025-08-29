@@ -17,33 +17,35 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 @EnableWebSecurity
 public class CustomWebSecurityConfigurerAdapter {
 
-	@Value("${app.user}")
-	private String appUser;
+  @Value("${app.user}")
+  private String appUser;
 
-	@Value("${app.pass}")
-	private String appPass;
+  @Value("${app.pass}")
+  private String appPass;
 
-	@Autowired
-	private RestAuthenticationEntryPoint authenticationEntryPoint;
+  @Autowired private RestAuthenticationEntryPoint authenticationEntryPoint;
 
-	@Autowired
-	public void configureGlobal(AuthenticationManagerBuilder auth, PasswordEncoder passwordEncoder) throws Exception {
-		auth.inMemoryAuthentication()
-				.withUser(appUser)
-				.password(passwordEncoder.encode(appPass))
-				.authorities("ROLE_USER");
-	}
+  @Autowired
+  public void configureGlobal(AuthenticationManagerBuilder auth, PasswordEncoder passwordEncoder)
+      throws Exception {
+    auth.inMemoryAuthentication()
+        .withUser(appUser)
+        .password(passwordEncoder.encode(appPass))
+        .authorities("ROLE_USER");
+  }
 
-	@Bean
-	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		http.authorizeHttpRequests(
-				expressionInterceptUrlRegistry -> expressionInterceptUrlRegistry.anyRequest().authenticated())
-				.httpBasic(httpSecurityHttpBasicConfigurer -> httpSecurityHttpBasicConfigurer
-						.authenticationEntryPoint(authenticationEntryPoint));
-		http.csrf(CsrfConfigurer::disable);
-		http.sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-		http.addFilterAfter(new CustomFilter(), BasicAuthenticationFilter.class);
-		return http.build();
-	}
-
+  @Bean
+  SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http.authorizeHttpRequests(
+            expressionInterceptUrlRegistry ->
+                expressionInterceptUrlRegistry.anyRequest().authenticated())
+        .httpBasic(
+            httpSecurityHttpBasicConfigurer ->
+                httpSecurityHttpBasicConfigurer.authenticationEntryPoint(authenticationEntryPoint));
+    http.csrf(CsrfConfigurer::disable);
+    http.sessionManagement(
+        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+    http.addFilterAfter(new CustomFilter(), BasicAuthenticationFilter.class);
+    return http.build();
+  }
 }
