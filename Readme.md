@@ -143,3 +143,11 @@ chmod +x run_license_sdk_cli.sh
 ---
 
 ✅ **Note:** CLI examples must always be provided **on a single line**. If parameters contain spaces or special characters, they should be enclosed in quotes `"..."`.
+
+
+---
+
+## Feedback & Questions
+
+If you notice any issues in this documentation or have suggestions for improvements, feel free to open an issue or a pull request.  
+For any questions related to the project, I’ll be glad to help — just leave a comment in the repository’s discussion or issue tracker.
