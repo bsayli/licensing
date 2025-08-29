@@ -18,7 +18,6 @@
 *.jar
 *.rar
 *.tar
-*.zip
 
 # Logs and databases #
 ######################
@@ -44,6 +43,9 @@ target/
 /bin/
 
 
+# IDE specific files and folders
+.idea/
+
 # Maven specific files and folders
 **/target/
 pom.xml.tag
@@ -60,4 +62,3 @@ buildNumber.properties
 # Generated source folders (common choices)
 generated-sources/
 generated-classes/
-/HELP.md
