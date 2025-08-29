@@ -1,164 +1,145 @@
-#Welcome to the Licensing Project!
+# Welcome to the Licensing Project!
 
-#This repository holds the source code for a licensing system containing four projects:
+This repository holds the source code for a licensing system containing four projects:
 
-* license-generator: This is a java project which has license key generation, encryption samples.
+* **license-generator**: Java project for license key generation and encryption samples.
+* **licensing-service**: Web project that handles core licensing functionalities.
+* **licensing-service-sdk**: SDK for integrating licensing features into other applications.
+* **licensing-service-sdk-cli**: Command-line tool for testing and interacting with the licensing service.
 
-* licensing-service: This web project handles core licensing functionalities.
+## Repository Structure
 
-* licensing-service-sdk: This web project provides an SDK for integrating licensing features into other applications.
+* **db**: Keycloak database backup (docker_volumes.zip)
+* **docker-compose**: Docker Compose files to run servers and client
+* **scripts**: Script to run the client (`run_license_sdk_cli.sh`)
 
-* licensing-service-sdk-cli: This Java executable is a command-line tool for testing and interacting with the licensing
-  service.
+## Prerequisites
 
-#This repository also keeps three main folders:
+* Git client installed
+* Docker installed and running
+* Docker Compose installed and running
+* Java (>= 17.x)
+* Maven (>= 3.x)
 
-* db: Keycloak db in a zip format (docker_volumes.zip)
+---
 
-* docker-compose: Keeps the docker-compose.yml files to run servers and client
+## Setting Up the Environment
 
-* scripts: To run the client with sh script (run_license_sdk_cli.sh)
+1. **Clone the Repository**
 
-#Prerequisites
-
-* Git client installed on your system.
-* Docker installed and running.
-* Docker Compose installed and running.
-
-#Setting Up the Environment
-
-1. Clone the Full Repository:
-
+```bash
 git clone https://github.com/bsayli/licensing.git
+```
 
-2. Extract KeyCloak DB:
+2. **Extract Keycloak DB**
 
-    - Get the docker_volumes.zip file from /licensing/db directory.
+- Get `docker_volumes.zip` from `/licensing/db`
+- Copy and extract into your home directory ($HOME)
 
-    - Copy and Extract docker_volumes.zip file into your home directory ($HOME).
+---
 
-#Running the Licensing Service
+## Running the Licensing Service
 
-1. Navigate to Server Docker Compose:
+1. Navigate to server docker-compose:
 
-    - cd ../licensing/docker-compose/server
+```bash
+cd licensing/docker-compose/server
+```
 
-2. Start the Server Components:
+2. Start the server components:
 
-    - docker-compose up -d
+```bash
+docker-compose up -d
+```
 
-This will start the Keycloak server, Licensing Service, and Licensing Service SDK containers in the background.
+This starts Keycloak, Licensing Service, and Licensing Service SDK in the background.
 
-3. Wait for Services to Start:
+3. Wait ~45 seconds for the services to initialize on first run.
 
-Allow approximately 45 seconds for the services to fully initialize in the first run.
+---
 
-#Running the License Validation Tool By Docker
+## Running the License Validation Tool via Docker
 
-1. Navigate to Client Docker Compose:
+1. Navigate to client docker-compose:
 
-    - cd ../client
+```bash
+cd licensing/docker-compose/client
+```
 
-2. Start the Client Service:
+2. Start the client service:
 
-    - docker-compose up
+```bash
+docker-compose up
+```
 
-This will start the Licensing Service SDK CLI container.
+3. Check logs for successful license validation. Example:
 
-3. Verify License Validation:
+```text
+licensing-service-sdk-cli | INFO License validated successfully:
+licensing-service-sdk-cli | INFO {
+  "success" : true,
+  "status" : "LICENSE_ACTIVE",
+  "message" : "License is active",
+  "errorDetails" : null
+}
+```
 
-    - You should see logs indicating successful license validation.
-    - Look for messages similar to:
+4. Stopping containers:
 
-   licensing-service-sdk-cli | 12:36:54.220 [main] INFO c.c.l.s.c.s.i.LicenseSdkClientServiceImpl - License validated
-   successfully:
-   licensing-service-sdk-cli | 12:36:54.222 [main] INFO c.c.l.s.c.s.i.LicenseSdkClientServiceImpl - {
-   "success" : true,
-   "status" : "LICENSE_ACTIVE",
-   "message" : "License is active",
-   "errorDetails" : null
-   }
-   licensing-service-sdk-cli exited with code 0
+```bash
+# Client
+docker-compose down
 
-4. Stopping And Removing Containers:
+# Server
+cd ../server
+docker-compose down
+```
 
-   Client:
+---
 
-    - docker-compose down
+## Running the License Validation Tool Directly (Optional 1)
 
-   Server:
+1. Build the JAR:
 
-    - cd ../server
-    - docker-compose down
+```bash
+cd licensing/licensing-service-sdk-cli
+mvn clean package
+```
 
-#Running the License Validation Tool (Directly) Optional 1
+2. The JAR will be in `target/`:
 
-Building the JAR
+```bash
+cd target
+```
 
-The licensing-service-sdk-cli application is distributed as an executable jar file. To build the jar, you'll need to
-have Maven installed on your system.
+3. Run it:
 
-Prerequisites
+```bash
+java -jar licensing-service-sdk-cli-1.0.1.jar -s c9ineCodegen -v 1.2.2 -i "c9ineCodegen~macbookuynjkl5~00:2A:8D:BE:F1:56" -k "v6ZFWUUUDlVaONpVJzzDowezuCkCk6szc4ClvB0ow6V+oyuY2bsJCPdVQErI0F7jiJ44X9xoyRCrMN2Ugz2iK1kekvRkHQdaxREMz8NnQCCIodstpdYqSv+h1lNJqROPzfvj23TxHBSKr0PzlS/OoqulJuHb0rU+9WR/LoAFAr5/L740bToGooZ/KLRKKeGOS3LCJfOApMCVvL9YblYxwPPLTOZC2A=="
+```
 
-* Maven (> 3.x)
+---
 
-**Steps:**
+## Running the License Validation Tool with Script (Optional 2)
 
-1. Clone or download the project repository.
-2. Navigate to the project directory. (../licensing/licensing-service-sdk-cli/)
-3. Run the following command to build and package the application:
+1. Navigate to script location:
 
-    - mvn clean package
+```bash
+cd licensing/scripts
+```
 
-4. The jar file will be inside the directory path ../licensing/licensing-service-sdk-cli/target
+2. Make it executable:
 
-Now you can run the licensing-service-sdk-cli jar directly to validate a license:
+```bash
+chmod +x run_license_sdk_cli.sh
+```
 
-	- java -jar licensing-service-sdk-cli.jar -k <licenseKey> -s <serviceId> -v <serviceVersion> -i <instanceId>
+3. Run with options:
 
-Required parameters:
+```bash
+./run_license_sdk_cli.sh -s c9ineCodegen -v 1.2.2 -i "c9ineCodegen~macbookuynjkl5~00:2A:8D:BE:F1:56" -k "v6ZFWUUUDlVaONpVJzzDowezuCkCk6szc4ClvB0ow6V+oyuY2bsJCPdVQErI0F7jiJ44X9xoyRCrMN2Ugz2iK1kekvRkHQdaxREMz8NnQCCIodstpdYqSv+h1lNJqROPzfvj23TxHBSKr0PzlS/OoqulJuHb0rU+9WR/LoAFAr5/L740bToGooZ/KLRKKeGOS3LCJfOApMCVvL9YblYxwPPLTOZC2A=="
+```
 
--k, --key: License key
--s, --service-id: Service ID
--v, --service-version: Service version
--i, --instance-id: Instance ID
+---
 
-4. How to run:
-
-    - cd ../licensing/licensing-service-sdk-cli/target
-
-    - java -jar licensing-service-sdk-cli-1.0.1.jar -s c9ineCodegen -v 1.2.2 -i c9ineCodegen~macbookuynjkl5~00:2A:8D:BE:
-      F1:56 -k
-      v6ZFWUUUDlVaONpVJzzDowezuCkCk6szc4ClvB0ow6V+oyuY2bsJCPdVQErI0F7jiJ44X9xoyRCrMN2Ugz2iK1kekvRkHQdaxREMz8NnQCCIodstpdYqSv+h1lNJqROPzfvj23TxHBSKr0PzlS/OoqulJuHb0rU+9WR/LoAFAr5/L740bToGooZ/KLRKKeGOS3LCJfOApMCVvL9YblYxwPPLTOZC2A==
-
-#Running the License Validation Tool with the run_license_sdk_cli.sh Script Optional 2
-
-Prerequisites
-
-* Java installed on the system  (>= 17.x)
-
-1. Navigate to Script Location:
-
-    - cd licensing/scripts/
-
-2. Making the Script Executable:
-
-    - chmod +x run_license_sdk_cli.sh
-
-3. Script Usage:
-
-    - ./run_license_sdk_cli.sh -k <licenseKey> -s <serviceId> -v <serviceVersion> -i <instanceId>
-
-**Options:**
-
-* `-k`: Your license key
-* `-s`: The service ID
-* `-v`: The service version
-* `-i`: The instance ID
-
-4. How to run it with passing options:
-
-    - ./run_license_sdk_cli.sh -s c9ineCodegen -v 1.2.2 -i c9ineCodegen~macbookuynjkl5~00:2A:8D:BE:F1:56 -k
-      v6ZFWUUUDlVaONpVJzzDowezuCkCk6szc4ClvB0ow6V+oyuY2bsJCPdVQErI0F7jiJ44X9xoyRCrMN2Ugz2iK1kekvRkHQdaxREMz8NnQCCIodstpdYqSv+h1lNJqROPzfvj23TxHBSKr0PzlS/OoqulJuHb0rU+9WR/LoAFAr5/L740bToGooZ/KLRKKeGOS3LCJfOApMCVvL9YblYxwPPLTOZC2A==
-
-
+✅ **Note:** CLI examples must always be provided **on a single line**. If parameters contain spaces or special characters, they should be enclosed in quotes `"..."`.

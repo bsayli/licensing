@@ -10,6 +10,11 @@
 
     <properties>
         <java.version>21</java.version>
+        <picocli.version>4.7.6</picocli.version>
+        <httpclient5-fluent.version>5.3.1</httpclient5-fluent.version>
+        <jackson-databind.version>2.17.2</jackson-databind.version>
+        <slf4j-api.version>2.0.13</slf4j-api.version>
+        <logback-classic.version>1.5.18</logback-classic.version>
     </properties>
 
     <dependencies>
@@ -17,31 +22,31 @@
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
-            <version>4.7.6</version>
+            <version>${picocli.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5-fluent</artifactId>
-            <version>5.3.1</version>
+            <version>${httpclient5-fluent.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.17.2</version>
+            <version>${jackson-databind.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.13</version>
+            <version>${slf4j-api.version}</version>
         </dependency>
 
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.5.6</version>
+            <version>${logback-classic.version}</version>
         </dependency>
 
     </dependencies>
