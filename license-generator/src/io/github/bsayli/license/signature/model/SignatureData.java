@@ -1,21 +1,23 @@
-package signature.model;
+package io.github.bsayli.license.signature.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Canonical payload used for detached signatures. Exactly one of {@code encryptedLicenseKeyHash} or
+ * {@code licenseTokenHash} must be provided.
+ */
+@JsonInclude(Include.NON_NULL)
 public class SignatureData {
+
+  private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private final String serviceId;
   private final String serviceVersion;
-
-  @JsonInclude(Include.NON_NULL)
-  private final String encryptedLicenseKeyHash;
-
-  @JsonInclude(Include.NON_NULL)
-  private final String licenseTokenHash;
-
+  private final String encryptedLicenseKeyHash; // optional, XOR with licenseTokenHash
+  private final String licenseTokenHash; // optional, XOR with encryptedLicenseKeyHash
   private final String instanceId;
 
   private SignatureData(Builder builder) {
@@ -47,8 +49,7 @@ public class SignatureData {
   }
 
   public String toJson() throws JsonProcessingException {
-    ObjectMapper mapper = new ObjectMapper();
-    return mapper.writeValueAsString(this);
+    return MAPPER.writeValueAsString(this);
   }
 
   public static class Builder {
@@ -57,6 +58,10 @@ public class SignatureData {
     private String encryptedLicenseKeyHash;
     private String licenseTokenHash;
     private String instanceId;
+
+    private static boolean isBlank(String s) {
+      return s == null || s.isBlank();
+    }
 
     public Builder serviceId(String serviceId) {
       this.serviceId = serviceId;
@@ -84,6 +89,19 @@ public class SignatureData {
     }
 
     public SignatureData build() {
+      // required fields
+      if (isBlank(serviceId) || isBlank(serviceVersion) || isBlank(instanceId)) {
+        throw new IllegalStateException("serviceId, serviceVersion and instanceId are required");
+      }
+
+      // XOR rule: exactly one of the hashes must be present
+      boolean hasEncKeyHash = !isBlank(encryptedLicenseKeyHash);
+      boolean hasTokenHash = !isBlank(licenseTokenHash);
+      if (hasEncKeyHash == hasTokenHash) {
+        throw new IllegalStateException(
+            "Exactly one of encryptedLicenseKeyHash or licenseTokenHash must be set");
+      }
+
       return new SignatureData(this);
     }
   }
