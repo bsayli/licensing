@@ -7,7 +7,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.3
     container_name: licensing-keycloak
-    networks: [network]
+    networks: [ network ]
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -21,22 +21,22 @@ services:
     build: ./../../licensing-service
     image: licensing-service:1.0.1
     container_name: licensing-service
-    networks: [network]
+    networks: [ network ]
     environment:
       SPRING_PROFILES_ACTIVE: dev
       KEYCLOAK_SERVER_URL: http://keycloak:8080
     ports:
       - "8081:8081"
-    depends_on: [keycloak]
+    depends_on: [ keycloak ]
 
   licensing-service-sdk:
     build: ./../../licensing-service-sdk
     image: licensing-service-sdk:1.0.1
     container_name: licensing-service-sdk
-    networks: [network]
+    networks: [ network ]
     environment:
       SPRING_PROFILES_ACTIVE: dev
       LICENSE_SERVICE_URL: http://licensing-service:8081
     ports:
       - "8082:8082"
-    depends_on: [licensing-service]
+    depends_on: [ licensing-service ]
