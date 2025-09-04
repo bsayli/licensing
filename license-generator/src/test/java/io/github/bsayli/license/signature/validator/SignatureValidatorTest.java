@@ -26,10 +26,9 @@ class SignatureValidatorTest {
   @DisplayName("validateSignature returns false when JSON is different")
   void validate_false_onDifferentJson() throws Exception {
     SignatureData payload = SignatureGenerator.sampleSignatureDataWithLicenseKey();
-    String json = payload.toJson();
     String sig = SignatureGenerator.createSignature(payload);
 
-    String differentJson = payload.toJson() + " "; // farklı string
+    String differentJson = payload.toJson() + " ";
     assertFalse(new SignatureValidator().validateSignature(sig, differentJson));
   }
 }

@@ -49,59 +49,64 @@ class SignatureDataTest {
   @Test
   @DisplayName("Both hashes set -> should fail")
   void build_bothHashes_shouldFail() {
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            new SignatureData.Builder()
-                .serviceId("svc")
-                .serviceVersion("1.0.0")
-                .instanceId("inst-1")
-                .encryptedLicenseKeyHash("x")
-                .licenseTokenHash("y")
-                .build());
+    assertThrows(IllegalStateException.class, this::buildWithBothHashes);
   }
 
   @Test
   @DisplayName("No hash set -> should fail")
   void build_noHash_shouldFail() {
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            new SignatureData.Builder()
-                .serviceId("svc")
-                .serviceVersion("1.0.0")
-                .instanceId("inst-1")
-                .build());
+    assertThrows(IllegalStateException.class, this::buildWithNoHash);
   }
 
   @Test
   @DisplayName("Missing required fields -> should fail")
   void build_missingRequired_shouldFail() {
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            new SignatureData.Builder()
-                .serviceVersion("1.0.0")
-                .instanceId("inst-1")
-                .encryptedLicenseKeyHash("x")
-                .build());
+    assertThrows(IllegalStateException.class, this::buildMissingServiceId);
+    assertThrows(IllegalStateException.class, this::buildMissingServiceVersion);
+    assertThrows(IllegalStateException.class, this::buildMissingInstanceId);
+  }
 
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            new SignatureData.Builder()
-                .serviceId("svc")
-                .instanceId("inst-1")
-                .encryptedLicenseKeyHash("x")
-                .build());
+  // ---- helpers (instance, no-arg, single-invocation) ----
 
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            new SignatureData.Builder()
-                .serviceId("svc")
-                .serviceVersion("1.0.0")
-                .encryptedLicenseKeyHash("x")
-                .build());
+  private SignatureData buildWithBothHashes() {
+    return new SignatureData.Builder()
+        .serviceId("svc")
+        .serviceVersion("1.0.0")
+        .instanceId("inst-1")
+        .encryptedLicenseKeyHash("x")
+        .licenseTokenHash("y")
+        .build();
+  }
+
+  private SignatureData buildWithNoHash() {
+    return new SignatureData.Builder()
+        .serviceId("svc")
+        .serviceVersion("1.0.0")
+        .instanceId("inst-1")
+        .build();
+  }
+
+  private SignatureData buildMissingServiceId() {
+    return new SignatureData.Builder()
+        .serviceVersion("1.0.0")
+        .instanceId("inst-1")
+        .encryptedLicenseKeyHash("x")
+        .build();
+  }
+
+  private SignatureData buildMissingServiceVersion() {
+    return new SignatureData.Builder()
+        .serviceId("svc")
+        .instanceId("inst-1")
+        .encryptedLicenseKeyHash("x")
+        .build();
+  }
+
+  private SignatureData buildMissingInstanceId() {
+    return new SignatureData.Builder()
+        .serviceId("svc")
+        .serviceVersion("1.0.0")
+        .encryptedLicenseKeyHash("x")
+        .build();
   }
 }
