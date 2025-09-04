@@ -2,9 +2,7 @@
 
 ## Overview
 
-This project provides a **modular licensing framework** designed to issue, encrypt, validate, and verify software
-licenses. It integrates with identity providers like **Keycloak** and uses modern cryptography standards to ensure
-license authenticity and user binding.
+This project provides a **modular licensing framework** designed to issue, encrypt, validate, and verify software licenses. It integrates with identity providers like **Keycloak** and uses modern cryptography standards to ensure license authenticity and user binding.
 
 The system is organized into multiple packages, each with a clear responsibility:
 
@@ -90,7 +88,7 @@ JWT tokens embed license-related claims:
 
 Command-line tools for common licensing flows:
 
-* `EncryptUserIdCli` → Encrypt a Keycloak user UUID.
+* `EncryptUserIdCli` → Encrypt or decrypt a Keycloak user UUID.
 * `LicenseKeyGeneratorCli` → Generate a license key (PREFIX \~ RANDOM \~ ENCRYPTED\_USER\_ID).
 * `LicenseTokenCli` → Validate JWT license tokens.
 * `SignatureCli` → Create or verify detached digital signatures.
@@ -136,29 +134,39 @@ mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
 * **EncryptUserIdCli**
 
 ```bash
-java -cp license-generator.jar io.github.bsayli.license.cli.EncryptUserIdCli --userId <uuid>
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.EncryptUserIdCli \
+  -Dexec.args="--userId <uuid>"
 ```
 
 * **LicenseKeyGeneratorCli**
 
 ```bash
-java -cp license-generator.jar io.github.bsayli.license.cli.LicenseKeyGeneratorCli --userId <uuid>
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.LicenseKeyGeneratorCli \
+  -Dexec.args="--userId <uuid>"
 ```
 
 * **LicenseTokenCli**
 
 ```bash
-java -cp license-generator.jar io.github.bsayli.license.cli.LicenseTokenCli --token <jwt> --publicKey <base64>
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.LicenseTokenCli \
+  -Dexec.args="--token <jwt> --publicKey <base64>"
 ```
 
 * **SignatureCli**
 
 ```bash
-java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli --mode sign|verify --data <json> --key <key>
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.SignatureCli \
+  -Dexec.args="--mode sign|verify --data <json> --key <key>"
 ```
 
 * **KeygenCli**
 
 ```bash
-java -cp license-generator.jar io.github.bsayli.license.cli.KeygenCli --type aes|ed25519
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.KeygenCli \
+  -Dexec.args="--type aes|ed25519"
 ```
