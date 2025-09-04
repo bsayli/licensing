@@ -11,6 +11,7 @@ The system is organized into multiple packages, each with a clear responsibility
 * **`securekey`**: generation of secure symmetric/asymmetric keys.
 * **`token`**: parsing and validating license tokens (JWT).
 * **`common`**: shared constants, utilities, and domain-level definitions.
+* **`cli`**: command-line tooling for encryption, key generation, token validation, and signatures.
 
 ---
 
@@ -83,6 +84,16 @@ JWT tokens embed license-related claims:
 * `JwtTokenExtractor` → validates JWT license tokens and extracts `LicenseValidationResult`.
 * `model.LicenseValidationResult` → DTO holding validation outcome.
 
+### `io.github.bsayli.license.cli`
+
+Command-line tools for common licensing flows:
+
+* `EncryptUserIdCli` → Encrypt a Keycloak user UUID.
+* `LicenseKeyGeneratorCli` → Generate a license key (PREFIX \~ RANDOM \~ ENCRYPTED\_USER\_ID).
+* `LicenseTokenCli` → Validate JWT license tokens.
+* `SignatureCli` → Create or verify detached digital signatures.
+* `KeygenCli` → Generate AES symmetric keys or Ed25519 key pairs.
+
 ---
 
 ## Example Flows
@@ -102,24 +113,50 @@ JWT tokens embed license-related claims:
 
 ---
 
-## Development Notes
+## CLI Usage
 
-* All **magic strings** are replaced by shared constants.
-* **Work-in-progress refactor**: project is being consolidated under `io.github.bsayli.license.*`.
-* Encryption keys inside code (`SECRET_KEY_BASE64`) are **demo-only**. In production, use Vault/KMS.
-* Branch **`refactor/project-wide`** contains ongoing cleanup (not stable).
+After packaging the project with Maven:
 
----
+```bash
+mvn -q -DskipTests package
+```
 
-## Roadmap
+Run any CLI with `exec-maven-plugin`:
 
-* [ ] Complete package-wide refactoring & rename base packages.
-* [ ] Add unit/integration tests for AES, signature, and JWT flows.
-* [ ] Provide CLI tooling for generating/validating licenses.
-* [ ] Extend to multi-tenant license management.
+```bash
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.EncryptUserIdCli \
+  -Dexec.args="--userId ba035b3e-d8b6-4a09-89c7-ab0459f2585b"
+```
 
----
+### Available CLIs
 
-## Disclaimer
+* **EncryptUserIdCli**
 
-This project is under **active development and refactoring**. Do not use the `refactor/project-wide` branch in production. All cryptographic keys included in this repository are **for demonstration only**.
+```bash
+java -cp license-generator.jar io.github.bsayli.license.cli.EncryptUserIdCli --userId <uuid>
+```
+
+* **LicenseKeyGeneratorCli**
+
+```bash
+java -cp license-generator.jar io.github.bsayli.license.cli.LicenseKeyGeneratorCli --userId <uuid>
+```
+
+* **LicenseTokenCli**
+
+```bash
+java -cp license-generator.jar io.github.bsayli.license.cli.LicenseTokenCli --token <jwt> --publicKey <base64>
+```
+
+* **SignatureCli**
+
+```bash
+java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli --mode sign|verify --data <json> --key <key>
+```
+
+* **KeygenCli**
+
+```bash
+java -cp license-generator.jar io.github.bsayli.license.cli.KeygenCli --type aes|ed25519
+```
