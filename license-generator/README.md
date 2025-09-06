@@ -2,7 +2,9 @@
 
 ## Overview
 
-This project provides a **modular licensing framework** designed to issue, encrypt, validate, and verify software licenses. It integrates with identity providers like **Keycloak** and uses modern cryptography standards to ensure license authenticity and user binding.
+This project provides a **modular licensing framework** designed to issue, encrypt, validate, and verify software
+licenses. It integrates with identity providers like **Keycloak** and uses modern cryptography standards to ensure
+license authenticity and user binding.
 
 The system is organized into multiple packages, each with a clear responsibility:
 
