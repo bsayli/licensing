@@ -1,0 +1,26 @@
+package io.github.bsayli.licensing.sdk.service.impl;
+
+import io.github.bsayli.licensing.sdk.service.LicenseTokenService;
+import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.stereotype.Service;
+
+@Service
+public class LicenseTokenServiceImpl implements LicenseTokenService {
+
+  private final ConcurrentHashMap<String, String> licenseTokenMap = new ConcurrentHashMap<>();
+
+  @Override
+  public void storeLicenseToken(String clientId, String licenseToken) {
+    licenseTokenMap.put(clientId, licenseToken);
+  }
+
+  @Override
+  public String getLicenseToken(String clientId) {
+    return licenseTokenMap.get(clientId);
+  }
+
+  @Override
+  public void removeLicenseToken(String clientId) {
+    licenseTokenMap.remove(clientId);
+  }
+}

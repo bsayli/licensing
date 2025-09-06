@@ -75,7 +75,7 @@
                         </goals>
                         <configuration>
                             <mainClass>
-                                com.c9.licensing.sdk.cli.LicenseSdkCli
+                                io.github.bsayli.licensing.sdk.cli.LicenseSdkCli
                             </mainClass>
                         </configuration>
                     </execution>
