@@ -3,9 +3,7 @@ package io.github.bsayli.licensing.api.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record LicenseValidationRequest(
-    @Size(min = 200, max = 400, message = "{license.key.size}") String licenseKey,
-    @Size(min = 200, max = 400, message = "{license.token.size}") String licenseToken,
+public record IssueTokenRequest(
     @NotBlank(message = "{service.id.required}")
         @Size(min = 3, max = 50, message = "{service.id.size}")
         String serviceId,
@@ -19,4 +17,7 @@ public record LicenseValidationRequest(
         @Size(min = 20, max = 500, message = "{signature.size}")
         String signature,
     @Size(min = 20, max = 500, message = "{checksum.size}") String checksum,
+    @NotBlank(message = "{license.key.required}")
+        @Size(min = 200, max = 400, message = "{license.key.size}")
+        String licenseKey,
     boolean forceTokenRefresh) {}

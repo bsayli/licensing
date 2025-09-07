@@ -6,15 +6,14 @@ import io.github.bsayli.licensing.model.LicenseChecksumVersionInfo;
 import io.github.bsayli.licensing.model.LicenseInfo;
 import io.github.bsayli.licensing.model.LicenseServiceIdVersionInfo;
 import io.github.bsayli.licensing.model.errors.LicenseUsageLimitExceededException;
+import io.github.bsayli.licensing.model.errors.repository.UserAttributeInvalidFormatException;
+import io.github.bsayli.licensing.model.errors.repository.UserAttributeMissingException;
 import io.github.bsayli.licensing.model.errors.repository.UserNotFoundException;
 import io.github.bsayli.licensing.repository.user.UserRepository;
 import jakarta.ws.rs.NotFoundException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -26,10 +25,22 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class UserRepositoryImpl implements UserRepository {
 
+  private static final String ATTR_LICENSE_TIER = "licenseTier";
+  private static final String ATTR_LICENSE_STATUS = "licenseStatus";
+  private static final String ATTR_LICENSE_EXPIRATION = "licenseExpiration";
+  private static final String ATTR_INSTANCE_IDS = "instanceIds";
+  private static final String ATTR_MAX_COUNT = "maxCount";
+  private static final String ATTR_REMAINING_USAGE_COUNT = "remainingUsageCount";
+  private static final String ATTR_ALLOWED_SERVICES = "allowedServices";
+  private static final String ATTR_ALLOWED_SERVICE_VERSIONS = "allowedServiceVersions";
+  private static final String ATTR_CHECKSUM_CRM = "checksumCrm";
+  private static final String ATTR_CHECKSUM_BILLING = "checksumBilling";
+  private static final String ATTR_CHECKSUM_REPORTING = "checksumReporting";
+
+  private final Keycloak keycloak;
+
   @Value("${keycloak.realm}")
   private String realm;
-
-  private Keycloak keycloak;
 
   public UserRepositoryImpl(Keycloak keycloak) {
     this.keycloak = keycloak;
@@ -37,78 +48,71 @@ public class UserRepositoryImpl implements UserRepository {
 
   @Override
   public Optional<LicenseInfo> getUser(String userId) {
-    Optional<LicenseInfo> userLicenseInfoOptional = Optional.empty();
-    UsersResource usersResource = getUsersResource();
+    UsersResource users = getUsersResource();
     try {
-      UserResource userResource = usersResource.get(userId);
-      UserRepresentation userRepresentation = userResource.toRepresentation();
-      userLicenseInfoOptional = getUserLicenseInfo(userRepresentation);
+      UserResource userRes = users.get(userId);
+      UserRepresentation rep = userRes.toRepresentation();
+      return getUserLicenseInfo(rep);
     } catch (NotFoundException e) {
-      logger.error("User Not Found: {}", e.getMessage());
+      throw new UserNotFoundException(e);
     }
-    return userLicenseInfoOptional;
   }
 
   @Override
   public Optional<LicenseInfo> updateLicenseUsage(String userId, String appInstanceId) {
-    Optional<LicenseInfo> userLicenseInfoOptional = Optional.empty();
-    UsersResource usersResource = getUsersResource();
+    UsersResource users = getUsersResource();
     try {
-      UserRepresentation userRepresentation = usersResource.get(userId).toRepresentation();
-      Map<String, List<String>> attributes = userRepresentation.getAttributes();
+      UserResource ur = users.get(userId);
+      UserRepresentation rep = ur.toRepresentation();
+      Map<String, List<String>> attrs = rep.getAttributes();
 
-      List<String> instanceIds = attributes.getOrDefault(ATTR_INSTANCE_IDS, new ArrayList<>());
+      List<String> instanceIds = new ArrayList<>(attrs.getOrDefault(ATTR_INSTANCE_IDS, List.of()));
 
       if (!instanceIds.contains(appInstanceId)) {
-        int remainingUsageCount =
-            Integer.parseInt(getSingleAttribute(attributes, ATTR_REMAINING_USAGE_COUNT));
-        if (remainingUsageCount > 0) {
-          remainingUsageCount--;
-          attributes.put(ATTR_REMAINING_USAGE_COUNT, List.of(String.valueOf(remainingUsageCount)));
+        int remaining = Integer.parseInt(getSingleAttribute(attrs, ATTR_REMAINING_USAGE_COUNT));
+        if (remaining > 0) {
+          remaining--;
+          attrs.put(ATTR_REMAINING_USAGE_COUNT, List.of(String.valueOf(remaining)));
         } else {
-          throw new LicenseUsageLimitExceededException(
-              "No remaining usage available for this license");
+          throw new LicenseUsageLimitExceededException();
         }
 
         instanceIds.add(appInstanceId);
-        attributes.put(ATTR_INSTANCE_IDS, instanceIds);
-        keycloak.realm(realm).users().get(userId).update(userRepresentation);
-        userLicenseInfoOptional = getUserLicenseInfo(userRepresentation);
+        attrs.put(ATTR_INSTANCE_IDS, instanceIds);
+        rep.setAttributes(attrs);
+        ur.update(rep);
+        return getUserLicenseInfo(rep);
       }
 
-      return userLicenseInfoOptional;
+      return getUserLicenseInfo(rep);
     } catch (NotFoundException e) {
-      throw new UserNotFoundException("User not found", e);
+      throw new UserNotFoundException(e);
     }
   }
 
-  private Optional<LicenseInfo> getUserLicenseInfo(UserRepresentation userRepresentation) {
-    Optional<LicenseInfo> userLicenseInfoOptional = Optional.empty();
-    if (userRepresentation != null) {
-      Map<String, List<String>> customAttributes = userRepresentation.getAttributes();
-      LicenseInfo userInfo =
-          new LicenseInfo.Builder()
-              .userId(userRepresentation.getId())
-              .licenseTier(getSingleAttribute(customAttributes, ATTR_LICENSE_TIER))
-              .licenseStatus(getSingleAttribute(customAttributes, ATTR_LICENSE_STATUS))
-              .expirationDate(
-                  parseLocalDateTime(getSingleAttribute(customAttributes, ATTR_LICENSE_EXPIRATION)))
-              .maxCount(Integer.parseInt(getSingleAttribute(customAttributes, ATTR_MAX_COUNT)))
-              .remainingUsageCount(
-                  Integer.parseInt(
-                      getSingleAttribute(customAttributes, ATTR_REMAINING_USAGE_COUNT)))
-              .instanceIds(getAttribute(customAttributes, ATTR_INSTANCE_IDS))
-              .allowedServices(getAttribute(customAttributes, ATTR_ALLOWED_SERVICES))
-              .allowedServiceVersions(
-                  getServiceIdVersionInfo(customAttributes, ATTR_ALLOWED_SERVICE_VERSIONS))
-              .checksumsCodegen(getChecksumVersionInfo(customAttributes, ATTR_CHECKSUM_CODEGEN))
-              .checksumsTestAutomation(
-                  getChecksumVersionInfo(customAttributes, ATTR_CHECKSUM_TEST_AUTO))
-              .build();
+  private Optional<LicenseInfo> getUserLicenseInfo(UserRepresentation rep) {
+    if (rep == null) return Optional.empty();
 
-      userLicenseInfoOptional = Optional.of(userInfo);
-    }
-    return userLicenseInfoOptional;
+    Map<String, List<String>> attrs = rep.getAttributes();
+
+    LicenseInfo info =
+        new LicenseInfo.Builder()
+            .userId(rep.getId())
+            .licenseTier(getSingleAttribute(attrs, ATTR_LICENSE_TIER))
+            .licenseStatus(getSingleAttribute(attrs, ATTR_LICENSE_STATUS))
+            .expirationDate(parseLocalDateTime(getSingleAttribute(attrs, ATTR_LICENSE_EXPIRATION)))
+            .maxCount(Integer.parseInt(getSingleAttribute(attrs, ATTR_MAX_COUNT)))
+            .remainingUsageCount(
+                Integer.parseInt(getSingleAttribute(attrs, ATTR_REMAINING_USAGE_COUNT)))
+            .instanceIds(getAttribute(attrs, ATTR_INSTANCE_IDS))
+            .allowedServices(getAttribute(attrs, ATTR_ALLOWED_SERVICES))
+            .allowedServiceVersions(getServiceIdVersionInfo(attrs, ATTR_ALLOWED_SERVICE_VERSIONS))
+            .checksumsCrm(getChecksumVersionInfo(attrs, ATTR_CHECKSUM_CRM))
+            .checksumsBilling(getChecksumVersionInfo(attrs, ATTR_CHECKSUM_BILLING))
+            .checksumsReporting(getChecksumVersionInfo(attrs, ATTR_CHECKSUM_REPORTING))
+            .build();
+
+    return Optional.of(info);
   }
 
   private UsersResource getUsersResource() {
@@ -116,50 +120,52 @@ public class UserRepositoryImpl implements UserRepository {
     return realmResource.users();
   }
 
-  private String getSingleAttribute(Map<String, List<String>> attributes, String name) {
-    List<String> values = attributes.get(name);
+  private String getSingleAttribute(Map<String, List<String>> attrs, String name) {
+    List<String> values = attrs != null ? attrs.get(name) : null;
     if (values == null || values.isEmpty()) {
-      throw new IllegalArgumentException("Custom attribute '" + name + "' not found");
+      throw new UserAttributeMissingException(name);
     }
-    return values.get(0);
+    return values.getFirst();
   }
 
-  private List<String> getAttribute(Map<String, List<String>> attributes, String name) {
-    return attributes.getOrDefault(name, new ArrayList<>());
+  private List<String> getAttribute(Map<String, List<String>> attrs, String name) {
+    return attrs != null ? new ArrayList<>(attrs.getOrDefault(name, List.of())) : new ArrayList<>();
   }
 
-  private LocalDateTime parseLocalDateTime(String dateString) {
-    return LocalDateTime.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+  private LocalDateTime parseLocalDateTime(String str) {
+    try {
+      return LocalDateTime.parse(str, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    } catch (Exception ex) {
+      throw new UserAttributeInvalidFormatException(ATTR_LICENSE_EXPIRATION, str, ex);
+    }
   }
 
   private List<LicenseChecksumVersionInfo> getChecksumVersionInfo(
-      Map<String, List<String>> attributes, String name) {
-    List<String> jsonChecksumWithVersions = attributes.getOrDefault(name, new ArrayList<>());
-    return jsonChecksumWithVersions.stream()
-        .map(
-            jsonChecksumWithVersion ->
-                fromJson(jsonChecksumWithVersion, LicenseChecksumVersionInfo.class))
-        .toList();
+      Map<String, List<String>> attrs, String name) {
+    List<String> vals = attrs.getOrDefault(name, List.of());
+    List<LicenseChecksumVersionInfo> result = new ArrayList<>(vals.size());
+    for (String json : vals) {
+      result.add(fromJson(json, LicenseChecksumVersionInfo.class, name));
+    }
+    return result;
   }
 
   private List<LicenseServiceIdVersionInfo> getServiceIdVersionInfo(
-      Map<String, List<String>> attributes, String name) {
-    List<String> jsonServiceIdLicensedMaxVersions =
-        attributes.getOrDefault(name, new ArrayList<>());
-    return jsonServiceIdLicensedMaxVersions.stream()
-        .map(
-            jsonServiceIdVersion ->
-                fromJson(jsonServiceIdVersion, LicenseServiceIdVersionInfo.class))
-        .toList();
+      Map<String, List<String>> attrs, String name) {
+    List<String> vals = attrs.getOrDefault(name, List.of());
+    List<LicenseServiceIdVersionInfo> result = new ArrayList<>(vals.size());
+    for (String json : vals) {
+      result.add(fromJson(json, LicenseServiceIdVersionInfo.class, name));
+    }
+    return result;
   }
 
-  private <T> T fromJson(String json, Class<T> classType) {
+  private <T> T fromJson(String json, Class<T> type, String attrName) {
     ObjectMapper mapper = new ObjectMapper();
     try {
-      return mapper.readValue(json, classType);
+      return mapper.readValue(json, type);
     } catch (JsonProcessingException e) {
-      e.printStackTrace();
+      throw new UserAttributeInvalidFormatException(attrName, json, e);
     }
-    return null;
   }
 }

@@ -26,6 +26,10 @@ public class SignatureData {
     this.instanceId = builder.instanceId;
   }
 
+  public static Builder builder() {
+    return new Builder();
+  }
+
   public String getServiceId() {
     return serviceId;
   }

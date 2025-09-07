@@ -1,5 +1,7 @@
 package io.github.bsayli.licensing.model;
 
+import io.github.bsayli.licensing.model.errors.LicenseServiceStatus;
+
 public record LicenseValidationResult(
     String userId,
     String appInstanceId,
@@ -9,7 +11,6 @@ public record LicenseValidationResult(
     LicenseServiceStatus serviceStatus,
     String message) {
 
-  // Builder for LicenseValidationResult
   public static class Builder {
     private String userId;
     private String appInstanceId;
@@ -54,7 +55,6 @@ public record LicenseValidationResult(
       return this;
     }
 
-    // Default value for valid is true
     public LicenseValidationResult build() {
       return new LicenseValidationResult(
           userId, appInstanceId, valid, licenseTier, licenseStatus, serviceStatus, message);

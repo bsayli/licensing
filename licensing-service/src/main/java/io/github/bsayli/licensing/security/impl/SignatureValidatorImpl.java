@@ -1,14 +1,13 @@
 package io.github.bsayli.licensing.security.impl;
 
-import io.github.bsayli.licensing.api.dto.LicenseValidationRequest;
+import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
+import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
 import io.github.bsayli.licensing.model.SignatureData;
-import io.github.bsayli.licensing.model.SignatureData.Builder;
 import io.github.bsayli.licensing.model.errors.SignatureInvalidException;
 import io.github.bsayli.licensing.security.SignatureValidator;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
@@ -17,77 +16,68 @@ public class SignatureValidatorImpl implements SignatureValidator {
 
   private final byte[] signaturePublicKey;
 
-  public SignatureValidatorImpl(String signaturePublicKeyStr) {
-    this.signaturePublicKey = Base64.getDecoder().decode(signaturePublicKeyStr);
+  public SignatureValidatorImpl(String signaturePublicKeyBase64) {
+    this.signaturePublicKey = Base64.getDecoder().decode(signaturePublicKeyBase64);
   }
 
   @Override
-  public void validateSignature(LicenseValidationRequest validationRequest)
-      throws SignatureInvalidException {
-    boolean isValidBase64 = isValidBase64(validationRequest.signature());
-    if (!isValidBase64) {
-      throw new SignatureInvalidException(MESSAGE_SIGNATURE_IS_INVALID);
-    }
-
-    try {
-      SignatureData signatureData = getSignatureData(validationRequest);
-      byte[] hash = calculateSHA256Hash(signatureData.toJson().getBytes());
-      Signature signatureObject = Signature.getInstance(ALGORITHM_SHA256WITHDSA);
-      signatureObject.initVerify(
-          KeyFactory.getInstance(ALGORITHM_DSA)
-              .generatePublic(new X509EncodedKeySpec(signaturePublicKey)));
-      signatureObject.update(hash);
-      boolean isValid =
-          signatureObject.verify(Base64.getDecoder().decode(validationRequest.signature()));
-      if (!isValid) {
-        throw new SignatureInvalidException(MESSAGE_SIGNATURE_IS_INVALID);
-      }
-    } catch (Exception e) {
-      throw new SignatureInvalidException(MESSAGE_SIGNATURE_IS_INVALID, e);
-    }
-  }
-
-  private SignatureData getSignatureData(LicenseValidationRequest request) {
-    Builder signatureDataBuilder =
-        new SignatureData.Builder()
+  public void validate(IssueTokenRequest request) throws SignatureInvalidException {
+    ensureBase64(request.signature());
+    SignatureData data =
+        SignatureData.builder()
             .serviceId(request.serviceId())
             .serviceVersion(request.serviceVersion())
-            .instanceId(request.instanceId());
-
-    boolean requestedByLicenseKey =
-        request.licenseKey() != null && request.licenseKey().trim().length() > 0;
-    if (requestedByLicenseKey) {
-      signatureDataBuilder.encryptedLicenseKeyHash(getDataHash(request.licenseKey()));
-    } else {
-      signatureDataBuilder.licenseTokenHash(getDataHash(request.licenseToken()));
-    }
-    return signatureDataBuilder.build();
+            .instanceId(request.instanceId())
+            .encryptedLicenseKeyHash(sha256Base64(request.licenseKey()))
+            .build();
+    verify(request.signature(), data);
   }
 
-  private String getDataHash(String data) {
-    MessageDigest digest;
+  @Override
+  public void validate(ValidateTokenRequest request, String token)
+      throws SignatureInvalidException {
+    ensureBase64(request.signature());
+    SignatureData data =
+        SignatureData.builder()
+            .serviceId(request.serviceId())
+            .serviceVersion(request.serviceVersion())
+            .instanceId(request.instanceId())
+            .licenseTokenHash(sha256Base64(token))
+            .build();
+    verify(request.signature(), data);
+  }
+
+  private void verify(String signatureBase64, SignatureData payload) {
     try {
-      digest = MessageDigest.getInstance("SHA-256");
-      byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
-      return Base64.getEncoder().encodeToString(hash);
-    } catch (NoSuchAlgorithmException e) {
-      e.printStackTrace();
+      byte[] jsonHash = sha256(payload.toJson().getBytes(StandardCharsets.UTF_8));
+      Signature sig = Signature.getInstance(ALGORITHM_SHA256WITHDSA);
+      sig.initVerify(
+          KeyFactory.getInstance(ALGORITHM_DSA)
+              .generatePublic(new X509EncodedKeySpec(signaturePublicKey)));
+      sig.update(jsonHash);
+      boolean ok = sig.verify(Base64.getDecoder().decode(signatureBase64));
+      if (!ok) throw new SignatureInvalidException();
+    } catch (Exception e) {
+      throw new SignatureInvalidException(e);
     }
-    return null;
   }
 
-  private byte[] calculateSHA256Hash(byte[] data) {
-    MessageDigest digest;
+  private void ensureBase64(String s) {
+    if (s == null || !s.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$")) {
+      throw new SignatureInvalidException();
+    }
+  }
+
+  private String sha256Base64(String data) {
+    return Base64.getEncoder().encodeToString(sha256(data.getBytes(StandardCharsets.UTF_8)));
+  }
+
+  private byte[] sha256(byte[] bytes) {
     try {
-      digest = MessageDigest.getInstance(ALGORITHM_SHA_256);
-      return digest.digest(data);
-    } catch (NoSuchAlgorithmException e) {
-      throw new SignatureInvalidException(MESSAGE_SIGNATURE_IS_INVALID, e);
+      MessageDigest md = MessageDigest.getInstance(ALGORITHM_SHA_256);
+      return md.digest(bytes);
+    } catch (Exception e) {
+      throw new SignatureInvalidException(e);
     }
-  }
-
-  private boolean isValidBase64(String str) {
-    String base64Regex = "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$";
-    return str != null && str.matches(base64Regex);
   }
 }

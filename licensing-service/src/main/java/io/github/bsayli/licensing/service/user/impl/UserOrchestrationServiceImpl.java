@@ -20,7 +20,7 @@ public class UserOrchestrationServiceImpl implements UserOrchestrationService {
     this.userCacheManagementService = userCacheManagementService;
   }
 
-  public Optional<LicenseInfo> getUser(String userId) throws Exception {
+  public Optional<LicenseInfo> getUser(String userId) {
     Map<String, Optional<LicenseInfo>> offlineCacheData =
         userCacheManagementService.getDataInOffline(userId);
     if (offlineCacheData.containsKey(userId)) {

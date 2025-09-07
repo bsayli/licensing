@@ -35,6 +35,9 @@ license:
       key: 'MFECAQEwBQYDK2VwBCIEIJa52B/FN/sjW/nlB9Id+Na2B8rI2+5ZPhXTIQSzH+3BgSEA6lNvY1+qsRSYgo66OFxWZxQymd2wC6LYNr1+q2gHHMo='
     public:
       key: 'MCowBQYDK2VwAyEA6lNvY1+qsRSYgo66OFxWZxQymd2wC6LYNr1+q2gHHMo='
+  service:
+    ids: [ crm, billing, reporting ]
+    checksum-required: [ crm, billing, reporting ]
 
 userid:
   secret:

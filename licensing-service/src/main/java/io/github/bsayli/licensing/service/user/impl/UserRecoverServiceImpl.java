@@ -21,15 +21,14 @@ public class UserRecoverServiceImpl implements UserRecoverService {
 
   @Override
   public Optional<LicenseInfo> recoverGetUser(ProcessingException pe, String userId) {
-    boolean isConnectionBasedException =
-        ConnectionExceptionPredicate.isConnectionBasedException.test(pe);
-    if (isConnectionBasedException) {
-      Map<String, Optional<LicenseInfo>> dataInOffline =
+    if (ConnectionExceptionPredicate.isConnectionBasedException.test(pe)) {
+      Map<String, Optional<LicenseInfo>> offlineData =
           userCacheManagementService.getDataInOffline(userId);
-      if (dataInOffline.containsKey(userId)) {
-        return dataInOffline.get(userId);
+      Optional<LicenseInfo> cached = offlineData.getOrDefault(userId, Optional.empty());
+      if (cached.isPresent()) {
+        return cached;
       }
     }
-    throw new LicenseServiceUnexpectedException("License Server is currently unavailable", pe);
+    throw new LicenseServiceUnexpectedException(pe);
   }
 }

@@ -16,7 +16,7 @@ public class UserOnlineCacheServiceImpl implements UserCacheService {
 
   private static final String CACHE_NAME_USER_INFO = "userInfoCache";
 
-  private CacheManager cacheManager;
+  private final CacheManager cacheManager;
 
   public UserOnlineCacheServiceImpl(CacheManager cacheManager) {
     this.cacheManager = cacheManager;
@@ -51,7 +51,7 @@ public class UserOnlineCacheServiceImpl implements UserCacheService {
         if (object != null && object.getClass().isAssignableFrom(Optional.class)) {
           Optional<?> objectOptional = (Optional<?>) object;
           if (objectOptional.isPresent()) {
-            return Optional.ofNullable((LicenseInfo) objectOptional.get());
+            return Optional.of((LicenseInfo) objectOptional.get());
           }
         }
       }

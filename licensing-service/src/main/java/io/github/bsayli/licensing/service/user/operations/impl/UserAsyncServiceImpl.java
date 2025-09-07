@@ -10,12 +10,14 @@ import jakarta.ws.rs.ProcessingException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.HttpHostConnectException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
@@ -25,9 +27,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserAsyncServiceImpl implements UserAsyncService {
 
-  private final ConcurrentMap<String, String> ongoingProcesses = new ConcurrentHashMap<>();
-
-  private UserRepository userRepository;
+  private final Map<String, String> ongoingProcesses = new ConcurrentHashMap<>();
+  private final UserRepository userRepository;
+  Logger logger = LoggerFactory.getLogger(UserAsyncServiceImpl.class);
 
   public UserAsyncServiceImpl(UserRepository userRepository) {
     this.userRepository = userRepository;
@@ -50,7 +52,7 @@ public class UserAsyncServiceImpl implements UserAsyncService {
               delayExpression = "${retry.userServiceAsync.initialDelay}",
               maxDelayExpression = "${retry.userServiceAsync.maxDelay}",
               multiplierExpression = "${retry.userServiceAsync.multiplier}"))
-  public CompletableFuture<Optional<LicenseInfo>> getUser(String userId) throws Exception {
+  public CompletableFuture<Optional<LicenseInfo>> getUser(String userId) {
     boolean shouldRetryForConnectionError = false;
     boolean processAcquired = processAcquired(userId);
     if (!processAcquired) {
