@@ -1,6 +1,6 @@
 package io.github.bsayli.licensing.service.validation.impl;
 
-import io.github.bsayli.licensing.api.dto.LicenseValidationRequest;
+import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.model.ClientCachedLicenseData;
 import io.github.bsayli.licensing.model.errors.InvalidRequestException;
@@ -19,11 +19,16 @@ import io.jsonwebtoken.security.MalformedKeyException;
 import io.jsonwebtoken.security.SignatureException;
 import java.util.Objects;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class LicenseTokenRequestValidationServiceImpl
     implements LicenseTokenRequestValidationService {
+
+  private static final Logger log =
+      LoggerFactory.getLogger(LicenseTokenRequestValidationServiceImpl.class);
 
   private final JwtService jwtUtil;
   private final LicenseClientCacheManagementService cacheService;
@@ -44,92 +49,88 @@ public class LicenseTokenRequestValidationServiceImpl
     this.signatureValidator = signatureValidator;
   }
 
-  public void validateTokenRequest(LicenseValidationRequest request) {
-    signatureValidator.validateSignature(request);
+  @Override
+  public void validateTokenRequest(ValidateTokenRequest request, String token) {
+    signatureValidator.validate(request, token);
 
-    boolean isValidFormat = jwtUtil.validateTokenFormat(request.licenseToken());
-    if (!isValidFormat) {
-      throw new TokenInvalidException(MESSAGE_TOKEN_INVALID);
+    if (!jwtUtil.validateTokenFormat(token)) {
+      throw new TokenInvalidException();
     }
 
-    boolean isBlackListed = jwtBlacklistService.isBlackListed(request.licenseToken());
-    if (isBlackListed) {
-      throw new TokenInvalidException(MESSAGE_TOKEN_INVALIDATED_BY_FORCE_REFRESH);
+    if (jwtBlacklistService.isBlackListed(token)) {
+      throw new TokenInvalidException();
     }
 
-    checkTokenRequestWithCachedData(request);
+    checkTokenRequestWithCachedData(request, token);
 
     try {
-      Claims claims = jwtUtil.verifyAndExtractJwtClaims(request.licenseToken());
+      Claims claims = jwtUtil.verifyAndExtractJwtClaims(token);
       String clientId = claims.getSubject();
       String requestedClientId = clientIdGenerator.getClientId(request);
 
       if (!clientId.equals(requestedClientId)) {
-        throw new TokenForbiddenAccessException(MESSAGE_TOKEN_INVALID_ACCESS);
+        throw new TokenForbiddenAccessException();
       }
 
-      boolean isTokenExpired = isTokenExpired(claims);
-      if (isTokenExpired) {
-        validateAndThrowTokenException(request);
+      if (isTokenExpired(claims)) {
+        validateAndThrowTokenException(request, token);
       }
-
     } catch (ExpiredJwtException e) {
-      validateAndThrowTokenException(request);
-    } catch (SignatureException | MalformedKeyException se) {
-      throw new TokenInvalidException(MESSAGE_TOKEN_INVALID, se);
-    } catch (TokenForbiddenAccessException se) {
-      throw new TokenForbiddenAccessException(MESSAGE_TOKEN_INVALID_ACCESS, se);
+      validateAndThrowTokenException(request, token);
+    } catch (SignatureException | MalformedKeyException e) {
+      throw new TokenInvalidException(e);
+    } catch (TokenForbiddenAccessException e) {
+      throw e;
     } catch (Exception e) {
-      logger.error(MESSAGE_ERROR_DURING_TOKEN_VALIDATION, e);
-      throw new TokenInvalidException(MESSAGE_ERROR_DURING_TOKEN_VALIDATION, e);
+      log.error("Token validation failed", e);
+      throw new TokenInvalidException(e);
     }
   }
 
-  private void checkTokenRequestWithCachedData(LicenseValidationRequest request) {
+  private void checkTokenRequestWithCachedData(ValidateTokenRequest request, String token) {
     String clientId = clientIdGenerator.getClientId(request);
-    Optional<ClientCachedLicenseData> cachedLicenseDataOpt =
-        cacheService.getClientCachedLicenseData(clientId);
-    if (cachedLicenseDataOpt.isPresent()) {
-      ClientCachedLicenseData cachedData = cachedLicenseDataOpt.get();
-      boolean isTokenEqual = Objects.equals(cachedData.getLicenseToken(), request.licenseToken());
-      boolean isServiceIdEqual = Objects.equals(cachedData.getServiceId(), request.serviceId());
+    Optional<ClientCachedLicenseData> cachedOpt = cacheService.getClientCachedLicenseData(clientId);
+
+    if (cachedOpt.isPresent()) {
+      ClientCachedLicenseData cached = cachedOpt.get();
+
+      boolean isTokenEqual = Objects.equals(cached.getLicenseToken(), token);
+      boolean isServiceIdEqual = Objects.equals(cached.getServiceId(), request.serviceId());
       boolean isServiceVersionEqual =
-          Objects.equals(cachedData.getServiceVersion(), request.serviceVersion());
-      boolean isChecksumEqual = Objects.equals(cachedData.getChecksum(), request.checksum());
+          Objects.equals(cached.getServiceVersion(), request.serviceVersion());
+      boolean isChecksumEqual = Objects.equals(cached.getChecksum(), request.checksum());
+
       boolean isValidRequest =
           isTokenEqual && isServiceIdEqual && isServiceVersionEqual && isChecksumEqual;
 
       if (!isTokenEqual) {
-        throw new TokenInvalidException(MESSAGE_TOKEN_INVALID);
+        throw new TokenInvalidException();
       }
-
       if (!isValidRequest) {
-        throw new InvalidRequestException(MESSAGE_INVALID_REQUEST);
+        throw new InvalidRequestException();
       }
     }
   }
 
-  private void validateAndThrowTokenException(LicenseValidationRequest request) {
+  private void validateAndThrowTokenException(ValidateTokenRequest request, String token) {
     String clientId = clientIdGenerator.getClientId(request);
-    Optional<ClientCachedLicenseData> cachedLicenseDataOpt =
-        cacheService.getClientCachedLicenseData(clientId);
-    if (cachedLicenseDataOpt.isPresent()) {
-      ClientCachedLicenseData data = cachedLicenseDataOpt.get();
-      if (data.getLicenseToken().equals(request.licenseToken())) {
-        throw new TokenExpiredException(data.getEncUserId(), MESSAGE_TOKEN_HAS_EXPIRED);
-      } else {
-        throw new TokenInvalidException(MESSAGE_TOKEN_INVALID);
-      }
+    Optional<ClientCachedLicenseData> cachedOpt = cacheService.getClientCachedLicenseData(clientId);
 
+    if (cachedOpt.isPresent()) {
+      ClientCachedLicenseData data = cachedOpt.get();
+      if (Objects.equals(data.getLicenseToken(), token)) {
+        throw new TokenExpiredException(data.getEncUserId());
+      } else {
+        throw new TokenInvalidException();
+      }
     } else {
-      throw new TokenIsTooOldForRefreshException(MESSAGE_TOKEN_IS_TOO_OLD_FOR_REFRESH);
+      throw new TokenIsTooOldForRefreshException();
     }
   }
 
   private boolean isTokenExpired(Claims claims) {
     long expirationTime = claims.getExpiration().getTime();
     long currentTime = System.currentTimeMillis();
-    long timeRemaining = expirationTime - currentTime;
-    return timeRemaining <= 0;
+    return (expirationTime - currentTime) <= 0;
   }
 }

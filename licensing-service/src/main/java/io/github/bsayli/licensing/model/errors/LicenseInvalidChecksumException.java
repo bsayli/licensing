@@ -1,15 +1,12 @@
 package io.github.bsayli.licensing.model.errors;
 
-import io.github.bsayli.licensing.model.LicenseServiceStatus;
-
 public class LicenseInvalidChecksumException extends LicenseServiceExceptionImpl {
-  private static final long serialVersionUID = 864714349412856278L;
 
-  public LicenseInvalidChecksumException(String message) {
-    super(message);
+  public LicenseInvalidChecksumException(Object... args) {
+    super(LicenseServiceStatus.LICENSE_INVALID_CHECKSUM, args);
   }
 
-  public LicenseServiceStatus getStatus() {
-    return LicenseServiceStatus.LICENSE_SERVICE_INVALID_CHECKSUM;
+  public LicenseInvalidChecksumException(Throwable cause, Object... args) {
+    super(LicenseServiceStatus.LICENSE_INVALID_CHECKSUM, cause, args);
   }
 }

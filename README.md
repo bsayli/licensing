@@ -1,15 +1,15 @@
 # Welcome to the Licensing Project!
 
-This repository holds the source code for a licensing system containing four projects:
+This repository contains the source code for a complete licensing system. It is structured into four subprojects:
 
 * **license-generator**: Java project for license key generation and encryption samples.
-* **licensing-service**: Web project that handles core licensing functionalities.
+* **licensing-service**: Web project that handles the core licensing functionalities.
 * **licensing-service-sdk**: SDK for integrating licensing features into other applications.
 * **licensing-service-sdk-cli**: Command-line tool for testing and interacting with the licensing service.
 
 ## Repository Structure
 
-* **db**: Keycloak database backup (docker_volumes.zip)
+* **db**: Keycloak database backup (`licensing-keycloak.zip`)
 * **docker-compose**: Docker Compose files to run servers and client
 * **scripts**: Script to run the client (`run_license_sdk_cli.sh`)
 
@@ -33,8 +33,8 @@ git clone https://github.com/bsayli/licensing.git
 
 2. **Extract Keycloak DB**
 
-- Get `docker_volumes.zip` from `/licensing/db`
-- Copy and extract into your home directory ($HOME)
+* Get `licensing-keycloak.zip` from `/licensing/db`
+* Copy and extract into your home directory (\$HOME)
 
 ---
 
@@ -54,7 +54,7 @@ docker-compose up -d
 
 This starts Keycloak, Licensing Service, and Licensing Service SDK in the background.
 
-3. Wait ~45 seconds for the services to initialize on first run.
+3. Wait \~45 seconds for the services to initialize on the first run.
 
 ---
 
@@ -115,7 +115,7 @@ cd target
 3. Run it:
 
 ```bash
-java -jar licensing-service-sdk-cli-1.0.1.jar -s c9ineCodegen -v 1.2.2 -i "c9ineCodegen~macbookuynjkl5~00:2A:8D:BE:F1:56" -k "v6ZFWUUUDlVaONpVJzzDowezuCkCk6szc4ClvB0ow6V+oyuY2bsJCPdVQErI0F7jiJ44X9xoyRCrMN2Ugz2iK1kekvRkHQdaxREMz8NnQCCIodstpdYqSv+h1lNJqROPzfvj23TxHBSKr0PzlS/OoqulJuHb0rU+9WR/LoAFAr5/L740bToGooZ/KLRKKeGOS3LCJfOApMCVvL9YblYxwPPLTOZC2A=="
+java -jar licensing-service-sdk-cli-1.0.1.jar -s crm -v 1.5.0 -i "crm~macbookuynjkl5~00:2A:8D:BE:F1:56" -k "<LICENSE_KEY>"
 ```
 
 ---
@@ -137,7 +137,7 @@ chmod +x run_license_sdk_cli.sh
 3. Run with options:
 
 ```bash
-./run_license_sdk_cli.sh -s c9ineCodegen -v 1.2.2 -i "c9ineCodegen~macbookuynjkl5~00:2A:8D:BE:F1:56" -k "v6ZFWUUUDlVaONpVJzzDowezuCkCk6szc4ClvB0ow6V+oyuY2bsJCPdVQErI0F7jiJ44X9xoyRCrMN2Ugz2iK1kekvRkHQdaxREMz8NnQCCIodstpdYqSv+h1lNJqROPzfvj23TxHBSKr0PzlS/OoqulJuHb0rU+9WR/LoAFAr5/L740bToGooZ/KLRKKeGOS3LCJfOApMCVvL9YblYxwPPLTOZC2A=="
+./run_license_sdk_cli.sh -s billing -v 2.0.0 -i "billing~macbookuynjkl5~00:2A:8D:BE:F1:56" -k "<LICENSE_KEY>"
 ```
 
 ---
@@ -145,12 +145,11 @@ chmod +x run_license_sdk_cli.sh
 ✅ **Note:** CLI examples must always be provided **on a single line**. If parameters contain spaces or special
 characters, they should be enclosed in quotes `"..."`.
 
-
 ---
 
 ## Feedback & Questions
 
 If you notice any issues in this documentation or have suggestions for improvements, feel free to open an issue or a
-pull request.  
+pull request.
 For any questions related to the project, I’ll be glad to help — just leave a comment in the repository’s discussion or
 issue tracker.

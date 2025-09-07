@@ -26,7 +26,7 @@ public class UserCacheManagementServiceImpl implements UserCacheManagementServic
   }
 
   @Override
-  public void updateCachesAsync(String userId) throws Exception {
+  public void updateCachesAsync(String userId) {
     CompletableFuture<Optional<LicenseInfo>> userAsyncResult = userAsyncService.getUser(userId);
     userAsyncResult.handleAsync(
         (optionalUserInfo, throwable) -> {

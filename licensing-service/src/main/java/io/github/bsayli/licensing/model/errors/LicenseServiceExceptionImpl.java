@@ -3,13 +3,34 @@ package io.github.bsayli.licensing.model.errors;
 public abstract class LicenseServiceExceptionImpl extends RuntimeException
     implements LicenseServiceException {
 
-  private static final long serialVersionUID = 4327755923293926801L;
+  private final LicenseServiceStatus status;
+  private final transient Object[] messageArgs;
 
-  protected LicenseServiceExceptionImpl(String message) {
-    super(message);
+  protected LicenseServiceExceptionImpl(LicenseServiceStatus status, Object... messageArgs) {
+    super(status.getMessageKey());
+    this.status = status;
+    this.messageArgs = messageArgs;
   }
 
-  protected LicenseServiceExceptionImpl(String message, Throwable cause) {
-    super(message, cause);
+  protected LicenseServiceExceptionImpl(
+      LicenseServiceStatus status, Throwable cause, Object... messageArgs) {
+    super(status.getMessageKey(), cause);
+    this.status = status;
+    this.messageArgs = messageArgs;
+  }
+
+  @Override
+  public LicenseServiceStatus getStatus() {
+    return status;
+  }
+
+  @Override
+  public String getMessageKey() {
+    return status.getMessageKey();
+  }
+
+  @Override
+  public Object[] getMessageArgs() {
+    return messageArgs;
   }
 }

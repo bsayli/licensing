@@ -1,6 +1,7 @@
 package io.github.bsayli.licensing.generator.impl;
 
-import io.github.bsayli.licensing.api.dto.LicenseValidationRequest;
+import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
+import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.model.ClientInfo;
 import java.nio.charset.StandardCharsets;
@@ -16,38 +17,41 @@ public class ClientIdGeneratorImpl implements ClientIdGenerator {
   private static final String ALGORITHM = "SHA-256";
 
   @Override
-  public String getClientId(LicenseValidationRequest request) {
-    return getClientId(
+  public String getClientId(IssueTokenRequest request) {
+    return buildClientId(
+        request.instanceId(), request.serviceId(), request.serviceVersion(), request.checksum());
+  }
+
+  @Override
+  public String getClientId(ValidateTokenRequest request) {
+    return buildClientId(
         request.instanceId(), request.serviceId(), request.serviceVersion(), request.checksum());
   }
 
   @Override
   public String getClientId(ClientInfo clientInfo) {
-    return getClientId(
+    return buildClientId(
         clientInfo.instanceId(),
         clientInfo.serviceId(),
         clientInfo.serviceVersion(),
         clientInfo.checksum());
   }
 
-  private String getClientId(
+  private String buildClientId(
       String instanceId, String serviceId, String serviceVersion, String checksum) {
-    StringBuilder clientIdBuilder = new StringBuilder();
-    clientIdBuilder.append(instanceId);
-    clientIdBuilder.append(serviceId);
-    clientIdBuilder.append(serviceVersion);
+    StringBuilder raw =
+        new StringBuilder().append(instanceId).append(serviceId).append(serviceVersion);
 
     if (Objects.nonNull(checksum)) {
-      clientIdBuilder.append(checksum);
+      raw.append(checksum);
     }
 
     try {
       MessageDigest digest = MessageDigest.getInstance(ALGORITHM);
-      byte[] hashedBytes =
-          digest.digest(clientIdBuilder.toString().getBytes(StandardCharsets.UTF_8));
-      return Base64.getEncoder().encodeToString(hashedBytes);
+      byte[] hashed = digest.digest(raw.toString().getBytes(StandardCharsets.UTF_8));
+      return Base64.getEncoder().encodeToString(hashed);
     } catch (NoSuchAlgorithmException e) {
-      return null;
+      throw new IllegalStateException("Hash algorithm not found: " + ALGORITHM, e);
     }
   }
 }

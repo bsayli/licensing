@@ -4,6 +4,7 @@ import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.model.ClientCachedLicenseData;
 import io.github.bsayli.licensing.model.ClientInfo;
 import io.github.bsayli.licensing.service.LicenseClientCacheManagementService;
+import java.util.Objects;
 import java.util.Optional;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -49,7 +50,8 @@ public class LicenseClientCacheManagementServiceImpl
     if (activeClientsCache != null) {
       Cache.ValueWrapper cachedValueWrapper = activeClientsCache.get(clientId);
       if (cachedValueWrapper != null && cachedValueWrapper.get() != null) {
-        tokenOpt = Optional.of((ClientCachedLicenseData) cachedValueWrapper.get());
+        tokenOpt =
+            Optional.of((ClientCachedLicenseData) Objects.requireNonNull(cachedValueWrapper.get()));
       }
     }
     return tokenOpt;

@@ -1,17 +1,11 @@
 package io.github.bsayli.licensing.service.user.operations.errors;
 
-public class MaxRetryAttemptsExceededException extends RuntimeException {
-
-  private static final long serialVersionUID = 1803124881133766389L;
-
-  private final String userId;
-
+public class MaxRetryAttemptsExceededException extends UserOpsExceptionImpl {
   public MaxRetryAttemptsExceededException(String userId) {
-    super("Retry attempts exceeded for userId : " + userId);
-    this.userId = userId;
+    super(UserOpsErrorCode.MAX_RETRY_ATTEMPTS_EXCEEDED, userId);
   }
 
-  public String getUserId() {
-    return userId;
+  public MaxRetryAttemptsExceededException(Throwable cause, String userId) {
+    super(UserOpsErrorCode.MAX_RETRY_ATTEMPTS_EXCEEDED, cause, userId);
   }
 }

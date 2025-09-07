@@ -10,7 +10,7 @@ public interface UserCacheManagementService {
 
   Logger logger = LoggerFactory.getLogger(UserCacheManagementService.class);
 
-  void updateCachesAsync(String userId) throws Exception;
+  void updateCachesAsync(String userId);
 
   Map<String, Optional<LicenseInfo>> getDataInOffline(String userId);
 

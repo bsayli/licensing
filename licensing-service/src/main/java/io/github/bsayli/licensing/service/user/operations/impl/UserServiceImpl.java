@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.service.user.operations.impl;
 
 import io.github.bsayli.licensing.model.LicenseInfo;
-import io.github.bsayli.licensing.model.errors.LicenseInvalidException;
+import io.github.bsayli.licensing.model.errors.LicenseNotFoundException;
 import io.github.bsayli.licensing.model.errors.repository.UserNotFoundException;
 import io.github.bsayli.licensing.repository.user.UserRepository;
 import io.github.bsayli.licensing.service.user.operations.UserRecoverService;
@@ -48,7 +48,7 @@ public class UserServiceImpl implements UserService {
               delayExpression = "${retry.userService.initialDelay}",
               maxDelayExpression = "${retry.userService.maxDelay}",
               multiplierExpression = "${retry.userService.multiplier}"))
-  public Optional<LicenseInfo> getUser(String userId) throws Exception {
+  public Optional<LicenseInfo> getUser(String userId) {
     return userRepository.getUser(userId);
   }
 
@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
     try {
       return userRepository.updateLicenseUsage(userId, appInstanceId);
     } catch (UserNotFoundException e) {
-      throw new LicenseInvalidException("License key not found", e);
+      throw new LicenseNotFoundException(e, userId);
     }
   }
 

@@ -1,16 +1,12 @@
 package io.github.bsayli.licensing.model.errors;
 
-import io.github.bsayli.licensing.model.LicenseServiceStatus;
-
 public class TokenAlreadyExistException extends LicenseServiceExceptionImpl {
 
-  private static final long serialVersionUID = 9039245175884123100L;
-
-  public TokenAlreadyExistException(String message) {
-    super(message);
+  public TokenAlreadyExistException(Object... args) {
+    super(LicenseServiceStatus.TOKEN_ALREADY_EXIST, args);
   }
 
-  public LicenseServiceStatus getStatus() {
-    return LicenseServiceStatus.TOKEN_ALREADY_EXIST;
+  public TokenAlreadyExistException(Throwable cause, Object... args) {
+    super(LicenseServiceStatus.TOKEN_ALREADY_EXIST, cause, args);
   }
 }
