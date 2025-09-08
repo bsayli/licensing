@@ -2,9 +2,9 @@ package io.github.bsayli.licensing.security.impl;
 
 import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
 import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
-import io.github.bsayli.licensing.model.SignatureData;
-import io.github.bsayli.licensing.model.errors.SignatureInvalidException;
+import io.github.bsayli.licensing.domain.model.SignatureData;
 import io.github.bsayli.licensing.security.SignatureValidator;
+import io.github.bsayli.licensing.service.exception.security.SignatureInvalidException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.MessageDigest;

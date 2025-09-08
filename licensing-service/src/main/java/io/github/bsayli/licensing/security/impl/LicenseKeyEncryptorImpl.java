@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.security.impl;
 
-import io.github.bsayli.licensing.model.errors.LicenseInvalidException;
 import io.github.bsayli.licensing.security.LicenseKeyEncryptor;
+import io.github.bsayli.licensing.service.exception.license.LicenseInvalidException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -15,59 +15,76 @@ import org.bouncycastle.util.Arrays;
 
 public class LicenseKeyEncryptorImpl implements LicenseKeyEncryptor {
 
+  private static final String CIPHER_TRANSFORMATION = "AES/GCM/NoPadding";
+  private static final String KEY_ALGORITHM = "AES";
+  private static final int IV_LENGTH_BYTES = 12;
+  private static final int TAG_LENGTH_BITS = 128;
+
   private final SecretKey secretKey;
+  private final SecureRandom secureRandom = new SecureRandom();
 
   public LicenseKeyEncryptorImpl(String encodedSecretKey) {
     Security.addProvider(new BouncyCastleProvider());
-    byte[] decodedKey = Base64.getDecoder().decode(encodedSecretKey);
-    secretKey = new SecretKeySpec(decodedKey, ALGORITHM);
+    try {
+      byte[] decodedKey = Base64.getDecoder().decode(encodedSecretKey);
+      this.secretKey = new SecretKeySpec(decodedKey, KEY_ALGORITHM);
+    } catch (IllegalArgumentException e) {
+      throw new LicenseInvalidException(e);
+    }
   }
 
+  private static byte[] concat(byte[] a, byte[] b) {
+    byte[] out = new byte[a.length + b.length];
+    System.arraycopy(a, 0, out, 0, a.length);
+    System.arraycopy(b, 0, out, a.length, b.length);
+    return out;
+  }
+
+  @Override
   public String encrypt(String plainText) throws LicenseInvalidException {
-    byte[] iv = new SecureRandom().generateSeed(GCM_IV_LENGTH);
-    try {
-      Cipher cipher = Cipher.getInstance(ALGORITHM);
-      GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, iv);
-      cipher.init(Cipher.ENCRYPT_MODE, secretKey, parameterSpec);
+    byte[] iv = new byte[IV_LENGTH_BYTES];
+    secureRandom.nextBytes(iv);
 
-      byte[] cipherTextBytes = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
-      byte[] finalCipherText = concatArrays(iv, cipherTextBytes);
-      return Base64.getEncoder().encodeToString(finalCipherText);
+    try {
+      Cipher cipher = Cipher.getInstance(CIPHER_TRANSFORMATION);
+      GCMParameterSpec spec = new GCMParameterSpec(TAG_LENGTH_BITS, iv);
+      cipher.init(Cipher.ENCRYPT_MODE, secretKey, spec);
+
+      byte[] cipherText = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
+      byte[] ivPlusCipher = concat(iv, cipherText);
+      return Base64.getEncoder().encodeToString(ivPlusCipher);
+
     } catch (Exception e) {
-      throw new LicenseInvalidException(MESSAGE_LICENSE_KEY_INVALID, e);
+      throw new LicenseInvalidException(e);
     }
   }
 
+  @Override
   public String decrypt(String encryptedText) throws LicenseInvalidException {
-    boolean isValidBase64 = isValidBase64(encryptedText);
-    if (!isValidBase64) {
-      throw new LicenseInvalidException(MESSAGE_LICENSE_KEY_INVALID);
-    }
+    final byte[] ivPlusCipher;
     try {
-      byte[] decoded = Base64.getDecoder().decode(encryptedText);
-      byte[] iv = Arrays.copyOfRange(decoded, 0, GCM_IV_LENGTH);
-      byte[] cipherTextBytes = Arrays.copyOfRange(decoded, GCM_IV_LENGTH, decoded.length);
-
-      Cipher cipher = Cipher.getInstance(ALGORITHM);
-      GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, iv);
-      cipher.init(Cipher.DECRYPT_MODE, secretKey, parameterSpec);
-
-      byte[] decryptedBytes = cipher.doFinal(cipherTextBytes);
-      return new String(decryptedBytes, StandardCharsets.UTF_8);
-    } catch (Exception e) {
-      throw new LicenseInvalidException(MESSAGE_LICENSE_KEY_INVALID, e);
+      ivPlusCipher = Base64.getDecoder().decode(encryptedText);
+    } catch (IllegalArgumentException e) {
+      throw new LicenseInvalidException(e);
     }
-  }
 
-  private byte[] concatArrays(byte[] a, byte[] b) {
-    byte[] result = new byte[a.length + b.length];
-    System.arraycopy(a, 0, result, 0, a.length);
-    System.arraycopy(b, 0, result, a.length, b.length);
-    return result;
-  }
+    if (ivPlusCipher.length <= IV_LENGTH_BYTES) {
+      throw new LicenseInvalidException();
+    }
 
-  private boolean isValidBase64(String str) {
-    String base64Regex = "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$";
-    return str != null && str.matches(base64Regex);
+    try {
+      byte[] iv = Arrays.copyOfRange(ivPlusCipher, 0, IV_LENGTH_BYTES);
+      byte[] cipherBytes = Arrays.copyOfRange(ivPlusCipher, IV_LENGTH_BYTES, ivPlusCipher.length);
+
+      Cipher cipher = Cipher.getInstance(CIPHER_TRANSFORMATION);
+      GCMParameterSpec spec = new GCMParameterSpec(TAG_LENGTH_BITS, iv);
+      cipher.init(Cipher.DECRYPT_MODE, secretKey, spec);
+
+      byte[] plainBytes = cipher.doFinal(cipherBytes);
+      return new String(plainBytes, StandardCharsets.UTF_8);
+
+    } catch (Exception e) {
+      throw new LicenseInvalidException(e);
+    }
   }
 }

@@ -1,5 +1,6 @@
 package io.github.bsayli.licensing.service.jwt.impl;
 
+import io.github.bsayli.licensing.domain.model.LicenseStatus;
 import io.github.bsayli.licensing.service.jwt.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -12,50 +13,62 @@ import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class JwtServiceImpl implements JwtService {
 
-  private static final Random random = new Random();
-
+  private static final String KEY_ALG = "EdDSA";
+  private static final String KEY_PROVIDER = "BC";
+  private static final String HEADER_REQUIRED_FIELD = "alg";
+  private static final String JWT_DOT_REGEX = "\\.";
+  private static final int JWT_EXPECTED_PARTS = 3;
+  private static final String CLAIM_LICENSE_STATUS = "licenseStatus";
+  private static final String CLAIM_LICENSE_TIER = "licenseTier";
+  private static final Base64.Decoder B64_DEC = Base64.getDecoder();
+  private static final Base64.Decoder B64URL_DEC = Base64.getUrlDecoder();
   private final PrivateKey privateKey;
   private final PublicKey publicKey;
-  private final Integer tokenExpirationInMinute;
-  private final long tokenMaxJitter;
+  private final Duration tokenTtl;
+  private final Duration maxJitter;
 
   public JwtServiceImpl(
-      String privateKeyStr,
-      String publicKeyStr,
-      Integer tokenExpirationInMinute,
-      long tokenMaxJitter)
+      String privateKeyBase64, String publicKeyBase64, Duration tokenTtl, Duration maxJitter)
       throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
-    Security.addProvider(new BouncyCastleProvider());
-    byte[] decodedPrivateKey = Base64.getDecoder().decode(privateKeyStr);
-    KeyFactory keyFactory = KeyFactory.getInstance("EdDSA", "BC");
-    this.privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(decodedPrivateKey));
 
-    byte[] decodedPublicKey = Base64.getDecoder().decode(publicKeyStr);
-    this.publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(decodedPublicKey));
-    this.tokenExpirationInMinute = tokenExpirationInMinute;
-    this.tokenMaxJitter = tokenMaxJitter;
+    Security.addProvider(new BouncyCastleProvider());
+
+    KeyFactory kf = KeyFactory.getInstance(KEY_ALG, KEY_PROVIDER);
+
+    byte[] priv = B64_DEC.decode(privateKeyBase64);
+    this.privateKey = kf.generatePrivate(new PKCS8EncodedKeySpec(priv));
+
+    byte[] pub = B64_DEC.decode(publicKeyBase64);
+    this.publicKey = kf.generatePublic(new X509EncodedKeySpec(pub));
+
+    this.tokenTtl = (tokenTtl == null) ? Duration.ZERO : tokenTtl;
+    this.maxJitter = (maxJitter == null) ? Duration.ZERO : maxJitter;
   }
 
   @Override
-  public String generateToken(String clientId, String licenseTier, String licenseStatus) {
+  public String generateToken(String clientId, String licenseTier, LicenseStatus licenseStatus) {
     Instant now = Instant.now();
-    long jitter = random.nextLong(tokenMaxJitter);
-    Integer tokenExpirationWithJitter = (tokenExpirationInMinute * 60) + (int) (jitter / 1000);
-    Instant expiry = now.plus(tokenExpirationWithJitter, ChronoUnit.SECONDS);
+
+    long jitterMs =
+        (maxJitter.isZero() || maxJitter.isNegative())
+            ? 0L
+            : ThreadLocalRandom.current().nextLong(0, maxJitter.toMillis() + 1);
+
+    Instant expiry = now.plus(tokenTtl).plusMillis(jitterMs);
 
     return Jwts.builder()
         .subject(clientId)
-        .claim("licenseStatus", licenseStatus)
-        .claim("licenseTier", licenseTier)
+        .claim(CLAIM_LICENSE_STATUS, licenseStatus.name())
+        .claim(CLAIM_LICENSE_TIER, licenseTier)
         .issuedAt(Date.from(now))
         .expiration(Date.from(expiry))
         .signWith(privateKey)
@@ -71,20 +84,18 @@ public class JwtServiceImpl implements JwtService {
   public boolean validateTokenFormat(String token) {
     if (token == null) return false;
 
-    String[] parts = token.split("\\.");
-    if (parts.length != 3) {
-      return false;
-    }
+    String[] parts = token.split(JWT_DOT_REGEX);
+    if (parts.length != JWT_EXPECTED_PARTS) return false;
 
     for (String part : parts) {
       try {
-        Base64.getUrlDecoder().decode(part);
+        B64URL_DEC.decode(part);
       } catch (IllegalArgumentException e) {
         return false;
       }
     }
 
-    String header = new String(Base64.getUrlDecoder().decode(parts[0]));
-    return header.contains("alg");
+    String headerJson = new String(B64URL_DEC.decode(parts[0]));
+    return headerJson.contains(HEADER_REQUIRED_FIELD);
   }
 }

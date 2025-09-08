@@ -1,20 +1,16 @@
 package io.github.bsayli.licensing.service.user.cache.impl;
 
-import io.github.bsayli.licensing.model.LicenseInfo;
+import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.service.user.cache.UserCacheService;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service("userOfflineCacheService")
 public class UserOfflineCacheServiceImpl implements UserCacheService {
 
-  private static final String CACHE_NAME_USER_OFFLINE_INFO = "userOfflineInfoCache";
+  private static final String CACHE_NAME = "userOfflineInfoCache";
 
   private final CacheManager cacheManager;
 
@@ -23,63 +19,33 @@ public class UserOfflineCacheServiceImpl implements UserCacheService {
   }
 
   @Override
-  @Cacheable(value = CACHE_NAME_USER_OFFLINE_INFO, key = "#userId")
-  public Optional<LicenseInfo> addUser(String userId, Optional<LicenseInfo> licenseInfo) {
-    return licenseInfo;
+  public Optional<LicenseInfo> get(String userId) {
+    Cache cache = cacheManager.getCache(CACHE_NAME);
+    if (cache == null) return Optional.empty();
+    LicenseInfo info = cache.get(userId, LicenseInfo.class);
+    return Optional.ofNullable(info);
   }
 
   @Override
-  @CacheEvict(cacheNames = CACHE_NAME_USER_OFFLINE_INFO, key = "#userId")
-  public void evictUser(String userId) {}
-
-  @Override
-  public void updateUser(String userId, Optional<LicenseInfo> licenseInfo) {
-    Cache userOfflineInfoCache = cacheManager.getCache(CACHE_NAME_USER_OFFLINE_INFO);
-    if (userOfflineInfoCache != null) {
-      userOfflineInfoCache.put(userId, licenseInfo);
+  public void put(String userId, LicenseInfo licenseInfo) {
+    Cache cache = cacheManager.getCache(CACHE_NAME);
+    if (cache != null) {
+      cache.put(userId, licenseInfo);
     }
   }
 
   @Override
-  public Optional<LicenseInfo> getUser(String userId) {
-    Optional<LicenseInfo> userInfoOpt = Optional.empty();
-    Cache userOfflineInfoCache = cacheManager.getCache(CACHE_NAME_USER_OFFLINE_INFO);
-    if (userOfflineInfoCache != null) {
-      Cache.ValueWrapper cachedValueWrapper = userOfflineInfoCache.get(userId);
-      if (cachedValueWrapper != null && cachedValueWrapper.get() != null) {
-        Object object = cachedValueWrapper.get();
-        if (object != null && object.getClass().isAssignableFrom(Optional.class)) {
-          Optional<?> objectOptional = (Optional<?>) object;
-          if (objectOptional.isPresent()) {
-            return Optional.of((LicenseInfo) objectOptional.get());
-          }
-        }
-      }
+  public void evict(String userId) {
+    Cache cache = cacheManager.getCache(CACHE_NAME);
+    if (cache != null) {
+      cache.evict(userId);
     }
-    return userInfoOpt;
   }
 
   @Override
-  public boolean userExistInCache(String userId) {
-    boolean isUserCached = false;
-    Cache userOfflineInfoCache = cacheManager.getCache(CACHE_NAME_USER_OFFLINE_INFO);
-    if (userOfflineInfoCache != null) {
-      Cache.ValueWrapper cachedUserInfoValue = userOfflineInfoCache.get(userId);
-      if (cachedUserInfoValue != null) {
-        isUserCached = true;
-      }
-    }
-    return isUserCached;
-  }
-
-  @Override
-  public Map<String, Optional<LicenseInfo>> returnIfExist(String userId) {
-    Map<String, Optional<LicenseInfo>> dataMap = new HashMap<>();
-    Optional<LicenseInfo> licenseInfo = getUser(userId);
-    boolean exist = userExistInCache(userId);
-    if (exist) {
-      dataMap.put(userId, licenseInfo);
-    }
-    return dataMap;
+  public boolean exists(String userId) {
+    Cache cache = cacheManager.getCache(CACHE_NAME);
+    if (cache == null) return false;
+    return cache.get(userId) != null;
   }
 }

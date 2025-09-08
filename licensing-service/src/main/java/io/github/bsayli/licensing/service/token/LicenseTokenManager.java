@@ -1,8 +1,8 @@
 package io.github.bsayli.licensing.service.token;
 
-import io.github.bsayli.licensing.model.ClientInfo;
-import io.github.bsayli.licensing.model.LicenseValidationResult;
-import io.github.bsayli.licensing.service.LicenseClientCacheManagementService;
+import io.github.bsayli.licensing.domain.model.ClientInfo;
+import io.github.bsayli.licensing.domain.result.LicenseValidationResult;
+import io.github.bsayli.licensing.service.ClientSessionCache;
 import io.github.bsayli.licensing.service.jwt.JwtService;
 import org.springframework.stereotype.Component;
 
@@ -10,9 +10,9 @@ import org.springframework.stereotype.Component;
 public class LicenseTokenManager {
 
   private final JwtService jwtService;
-  private final LicenseClientCacheManagementService cache;
+  private final ClientSessionCache cache;
 
-  public LicenseTokenManager(JwtService jwtService, LicenseClientCacheManagementService cache) {
+  public LicenseTokenManager(JwtService jwtService, ClientSessionCache cache) {
     this.jwtService = jwtService;
     this.cache = cache;
   }
@@ -39,7 +39,7 @@ public class LicenseTokenManager {
             .licenseToken(token)
             .build();
 
-    cache.addClientInfo(clientInfo);
+    cache.put(clientInfo);
     return token;
   }
 }

@@ -3,9 +3,9 @@ package io.github.bsayli.licensing.service.impl;
 import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
 import io.github.bsayli.licensing.api.dto.LicenseValidationResponse;
 import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.common.exception.ServiceErrorCode;
+import io.github.bsayli.licensing.domain.result.LicenseValidationResult;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
-import io.github.bsayli.licensing.model.LicenseValidationResult;
-import io.github.bsayli.licensing.model.errors.LicenseServiceStatus;
 import io.github.bsayli.licensing.service.LicenseOrchestrationService;
 import io.github.bsayli.licensing.service.LicenseValidationService;
 import io.github.bsayli.licensing.service.jwt.JwtBlacklistService;
@@ -21,10 +21,10 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
   private final LicenseTokenManager tokenManager;
 
   public LicenseOrchestrationServiceImpl(
-          LicenseValidationService licenseValidationService,
-          ClientIdGenerator clientIdGenerator,
-          JwtBlacklistService jwtBlacklistService,
-          LicenseTokenManager tokenManager) {
+      LicenseValidationService licenseValidationService,
+      ClientIdGenerator clientIdGenerator,
+      JwtBlacklistService jwtBlacklistService,
+      LicenseTokenManager tokenManager) {
     this.licenseValidationService = licenseValidationService;
     this.clientIdGenerator = clientIdGenerator;
     this.jwtBlacklistService = jwtBlacklistService;
@@ -41,14 +41,14 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
     }
 
     String token =
-            tokenManager.issueAndCache(
-                    clientId,
-                    result,
-                    request.serviceId(),
-                    request.serviceVersion(),
-                    request.instanceId(),
-                    request.checksum(),
-                    request.signature());
+        tokenManager.issueAndCache(
+            clientId,
+            result,
+            request.serviceId(),
+            request.serviceVersion(),
+            request.instanceId(),
+            request.checksum(),
+            request.signature());
     return LicenseValidationResponse.created(token);
   }
 
@@ -56,17 +56,17 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
   public LicenseValidationResponse validateToken(ValidateTokenRequest request, String token) {
     LicenseValidationResult result = licenseValidationService.validateLicense(request, token);
 
-    if (LicenseServiceStatus.TOKEN_REFRESHED == result.serviceStatus()) {
+    if (ServiceErrorCode.TOKEN_REFRESHED == result.serviceStatus()) {
       String clientId = clientIdGenerator.getClientId(request);
       String newToken =
-              tokenManager.issueAndCache(
-                      clientId,
-                      result,
-                      request.serviceId(),
-                      request.serviceVersion(),
-                      request.instanceId(),
-                      request.checksum(),
-                      request.signature());
+          tokenManager.issueAndCache(
+              clientId,
+              result,
+              request.serviceId(),
+              request.serviceVersion(),
+              request.instanceId(),
+              request.checksum(),
+              request.signature());
       return LicenseValidationResponse.refreshed(newToken);
     }
 

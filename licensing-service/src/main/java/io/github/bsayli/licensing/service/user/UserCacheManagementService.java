@@ -1,24 +1,19 @@
 package io.github.bsayli.licensing.service.user;
 
-import io.github.bsayli.licensing.model.LicenseInfo;
-import java.util.Map;
+import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public interface UserCacheManagementService {
 
-  Logger logger = LoggerFactory.getLogger(UserCacheManagementService.class);
+  void refreshAsync(String userId);
 
-  void updateCachesAsync(String userId);
+  Optional<LicenseInfo> getOffline(String userId);
 
-  Map<String, Optional<LicenseInfo>> getDataInOffline(String userId);
+  boolean isOnlineMissing(String userId);
 
-  boolean isOnlineCacheDataExpired(String userId);
+  void putOffline(String userId, LicenseInfo licenseInfo);
 
-  void refreshDataInOffline(String userId, Optional<LicenseInfo> licenseInfo);
+  void putBoth(String userId, LicenseInfo licenseInfo);
 
-  void refreshDataInCaches(String userId, Optional<LicenseInfo> licenseInfo);
-
-  void evictDataInCaches(String userId);
+  void evict(String userId);
 }

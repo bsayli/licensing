@@ -1,6 +1,6 @@
 package io.github.bsayli.licensing.api.security;
 
-import io.github.bsayli.licensing.model.errors.InvalidAuthorizationHeaderException;
+import io.github.bsayli.licensing.service.exception.security.InvalidAuthorizationHeaderException;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.Nullable;
