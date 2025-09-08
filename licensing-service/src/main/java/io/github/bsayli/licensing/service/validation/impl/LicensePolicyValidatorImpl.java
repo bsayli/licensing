@@ -2,11 +2,11 @@ package io.github.bsayli.licensing.service.validation.impl;
 
 import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
 import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
-import io.github.bsayli.licensing.model.LicenseInfo;
-import io.github.bsayli.licensing.model.LicenseStatus;
-import io.github.bsayli.licensing.model.errors.LicenseExpiredException;
-import io.github.bsayli.licensing.model.errors.LicenseInactiveException;
-import io.github.bsayli.licensing.model.errors.LicenseUsageLimitExceededException;
+import io.github.bsayli.licensing.domain.model.LicenseInfo;
+import io.github.bsayli.licensing.domain.model.LicenseStatus;
+import io.github.bsayli.licensing.service.exception.license.LicenseExpiredException;
+import io.github.bsayli.licensing.service.exception.license.LicenseInactiveException;
+import io.github.bsayli.licensing.service.exception.license.LicenseUsageLimitExceededException;
 import io.github.bsayli.licensing.service.validation.LicensePolicyValidator;
 import io.github.bsayli.licensing.service.validation.LicenseServicePolicyValidator;
 import java.time.LocalDateTime;
@@ -51,7 +51,8 @@ public class LicensePolicyValidatorImpl implements LicensePolicyValidator {
   }
 
   private void assertActive(LicenseInfo info) {
-    if (!LicenseStatus.from(info.licenseStatus()).isActive()) {
+    LicenseStatus status = info.licenseStatus();
+    if (status == null || !status.isActive()) {
       throw new LicenseInactiveException();
     }
   }

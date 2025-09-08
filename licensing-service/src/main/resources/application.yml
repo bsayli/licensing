@@ -21,11 +21,16 @@ logging:
     org.springframework.security: INFO
     io.github.bsayli.licensing: DEBUG
 
+licensing:
+  api:
+    basic:
+      username: "licensingUser"
+      password: "licensingPass"
+      realm: "LicensingService"
+
 app:
   openapi:
     base-url: "http://localhost:${server.port}${server.servlet.context-path:}"
-  user: 'c9License'
-  pass: 'aPJ829Lrp15'
 
 license:
   secret:
@@ -58,24 +63,31 @@ keycloak:
     max-per-route: 5
 
 retry:
-  userService:
-    maxAttempts: 3
-    initialDelay: 5000
+  user-service:
+    max-attempts: 2
+    initial-delay: 1000      # ms
     multiplier: 2
-    maxDelay: 30000
-  userServiceAsync:
-    maxAttempts: 4
-    initialDelay: 10000
-    multiplier: 3
-    maxDelay: 360000
+    max-delay: 8000          # ms
+  user-service-async:
+    max-attempts: 3
+    initial-delay: 2000      # ms
+    multiplier: 2
+    max-delay: 15000         # ms
 
 jwt:
   token:
-    expiration: 120           # minutes
+    expiration: 60m         # demo için 60 dakika
     max:
-      jitter: 300000          # milliseconds
+      jitter: 2m            # yenileme toleransı (maks.)
 
 caching:
   spring:
-    clientLicenseInfoTTL: 2                 # hours
-    clientLicenseInfoOffLineSupportTTL: 120 # hours
+    clientLicenseInfoTTL: 1h      # online cache
+    clientLicenseInfoOffLineSupportTTL: 24h  # offline cache (uzun ömür)
+
+async:
+  pool:
+    core: 4
+    max: 8
+    queue: 100
+    threadNamePrefix: "LicenseService-"

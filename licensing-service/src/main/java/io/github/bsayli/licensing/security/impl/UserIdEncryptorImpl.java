@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.security.impl;
 
-import io.github.bsayli.licensing.model.errors.LicenseInvalidException;
 import io.github.bsayli.licensing.security.UserIdEncryptor;
+import io.github.bsayli.licensing.service.exception.license.LicenseInvalidException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.Security;

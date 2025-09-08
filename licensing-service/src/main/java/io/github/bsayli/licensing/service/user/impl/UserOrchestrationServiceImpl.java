@@ -1,10 +1,9 @@
 package io.github.bsayli.licensing.service.user.impl;
 
-import io.github.bsayli.licensing.model.LicenseInfo;
+import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.service.user.UserCacheManagementService;
 import io.github.bsayli.licensing.service.user.UserOrchestrationService;
 import io.github.bsayli.licensing.service.user.operations.UserService;
-import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 
@@ -20,25 +19,24 @@ public class UserOrchestrationServiceImpl implements UserOrchestrationService {
     this.userCacheManagementService = userCacheManagementService;
   }
 
-  public Optional<LicenseInfo> getUser(String userId) {
-    Map<String, Optional<LicenseInfo>> offlineCacheData =
-        userCacheManagementService.getDataInOffline(userId);
-    if (offlineCacheData.containsKey(userId)) {
-      if (userCacheManagementService.isOnlineCacheDataExpired(userId)) {
-        userCacheManagementService.updateCachesAsync(userId);
+  @Override
+  public Optional<LicenseInfo> getLicenseInfo(String userId) {
+    Optional<LicenseInfo> offline = userCacheManagementService.getOffline(userId);
+    if (offline.isPresent()) {
+      if (userCacheManagementService.isOnlineMissing(userId)) {
+        userCacheManagementService.refreshAsync(userId);
       }
-      return offlineCacheData.get(userId);
+      return offline;
     }
 
-    Optional<LicenseInfo> onlineCacheData = userService.getUser(userId);
-    userCacheManagementService.refreshDataInOffline(userId, onlineCacheData);
-    return onlineCacheData;
+    Optional<LicenseInfo> online = userService.getUser(userId);
+    userCacheManagementService.putOffline(userId, online.orElse(null));
+    return online;
   }
 
   @Override
-  public void updateLicenseUsage(String userId, String appInstanceId) {
-    Optional<LicenseInfo> updatedLicenseInfo =
-        userService.updateLicenseUsage(userId, appInstanceId);
-    userCacheManagementService.refreshDataInCaches(userId, updatedLicenseInfo);
+  public void recordUsage(String userId, String instanceId) {
+    Optional<LicenseInfo> updated = userService.updateLicenseUsage(userId, instanceId);
+    userCacheManagementService.putBoth(userId, updated.orElse(null));
   }
 }

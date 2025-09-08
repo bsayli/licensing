@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.config;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -14,36 +14,38 @@ import org.springframework.context.annotation.Configuration;
 public class CacheConfig {
 
   @Value("${caching.spring.clientLicenseInfoTTL}")
-  private Integer clientLicenseInfoTTL;
+  private Duration userInfoTtl;
 
   @Value("${caching.spring.clientLicenseInfoOffLineSupportTTL}")
-  private Integer clientLicenseInfoOffLineSupportTTL;
+  private Duration userOfflineTtl;
 
   @Value("${jwt.token.expiration}")
-  private Integer jwtTokenExpiration;
+  private Duration jwtExpiration;
 
   @Bean
   CacheManager cacheManager() {
-    CaffeineCacheManager cacheManager = new CaffeineCacheManager();
-
-    cacheManager.registerCustomCache(
+    var mgr = new CaffeineCacheManager();
+    mgr.registerCustomCache(
         "userInfoCache",
-        Caffeine.newBuilder().expireAfterWrite(clientLicenseInfoTTL, TimeUnit.HOURS).build());
+        Caffeine.newBuilder().maximumSize(10_000).expireAfterWrite(userInfoTtl).build());
 
-    cacheManager.registerCustomCache(
+    mgr.registerCustomCache(
         "userOfflineInfoCache",
-        Caffeine.newBuilder()
-            .expireAfterWrite(clientLicenseInfoOffLineSupportTTL, TimeUnit.HOURS)
-            .build());
+        Caffeine.newBuilder().maximumSize(10_000).expireAfterWrite(userOfflineTtl).build());
 
-    cacheManager.registerCustomCache(
+    Duration tokenRelatedTtl = jwtExpiration.multipliedBy(2);
+    if (tokenRelatedTtl.compareTo(Duration.ofHours(3)) > 0) {
+      tokenRelatedTtl = Duration.ofHours(3);
+    }
+
+    mgr.registerCustomCache(
         "activeClients",
-        Caffeine.newBuilder().expireAfterWrite((jwtTokenExpiration * 2), TimeUnit.MINUTES).build());
+        Caffeine.newBuilder().maximumSize(50_000).expireAfterWrite(tokenRelatedTtl).build());
 
-    cacheManager.registerCustomCache(
+    mgr.registerCustomCache(
         "blacklistedTokens",
-        Caffeine.newBuilder().expireAfterWrite((jwtTokenExpiration * 2), TimeUnit.MINUTES).build());
+        Caffeine.newBuilder().maximumSize(50_000).expireAfterWrite(tokenRelatedTtl).build());
 
-    return cacheManager;
+    return mgr;
   }
 }

@@ -4,19 +4,20 @@ import com.fasterxml.jackson.core.Version;
 import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
 import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
 import io.github.bsayli.licensing.config.ServiceCatalogProperties;
-import io.github.bsayli.licensing.model.LicenseChecksumVersionInfo;
-import io.github.bsayli.licensing.model.LicenseInfo;
-import io.github.bsayli.licensing.model.LicenseServiceIdVersionInfo;
-import io.github.bsayli.licensing.model.errors.InvalidServiceVersionFormatException;
-import io.github.bsayli.licensing.model.errors.LicenseInvalidChecksumException;
-import io.github.bsayli.licensing.model.errors.LicenseInvalidServiceIdException;
-import io.github.bsayli.licensing.model.errors.LicenseServiceIdNotSupportedException;
-import io.github.bsayli.licensing.model.errors.LicenseServiceVersionNotSupportedException;
+import io.github.bsayli.licensing.domain.model.LicenseChecksumVersionInfo;
+import io.github.bsayli.licensing.domain.model.LicenseInfo;
+import io.github.bsayli.licensing.domain.model.LicenseServiceIdVersionInfo;
+import io.github.bsayli.licensing.service.exception.serviceid.LicenseInvalidChecksumException;
+import io.github.bsayli.licensing.service.exception.serviceid.LicenseInvalidServiceIdException;
+import io.github.bsayli.licensing.service.exception.serviceid.LicenseServiceIdNotSupportedException;
+import io.github.bsayli.licensing.service.exception.version.InvalidServiceVersionFormatException;
+import io.github.bsayli.licensing.service.exception.version.LicenseServiceVersionNotSupportedException;
 import io.github.bsayli.licensing.service.validation.ChecksumLookup;
 import io.github.bsayli.licensing.service.validation.LicenseServicePolicyValidator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -56,10 +57,12 @@ public class LicenseServicePolicyValidatorImpl implements LicenseServicePolicyVa
   }
 
   private boolean isServiceIdKnown(String serviceId) {
-    return catalog.ids() != null && catalog.ids().contains(serviceId);
+    Set<String> ids = catalog.ids();
+    return ids != null && ids.contains(serviceId);
   }
 
-  private boolean isServiceIdLicensed(String serviceId, List<String> allowedServices) {
+  // NOTE: allowedServices artık Set<String>
+  private boolean isServiceIdLicensed(String serviceId, Set<String> allowedServices) {
     return !CollectionUtils.isEmpty(allowedServices) && allowedServices.contains(serviceId);
   }
 
@@ -78,7 +81,8 @@ public class LicenseServicePolicyValidatorImpl implements LicenseServicePolicyVa
   }
 
   private boolean isChecksumRequired(String serviceId) {
-    return catalog.checksumRequired() != null && catalog.checksumRequired().contains(serviceId);
+    Set<String> required = catalog.checksumRequired();
+    return required != null && required.contains(serviceId);
   }
 
   private void validateVersion(

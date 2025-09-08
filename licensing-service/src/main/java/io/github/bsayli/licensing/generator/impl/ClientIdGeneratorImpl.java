@@ -2,8 +2,8 @@ package io.github.bsayli.licensing.generator.impl;
 
 import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
 import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.domain.model.ClientInfo;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
-import io.github.bsayli.licensing.model.ClientInfo;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

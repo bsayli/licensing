@@ -2,14 +2,15 @@ package io.github.bsayli.licensing.repository.user.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.bsayli.licensing.model.LicenseChecksumVersionInfo;
-import io.github.bsayli.licensing.model.LicenseInfo;
-import io.github.bsayli.licensing.model.LicenseServiceIdVersionInfo;
-import io.github.bsayli.licensing.model.errors.LicenseUsageLimitExceededException;
-import io.github.bsayli.licensing.model.errors.repository.UserAttributeInvalidFormatException;
-import io.github.bsayli.licensing.model.errors.repository.UserAttributeMissingException;
-import io.github.bsayli.licensing.model.errors.repository.UserNotFoundException;
+import io.github.bsayli.licensing.domain.model.LicenseChecksumVersionInfo;
+import io.github.bsayli.licensing.domain.model.LicenseInfo;
+import io.github.bsayli.licensing.domain.model.LicenseServiceIdVersionInfo;
+import io.github.bsayli.licensing.domain.model.LicenseStatus;
+import io.github.bsayli.licensing.repository.exception.UserAttributeInvalidFormatException;
+import io.github.bsayli.licensing.repository.exception.UserAttributeMissingException;
+import io.github.bsayli.licensing.repository.exception.UserNotFoundException;
 import io.github.bsayli.licensing.repository.user.UserRepository;
+import io.github.bsayli.licensing.service.exception.license.LicenseUsageLimitExceededException;
 import jakarta.ws.rs.NotFoundException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class UserRepositoryImpl implements UserRepository {
 
+  // Attribute keys in Keycloak
   private static final String ATTR_LICENSE_TIER = "licenseTier";
   private static final String ATTR_LICENSE_STATUS = "licenseStatus";
   private static final String ATTR_LICENSE_EXPIRATION = "licenseExpiration";
@@ -36,6 +38,11 @@ public class UserRepositoryImpl implements UserRepository {
   private static final String ATTR_CHECKSUM_CRM = "checksumCrm";
   private static final String ATTR_CHECKSUM_BILLING = "checksumBilling";
   private static final String ATTR_CHECKSUM_REPORTING = "checksumReporting";
+
+  // Logical service ids used in payloads
+  private static final String SERVICE_CRM = "crm";
+  private static final String SERVICE_BILLING = "billing";
+  private static final String SERVICE_REPORTING = "reporting";
 
   private final Keycloak keycloak;
 
@@ -52,7 +59,7 @@ public class UserRepositoryImpl implements UserRepository {
     try {
       UserResource userRes = users.get(userId);
       UserRepresentation rep = userRes.toRepresentation();
-      return getUserLicenseInfo(rep);
+      return toLicenseInfo(rep);
     } catch (NotFoundException e) {
       throw new UserNotFoundException(e);
     }
@@ -81,25 +88,36 @@ public class UserRepositoryImpl implements UserRepository {
         attrs.put(ATTR_INSTANCE_IDS, instanceIds);
         rep.setAttributes(attrs);
         ur.update(rep);
-        return getUserLicenseInfo(rep);
+        return toLicenseInfo(rep);
       }
 
-      return getUserLicenseInfo(rep);
+      return toLicenseInfo(rep);
     } catch (NotFoundException e) {
       throw new UserNotFoundException(e);
     }
   }
 
-  private Optional<LicenseInfo> getUserLicenseInfo(UserRepresentation rep) {
-    if (rep == null) return Optional.empty();
+  // ---- Helpers ----
 
+  private Optional<LicenseInfo> toLicenseInfo(UserRepresentation rep) {
+    if (rep == null) return Optional.empty();
     Map<String, List<String>> attrs = rep.getAttributes();
+
+    // Build checksums map per service
+    Map<String, List<LicenseChecksumVersionInfo>> checksums = new HashMap<>();
+    List<LicenseChecksumVersionInfo> crm = getChecksumVersionInfo(attrs, ATTR_CHECKSUM_CRM);
+    if (!crm.isEmpty()) checksums.put(SERVICE_CRM, crm);
+    List<LicenseChecksumVersionInfo> billing = getChecksumVersionInfo(attrs, ATTR_CHECKSUM_BILLING);
+    if (!billing.isEmpty()) checksums.put(SERVICE_BILLING, billing);
+    List<LicenseChecksumVersionInfo> reporting =
+        getChecksumVersionInfo(attrs, ATTR_CHECKSUM_REPORTING);
+    if (!reporting.isEmpty()) checksums.put(SERVICE_REPORTING, reporting);
 
     LicenseInfo info =
         new LicenseInfo.Builder()
             .userId(rep.getId())
             .licenseTier(getSingleAttribute(attrs, ATTR_LICENSE_TIER))
-            .licenseStatus(getSingleAttribute(attrs, ATTR_LICENSE_STATUS))
+            .licenseStatus(LicenseStatus.from(getSingleAttribute(attrs, ATTR_LICENSE_STATUS)))
             .expirationDate(parseLocalDateTime(getSingleAttribute(attrs, ATTR_LICENSE_EXPIRATION)))
             .maxCount(Integer.parseInt(getSingleAttribute(attrs, ATTR_MAX_COUNT)))
             .remainingUsageCount(
@@ -107,9 +125,7 @@ public class UserRepositoryImpl implements UserRepository {
             .instanceIds(getAttribute(attrs, ATTR_INSTANCE_IDS))
             .allowedServices(getAttribute(attrs, ATTR_ALLOWED_SERVICES))
             .allowedServiceVersions(getServiceIdVersionInfo(attrs, ATTR_ALLOWED_SERVICE_VERSIONS))
-            .checksumsCrm(getChecksumVersionInfo(attrs, ATTR_CHECKSUM_CRM))
-            .checksumsBilling(getChecksumVersionInfo(attrs, ATTR_CHECKSUM_BILLING))
-            .checksumsReporting(getChecksumVersionInfo(attrs, ATTR_CHECKSUM_REPORTING))
+            .serviceChecksums(checksums)
             .build();
 
     return Optional.of(info);
@@ -121,7 +137,7 @@ public class UserRepositoryImpl implements UserRepository {
   }
 
   private String getSingleAttribute(Map<String, List<String>> attrs, String name) {
-    List<String> values = attrs != null ? attrs.get(name) : null;
+    List<String> values = (attrs != null) ? attrs.get(name) : null;
     if (values == null || values.isEmpty()) {
       throw new UserAttributeMissingException(name);
     }
@@ -129,7 +145,9 @@ public class UserRepositoryImpl implements UserRepository {
   }
 
   private List<String> getAttribute(Map<String, List<String>> attrs, String name) {
-    return attrs != null ? new ArrayList<>(attrs.getOrDefault(name, List.of())) : new ArrayList<>();
+    return (attrs != null)
+        ? new ArrayList<>(attrs.getOrDefault(name, List.of()))
+        : new ArrayList<>();
   }
 
   private LocalDateTime parseLocalDateTime(String str) {

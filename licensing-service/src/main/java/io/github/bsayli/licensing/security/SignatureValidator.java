@@ -2,7 +2,7 @@ package io.github.bsayli.licensing.security;
 
 import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
 import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
-import io.github.bsayli.licensing.model.errors.SignatureInvalidException;
+import io.github.bsayli.licensing.service.exception.security.SignatureInvalidException;
 
 public interface SignatureValidator {
 

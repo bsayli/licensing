@@ -1,17 +1,17 @@
 package io.github.bsayli.licensing.service.user.operations.impl;
 
-import io.github.bsayli.licensing.model.LicenseInfo;
+import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.repository.user.UserRepository;
 import io.github.bsayli.licensing.service.exception.ConnectionExceptionPredicate;
 import io.github.bsayli.licensing.service.user.operations.UserAsyncService;
-import io.github.bsayli.licensing.service.user.operations.errors.AlreadyProcessingException;
-import io.github.bsayli.licensing.service.user.operations.errors.MaxRetryAttemptsExceededException;
+import io.github.bsayli.licensing.service.user.operations.exception.AlreadyProcessingException;
+import io.github.bsayli.licensing.service.user.operations.exception.MaxRetryAttemptsExceededException;
 import jakarta.ws.rs.ProcessingException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.http.conn.ConnectTimeoutException;
@@ -27,9 +27,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserAsyncServiceImpl implements UserAsyncService {
 
-  private final Map<String, String> ongoingProcesses = new ConcurrentHashMap<>();
+  private static final Logger log = LoggerFactory.getLogger(UserAsyncServiceImpl.class);
+
+  private final Set<String> ongoingUsers = ConcurrentHashMap.newKeySet();
   private final UserRepository userRepository;
-  Logger logger = LoggerFactory.getLogger(UserAsyncServiceImpl.class);
 
   public UserAsyncServiceImpl(UserRepository userRepository) {
     this.userRepository = userRepository;
@@ -38,7 +39,7 @@ public class UserAsyncServiceImpl implements UserAsyncService {
   @Override
   @Async
   @Retryable(
-      recover = "recoverGetUser",
+      recover = "recoverUser",
       retryFor = {
         SocketException.class,
         SocketTimeoutException.class,
@@ -46,61 +47,46 @@ public class UserAsyncServiceImpl implements UserAsyncService {
         UnknownHostException.class,
         HttpHostConnectException.class
       },
-      maxAttemptsExpression = "${retry.userServiceAsync.maxAttempts}",
+      maxAttemptsExpression = "#{@retryProperties.userServiceAsync.maxAttempts}",
       backoff =
           @Backoff(
-              delayExpression = "${retry.userServiceAsync.initialDelay}",
-              maxDelayExpression = "${retry.userServiceAsync.maxDelay}",
-              multiplierExpression = "${retry.userServiceAsync.multiplier}"))
+              delayExpression = "#{@retryProperties.userServiceAsync.initialDelay}",
+              maxDelayExpression = "#{@retryProperties.userServiceAsync.maxDelay}",
+              multiplierExpression = "#{@retryProperties.userServiceAsync.multiplier}"))
   public CompletableFuture<Optional<LicenseInfo>> getUser(String userId) {
-    boolean shouldRetryForConnectionError = false;
-    boolean processAcquired = processAcquired(userId);
-    if (!processAcquired) {
-      CompletableFuture<Optional<LicenseInfo>> future = new CompletableFuture<>();
-      AlreadyProcessingException alreadyProcessingException =
-          new AlreadyProcessingException(userId);
-      future.completeExceptionally(alreadyProcessingException);
-      return future;
+    if (!ongoingUsers.add(userId)) {
+      return CompletableFuture.failedFuture(new AlreadyProcessingException(userId));
     }
-    logger.info("Processing asynchronously with Thread {}", Thread.currentThread().getName());
-    CompletableFuture<Optional<LicenseInfo>> future = new CompletableFuture<>();
+
+    boolean releaseSlot = true;
     try {
-      Optional<LicenseInfo> licenseInfo = userRepository.getUser(userId);
-      future.complete(licenseInfo);
+      log.debug("Async fetch start userId={} thread={}", userId, Thread.currentThread().getName());
+      Optional<LicenseInfo> result = userRepository.getUser(userId);
+      return CompletableFuture.completedFuture(result);
+
     } catch (ProcessingException pe) {
-      shouldRetryForConnectionError =
-          ConnectionExceptionPredicate.isConnectionBasedException.test(pe);
-      if (shouldRetryForConnectionError) {
+      if (ConnectionExceptionPredicate.isConnectionBasedException.test(pe)) {
+        releaseSlot = false;
         throw pe;
       }
-      future.completeExceptionally(pe);
+      return CompletableFuture.failedFuture(pe);
+
     } catch (Exception e) {
-      logger.error("Processing completed with exception", e);
-      future.completeExceptionally(e);
+      log.error("Async fetch failed userId={}", userId, e);
+      return CompletableFuture.failedFuture(e);
+
     } finally {
-      if (!shouldRetryForConnectionError) {
-        ongoingProcesses.remove(userId);
+      if (releaseSlot) {
+        ongoingUsers.remove(userId);
+        log.debug("Async fetch end userId={} thread={}", userId, Thread.currentThread().getName());
       }
     }
-    logger.info("Processing completed with Thread {}", Thread.currentThread().getName());
-    return future;
   }
 
-  @Override
   @Recover
-  public CompletableFuture<Optional<LicenseInfo>> recoverGetUser(
+  public CompletableFuture<Optional<LicenseInfo>> recoverUser(
       ProcessingException pe, String userId) {
-    CompletableFuture<Optional<LicenseInfo>> future = new CompletableFuture<>();
-    MaxRetryAttemptsExceededException maxRetryAttemptsExceededException =
-        new MaxRetryAttemptsExceededException(userId);
-    future.completeExceptionally(maxRetryAttemptsExceededException);
-    ongoingProcesses.remove(userId);
-    return future;
-  }
-
-  private boolean processAcquired(String userId) {
-    String currentThreadName = Thread.currentThread().getName();
-    String value = ongoingProcesses.putIfAbsent(userId, currentThreadName);
-    return value == null || currentThreadName.equals(value);
+    ongoingUsers.remove(userId);
+    return CompletableFuture.failedFuture(new MaxRetryAttemptsExceededException(userId));
   }
 }
