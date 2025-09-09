@@ -5,7 +5,7 @@ import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.service.LicenseEvaluationService;
 import io.github.bsayli.licensing.service.exception.license.LicenseNotFoundException;
-import io.github.bsayli.licensing.service.user.UserOrchestrationService;
+import io.github.bsayli.licensing.service.user.orchestration.UserOrchestrationService;
 import io.github.bsayli.licensing.service.validation.LicensePolicyValidator;
 import java.util.function.Consumer;
 import org.springframework.stereotype.Service;

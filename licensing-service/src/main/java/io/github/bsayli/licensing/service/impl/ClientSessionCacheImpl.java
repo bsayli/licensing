@@ -4,6 +4,7 @@ import io.github.bsayli.licensing.domain.model.ClientCachedLicenseData;
 import io.github.bsayli.licensing.domain.model.ClientInfo;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.service.ClientSessionCache;
+import java.util.Objects;
 import java.util.Optional;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -48,6 +49,6 @@ public class ClientSessionCacheImpl implements ClientSessionCache {
     Cache.ValueWrapper w = cache.get(clientId);
     return (w == null || w.get() == null)
         ? Optional.empty()
-        : Optional.of((ClientCachedLicenseData) w.get());
+        : Optional.of((ClientCachedLicenseData) Objects.requireNonNull(w.get()));
   }
 }

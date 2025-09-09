@@ -1,0 +1,98 @@
+package io.github.bsayli.licensing.service.validation.impl;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
+import io.github.bsayli.licensing.domain.model.ClientCachedLicenseData;
+import io.github.bsayli.licensing.generator.ClientIdGenerator;
+import io.github.bsayli.licensing.security.SignatureValidator;
+import io.github.bsayli.licensing.security.UserIdEncryptor;
+import io.github.bsayli.licensing.service.ClientSessionCache;
+import io.github.bsayli.licensing.service.exception.request.InvalidRequestException;
+import io.github.bsayli.licensing.service.exception.token.TokenAlreadyExistsException;
+import java.util.Optional;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@Tag("unit")
+@ExtendWith(MockitoExtension.class)
+@DisplayName("Unit Test: LicenseKeyRequestValidatorImpl")
+class LicenseKeyRequestValidatorImplTest {
+
+  @Mock private ClientSessionCache cache;
+  @Mock private ClientIdGenerator clientIdGenerator;
+  @Mock private UserIdEncryptor userIdEncryptor;
+  @Mock private SignatureValidator signatureValidator;
+
+  @InjectMocks private LicenseKeyRequestValidatorImpl validator;
+
+  private IssueTokenRequest req(String checksum) {
+    return new IssueTokenRequest("crm", "1.2.3", "inst-1", "sig", checksum, "LK", false);
+  }
+
+  private ClientCachedLicenseData cached(
+      String serviceId, String version, String checksum, String encUserId) {
+    ClientCachedLicenseData c = mock(ClientCachedLicenseData.class);
+    when(c.getServiceId()).thenReturn(serviceId);
+    when(c.getServiceVersion()).thenReturn(version);
+    when(c.getChecksum()).thenReturn(checksum);
+    when(c.getEncUserId()).thenReturn(encUserId);
+    return c;
+  }
+
+  @Test
+  @DisplayName("assertSignatureValid should delegate to SignatureValidator")
+  void assertSignatureValid_delegates() {
+    IssueTokenRequest request = req("chk");
+    assertDoesNotThrow(() -> validator.assertSignatureValid(request));
+    verify(signatureValidator).validate(request);
+  }
+
+  @Test
+  @DisplayName("assertNoConflictingCachedContext should return when cache empty")
+  void assertNoConflictingCachedContext_cacheEmpty() {
+    IssueTokenRequest request = req("chk");
+    when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
+    when(cache.find("client-1")).thenReturn(Optional.empty());
+
+    assertDoesNotThrow(() -> validator.assertNoConflictingCachedContext(request, "user-1"));
+  }
+
+  @Test
+  @DisplayName(
+      "assertNoConflictingCachedContext should throw TokenAlreadyExistsException for same context")
+  void assertNoConflictingCachedContext_sameContext() {
+    IssueTokenRequest request = req("chk");
+    when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
+
+    ClientCachedLicenseData c = cached("crm", "1.2.3", "chk", "encU");
+    when(cache.find("client-1")).thenReturn(Optional.of(c));
+    when(userIdEncryptor.decrypt("encU")).thenReturn("user-1");
+
+    assertThrows(
+        TokenAlreadyExistsException.class,
+        () -> validator.assertNoConflictingCachedContext(request, "user-1"));
+  }
+
+  @Test
+  @DisplayName(
+      "assertNoConflictingCachedContext should throw InvalidRequestException for different context")
+  void assertNoConflictingCachedContext_differentContext() {
+    IssueTokenRequest request = req("chk");
+    when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
+
+    ClientCachedLicenseData c = cached("crm", "9.9.9", "chk", "encU");
+    when(cache.find("client-1")).thenReturn(Optional.of(c));
+    when(userIdEncryptor.decrypt("encU")).thenReturn("user-2");
+
+    assertThrows(
+        InvalidRequestException.class,
+        () -> validator.assertNoConflictingCachedContext(request, "user-1"));
+  }
+}

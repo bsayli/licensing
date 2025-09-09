@@ -4,8 +4,6 @@ import java.io.Serializable;
 
 public class ClientCachedLicenseData implements Serializable {
 
-  private static final long serialVersionUID = 166852228735903999L;
-
   private final String licenseToken;
   private final String encUserId;
   private final String serviceId;

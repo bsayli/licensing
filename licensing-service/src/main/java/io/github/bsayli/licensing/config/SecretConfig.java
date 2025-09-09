@@ -8,9 +8,9 @@ import io.github.bsayli.licensing.security.impl.SignatureValidatorImpl;
 import io.github.bsayli.licensing.security.impl.UserIdEncryptorImpl;
 import io.github.bsayli.licensing.service.jwt.JwtService;
 import io.github.bsayli.licensing.service.jwt.impl.JwtServiceImpl;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
+import java.security.KeyFactory;
 import java.security.spec.InvalidKeySpecException;
+import java.time.Clock;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -28,11 +28,9 @@ public class SecretConfig {
   @Value("${signature.public.key}")
   private String signaturePublicKey;
 
-  // YAML: jwt.token.expiration: 60m
   @Value("${jwt.token.expiration}")
   private Duration tokenTtl;
 
-  // YAML: jwt.token.max.jitter: 2m
   @Value("${jwt.token.max.jitter}")
   private Duration tokenMaxJitter;
 
@@ -53,9 +51,15 @@ public class SecretConfig {
   }
 
   @Bean
-  JwtService jwtService()
-      throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
-    return new JwtServiceImpl(licenseJwtPrivateKey, licenseJwtPublicKey, tokenTtl, tokenMaxJitter);
+  JwtService jwtService(KeyFactory eddsaKeyFactory) throws InvalidKeySpecException {
+    return new JwtServiceImpl(
+        licenseJwtPrivateKey,
+        licenseJwtPublicKey,
+        tokenTtl,
+        tokenMaxJitter,
+        Clock.systemUTC(),
+        null,
+        eddsaKeyFactory);
   }
 
   @Bean

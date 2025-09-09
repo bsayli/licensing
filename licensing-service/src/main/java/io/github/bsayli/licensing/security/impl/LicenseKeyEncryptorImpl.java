@@ -4,14 +4,12 @@ import io.github.bsayli.licensing.security.LicenseKeyEncryptor;
 import io.github.bsayli.licensing.service.exception.license.LicenseInvalidException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.security.Security;
+import java.util.Arrays; // JDK Arrays
 import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.Arrays;
 
 public class LicenseKeyEncryptorImpl implements LicenseKeyEncryptor {
 
@@ -24,9 +22,12 @@ public class LicenseKeyEncryptorImpl implements LicenseKeyEncryptor {
   private final SecureRandom secureRandom = new SecureRandom();
 
   public LicenseKeyEncryptorImpl(String encodedSecretKey) {
-    Security.addProvider(new BouncyCastleProvider());
     try {
       byte[] decodedKey = Base64.getDecoder().decode(encodedSecretKey);
+      if (!(decodedKey.length == 16 || decodedKey.length == 24 || decodedKey.length == 32)) {
+        throw new LicenseInvalidException(
+            new IllegalArgumentException("AES key must be 16, 24, or 32 bytes."));
+      }
       this.secretKey = new SecretKeySpec(decodedKey, KEY_ALGORITHM);
     } catch (IllegalArgumentException e) {
       throw new LicenseInvalidException(e);
@@ -46,14 +47,13 @@ public class LicenseKeyEncryptorImpl implements LicenseKeyEncryptor {
     secureRandom.nextBytes(iv);
 
     try {
-      Cipher cipher = Cipher.getInstance(CIPHER_TRANSFORMATION);
+      Cipher cipher = Cipher.getInstance(CIPHER_TRANSFORMATION); // SunJCE
       GCMParameterSpec spec = new GCMParameterSpec(TAG_LENGTH_BITS, iv);
       cipher.init(Cipher.ENCRYPT_MODE, secretKey, spec);
 
       byte[] cipherText = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
       byte[] ivPlusCipher = concat(iv, cipherText);
       return Base64.getEncoder().encodeToString(ivPlusCipher);
-
     } catch (Exception e) {
       throw new LicenseInvalidException(e);
     }
@@ -82,7 +82,6 @@ public class LicenseKeyEncryptorImpl implements LicenseKeyEncryptor {
 
       byte[] plainBytes = cipher.doFinal(cipherBytes);
       return new String(plainBytes, StandardCharsets.UTF_8);
-
     } catch (Exception e) {
       throw new LicenseInvalidException(e);
     }

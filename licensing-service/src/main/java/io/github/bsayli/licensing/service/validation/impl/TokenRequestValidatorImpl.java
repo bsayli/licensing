@@ -68,10 +68,6 @@ public class TokenRequestValidatorImpl implements TokenRequestValidator {
       }
     } catch (ExpiredJwtException e) {
       throwTokenExceptionBasedOnCache(request, token);
-    } catch (TokenAccessDeniedException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new TokenInvalidException(e);
     }
   }
 

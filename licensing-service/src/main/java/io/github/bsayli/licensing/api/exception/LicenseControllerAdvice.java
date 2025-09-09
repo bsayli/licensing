@@ -1,12 +1,12 @@
 package io.github.bsayli.licensing.api.exception;
 
-import io.github.bsayli.licensing.api.dto.ApiError;
-import io.github.bsayli.licensing.api.dto.ApiResponse;
+import io.github.bsayli.licensing.common.api.ApiError;
+import io.github.bsayli.licensing.common.api.ApiResponse;
 import io.github.bsayli.licensing.common.exception.ServiceErrorCode;
 import io.github.bsayli.licensing.common.exception.ServiceException;
 import io.github.bsayli.licensing.common.i18n.LocalizedMessageResolver;
 import io.github.bsayli.licensing.repository.exception.RepositoryException;
-import io.github.bsayli.licensing.service.user.operations.exception.UserOperationException;
+import io.github.bsayli.licensing.service.user.exception.UserOperationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.ArrayList;
