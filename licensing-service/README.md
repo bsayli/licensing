@@ -270,8 +270,6 @@ Defined in `CacheConfig` (Caffeine):
 * **Detached signature** (`SignatureValidator`): validates Base64 signature over canonical JSON payload (
   `SignatureData`)
 * **AES/GCM** utilities\*\*:\*\*
-
-    * `LicenseKeyEncryptorImpl` — encrypt/decrypt full license key payload
     * `UserIdEncryptorImpl` — encrypt/decrypt user UUIDs
 
 > For key generation and signing helpers, see the **license-generator** subproject.
@@ -331,7 +329,7 @@ licensing-service/
 │  ├─ config/(CacheConfig, CryptoProviderConfig, SecretConfig, security/*)
 │  ├─ domain/(model, result)
 │  ├─ repository/user/UserRepositoryImpl.java
-│  ├─ security/(impls: LicenseKeyEncryptorImpl, UserIdEncryptorImpl, SignatureValidatorImpl)
+│  ├─ security/(impls: UserIdEncryptorImpl, SignatureValidatorImpl)
 │  ├─ service/
 │  │  ├─ impl/(LicenseOrchestrationServiceImpl, LicenseValidationServiceImpl, ...)
 │  │  ├─ jwt/(impl/JwtServiceImpl, JwtBlacklistServiceImpl)
