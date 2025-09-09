@@ -36,7 +36,8 @@ public class SignatureValidatorImpl implements SignatureValidator {
 
     String encSegment = extractEncryptedUserIdSegment(request.licenseKey());
 
-    SignatureData data = SignatureData.builder()
+    SignatureData data =
+        SignatureData.builder()
             .serviceId(request.serviceId())
             .serviceVersion(request.serviceVersion())
             .instanceId(request.instanceId())
@@ -47,10 +48,12 @@ public class SignatureValidatorImpl implements SignatureValidator {
   }
 
   @Override
-  public void validate(ValidateTokenRequest request, String token) throws SignatureInvalidException {
+  public void validate(ValidateTokenRequest request, String token)
+      throws SignatureInvalidException {
     ensureStdBase64(request.signature());
 
-    SignatureData data = SignatureData.builder()
+    SignatureData data =
+        SignatureData.builder()
             .serviceId(request.serviceId())
             .serviceVersion(request.serviceVersion())
             .instanceId(request.instanceId())

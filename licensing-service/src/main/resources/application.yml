@@ -78,14 +78,14 @@ retry:
 
 jwt:
   token:
-    expiration: 60m         # demo için 60 dakika
+    expiration: 60m         # 60 minutes for demo
     max:
-      jitter: 2m            # yenileme toleransı (maks.)
+      jitter: 2m            # renewal tolerance (maximum)
 
 caching:
   spring:
-    clientLicenseInfoTTL: 1h      # online cache
-    clientLicenseInfoOffLineSupportTTL: 24h  # offline cache (uzun ömür)
+    clientLicenseInfoTTL: 1h                  # online cache
+    clientLicenseInfoOffLineSupportTTL: 24h   # offline cache (long-lived)
 
 async:
   pool:

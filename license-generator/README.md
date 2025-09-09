@@ -1,13 +1,15 @@
 # License Management Project — **license-generator**
 
-> Tools and libraries for generating keys, license strings, detached signatures, and validating JWT-based license tokens. This README is aimed at **devs/ops** who provision keys and run CLI flows.
+> Tools and libraries for generating keys, license strings, detached signatures, and validating JWT-based license
+> tokens. This README is aimed at **devs/ops** who provision keys and run CLI flows.
 
 ---
 
 ## Who should read this?
 
 * **Integrators / Client app devs**: skim this for CLI usage, then see the service-side guide in **licensing-service**.
-* **Ops / Security**: use this to **generate**, **rotate**, and **distribute** keys (Ed25519 & AES) and to run offline token checks.
+* **Ops / Security**: use this to **generate**, **rotate**, and **distribute** keys (Ed25519 & AES) and to run offline
+  token checks.
 
 ---
 
@@ -56,7 +58,8 @@ BSAYLI~<RANDOM_URLSAFE_BASE64>~<ENCRYPTED_USER_ID>
 
 ### 3) Create a **detached signature** for the request
 
-The licensing-service expects a detached **Ed25519** signature over the canonical JSON **SignatureData** (see [Canonical Signing Contract](#canonical-signing-contract)).
+The licensing-service expects a detached **Ed25519** signature over the canonical JSON **SignatureData** (
+see [Canonical Signing Contract](#canonical-signing-contract)).
 
 ```bash
 mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \

@@ -6,7 +6,9 @@
 
 ## Project Purpose
 
-This project provides a **complete licensing framework** for applications, combining secure key generation, detached digital signatures, and token validation (JWT/EdDSA). It is designed to ensure license authenticity, prevent misuse, and integrate seamlessly with **Keycloak** for user identity and license metadata.
+This project provides a **complete licensing framework** for applications, combining secure key generation, detached
+digital signatures, and token validation (JWT/EdDSA). It is designed to ensure license authenticity, prevent misuse, and
+integrate seamlessly with **Keycloak** for user identity and license metadata.
 
 ---
 
@@ -156,12 +158,14 @@ chmod +x run_license_sdk_cli.sh
 
 ---
 
-✅ **Note:** CLI examples must always be provided **on a single line**. If parameters contain spaces or special characters, they should be enclosed in quotes `"..."`.
+✅ **Note:** CLI examples must always be provided **on a single line**. If parameters contain spaces or special
+characters, they should be enclosed in quotes `"..."`.
 
 ---
 
 ## Feedback & Questions
 
-If you notice any issues in this documentation or have suggestions for improvements, feel free to open an issue or a pull request.
+If you notice any issues in this documentation or have suggestions for improvements, feel free to open an issue or a
+pull request.
 
 For any questions related to the project, please leave a comment in the repository’s discussion or issue tracker.
