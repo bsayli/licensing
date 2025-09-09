@@ -30,6 +30,8 @@ public final class CryptoConstants {
   public static final SecureRandom RNG = new SecureRandom();
   public static final Base64.Encoder B64_ENC = Base64.getEncoder();
   public static final Base64.Decoder B64_DEC = Base64.getDecoder();
+  public static final Base64.Encoder B64URL_NOPAD_ENC = Base64.getUrlEncoder().withoutPadding();
+  public static final Base64.Decoder B64URL_DEC = Base64.getUrlDecoder();
 
   private CryptoConstants() {}
 }

@@ -39,7 +39,6 @@ public class UserRepositoryImpl implements UserRepository {
   private static final String ATTR_CHECKSUM_BILLING = "checksumBilling";
   private static final String ATTR_CHECKSUM_REPORTING = "checksumReporting";
 
-  // Logical service ids used in payloads
   private static final String SERVICE_CRM = "crm";
   private static final String SERVICE_BILLING = "billing";
   private static final String SERVICE_REPORTING = "reporting";
@@ -97,13 +96,9 @@ public class UserRepositoryImpl implements UserRepository {
     }
   }
 
-  // ---- Helpers ----
-
   private Optional<LicenseInfo> toLicenseInfo(UserRepresentation rep) {
     if (rep == null) return Optional.empty();
     Map<String, List<String>> attrs = rep.getAttributes();
-
-    // Build checksums map per service
     Map<String, List<LicenseChecksumVersionInfo>> checksums = new HashMap<>();
     List<LicenseChecksumVersionInfo> crm = getChecksumVersionInfo(attrs, ATTR_CHECKSUM_CRM);
     if (!crm.isEmpty()) checksums.put(SERVICE_CRM, crm);

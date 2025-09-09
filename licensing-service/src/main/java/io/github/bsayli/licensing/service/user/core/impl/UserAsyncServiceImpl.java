@@ -3,6 +3,7 @@ package io.github.bsayli.licensing.service.user.core.impl;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.repository.user.UserRepository;
 import io.github.bsayli.licensing.service.exception.ConnectionExceptionPredicate;
+import io.github.bsayli.licensing.service.exception.internal.LicenseServiceInternalException;
 import io.github.bsayli.licensing.service.user.core.UserAsyncService;
 import io.github.bsayli.licensing.service.user.exception.AlreadyProcessingException;
 import io.github.bsayli.licensing.service.user.exception.MaxRetryAttemptsExceededException;
@@ -84,9 +85,13 @@ public class UserAsyncServiceImpl implements UserAsyncService {
   }
 
   @Recover
-  public CompletableFuture<Optional<LicenseInfo>> recoverUser(
-      ProcessingException pe, String userId) {
+  public CompletableFuture<Optional<LicenseInfo>> recoverUser(Throwable cause, String userId) {
     ongoingUsers.remove(userId);
-    return CompletableFuture.failedFuture(new MaxRetryAttemptsExceededException(userId));
+    if (cause instanceof jakarta.ws.rs.ProcessingException pe
+        && ConnectionExceptionPredicate.isConnectionBasedException.test(pe)) {
+      return CompletableFuture.failedFuture(new MaxRetryAttemptsExceededException(userId));
+    }
+    return CompletableFuture.failedFuture(
+        (cause instanceof Exception e) ? e : new LicenseServiceInternalException(cause));
   }
 }

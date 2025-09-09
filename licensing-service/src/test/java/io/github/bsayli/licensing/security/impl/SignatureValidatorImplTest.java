@@ -15,12 +15,11 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("unit")
-@DisplayName("SignatureValidatorImpl")
+@DisplayName("Unit Test: SignatureValidatorImpl (Ed25519)")
 class SignatureValidatorImplTest {
 
-  private static KeyPair genDsaKeyPair() throws Exception {
-    KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
-    kpg.initialize(2048);
+  private static KeyPair genEd25519KeyPair() throws Exception {
+    KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519");
     return kpg.generateKeyPair();
   }
 
@@ -37,11 +36,10 @@ class SignatureValidatorImplTest {
     return Base64.getEncoder().encodeToString(pub.getEncoded());
   }
 
-  private static String signPayloadJsonHash(PrivateKey priv, String json) throws Exception {
-    byte[] jsonHash = sha256(json.getBytes(StandardCharsets.UTF_8));
-    Signature sig = Signature.getInstance("SHA256withDSA");
+  private static String signPayloadJson(PrivateKey priv, String json) throws Exception {
+    Signature sig = Signature.getInstance("Ed25519");
     sig.initSign(priv);
-    sig.update(jsonHash);
+    sig.update(json.getBytes(StandardCharsets.UTF_8));
     return Base64.getEncoder().encodeToString(sig.sign());
   }
 
@@ -61,18 +59,22 @@ class SignatureValidatorImplTest {
   }
 
   @Test
-  @DisplayName("validate(IssueTokenRequest): happy path with matching signature")
+  @DisplayName(
+      "validate(IssueTokenRequest): verifies Ed25519 signature over canonical payload (encUserId segment hashed)")
   void issue_happyPath() throws Exception {
-    KeyPair kp = genDsaKeyPair();
+    KeyPair kp = genEd25519KeyPair();
     String pubB64 = x509PublicKeyB64(kp.getPublic());
     SignatureValidator validator = new SignatureValidatorImpl(pubB64);
 
     String serviceId = "svcA";
     String serviceVer = "1.2.3";
     String instanceId = "instance-abcdefgh";
-    String licenseKey = "L".repeat(220);
 
-    String encLicHash = sha256B64(licenseKey);
+    String encSegment =
+        "0aT6lLTZGkO1zHHPHFDzwF7zPiZLRLWSl06HSVQO5z+NqtzzcFCUkkVFuqHTYKcAcI9037sQQQSfBQakQDUoCA==";
+    String licenseKey = "BSAYLI~X66e_qYlfPxWiIaN2ahPb9tQFyqjMuTih06LCytzjZ0~" + encSegment;
+
+    String encLicHash = sha256B64(encSegment);
     SignatureData payload =
         SignatureData.builder()
             .serviceId(serviceId)
@@ -81,7 +83,7 @@ class SignatureValidatorImplTest {
             .encryptedLicenseKeyHash(encLicHash)
             .build();
 
-    String sigB64 = signPayloadJsonHash(kp.getPrivate(), payload.toJson());
+    String sigB64 = signPayloadJson(kp.getPrivate(), payload.toJson());
 
     IssueTokenRequest req = issueReq(serviceId, serviceVer, instanceId, sigB64, licenseKey, null);
 
@@ -89,9 +91,10 @@ class SignatureValidatorImplTest {
   }
 
   @Test
-  @DisplayName("validate(ValidateTokenRequest): happy path with matching signature")
+  @DisplayName(
+      "validate(ValidateTokenRequest): verifies Ed25519 signature for token flow (token hash)")
   void validate_happyPath() throws Exception {
-    KeyPair kp = genDsaKeyPair();
+    KeyPair kp = genEd25519KeyPair();
     String pubB64 = x509PublicKeyB64(kp.getPublic());
     SignatureValidator validator = new SignatureValidatorImpl(pubB64);
 
@@ -109,7 +112,7 @@ class SignatureValidatorImplTest {
             .licenseTokenHash(tokenHash)
             .build();
 
-    String sigB64 = signPayloadJsonHash(kp.getPrivate(), payload.toJson());
+    String sigB64 = signPayloadJson(kp.getPrivate(), payload.toJson());
 
     ValidateTokenRequest req = validateReq(serviceId, serviceVer, instanceId, sigB64, null);
 
@@ -117,32 +120,28 @@ class SignatureValidatorImplTest {
   }
 
   @Test
-  @DisplayName("invalid Base64 signature -> SignatureInvalidException (IssueTokenRequest)")
-  void issue_invalidBase64Signature() {
-    KeyPair kp;
-    try {
-      kp = genDsaKeyPair();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+  @DisplayName("IssueTokenRequest with non-Base64 signature -> SignatureInvalidException")
+  void issue_invalidBase64Signature() throws Exception {
+    KeyPair kp = genEd25519KeyPair();
     String pubB64 = x509PublicKeyB64(kp.getPublic());
     SignatureValidator validator = new SignatureValidatorImpl(pubB64);
 
     String serviceId = "svcA", ver = "1.0.0", instanceId = "instance-abcdefgh";
-    String badSig = "***not-base64***";
-    String licenseKey = "L".repeat(220);
 
+    String encSegment = "SGVsbG8tRW5jcnlwdGVkVXNlcklkPT0=";
+    String licenseKey = "PFX~rnd~" + encSegment;
+
+    String badSig = "***not-base64***";
     IssueTokenRequest req = issueReq(serviceId, ver, instanceId, badSig, licenseKey, null);
 
     assertThrows(SignatureInvalidException.class, () -> validator.validate(req));
   }
 
   @Test
-  @DisplayName(
-      "signature does not match payload -> SignatureInvalidException (ValidateTokenRequest)")
-  void validate_wrongSignature() throws Exception {
-    KeyPair signerKp = genDsaKeyPair();
-    KeyPair verifierKp = genDsaKeyPair(); // different key ⇒ verification must fail
+  @DisplayName("ValidateTokenRequest signed with a different key -> SignatureInvalidException")
+  void validate_wrongKey() throws Exception {
+    KeyPair signerKp = genEd25519KeyPair();
+    KeyPair verifierKp = genEd25519KeyPair();
     SignatureValidator validator =
         new SignatureValidatorImpl(x509PublicKeyB64(verifierKp.getPublic()));
 
@@ -158,21 +157,23 @@ class SignatureValidatorImplTest {
             .licenseTokenHash(tokenHash)
             .build();
 
-    String sigB64 = signPayloadJsonHash(signerKp.getPrivate(), payload.toJson());
+    String sigB64 = signPayloadJson(signerKp.getPrivate(), payload.toJson());
     ValidateTokenRequest req = validateReq(serviceId, ver, instanceId, sigB64, null);
 
     assertThrows(SignatureInvalidException.class, () -> validator.validate(req, token));
   }
 
   @Test
-  @DisplayName("tampered request fields (after signing) -> SignatureInvalidException")
+  @DisplayName("Tampered request field after signing -> SignatureInvalidException")
   void issue_tamperedRequest() throws Exception {
-    KeyPair kp = genDsaKeyPair();
+    KeyPair kp = genEd25519KeyPair();
     SignatureValidator validator = new SignatureValidatorImpl(x509PublicKeyB64(kp.getPublic()));
 
     String serviceId = "svcA", ver = "1.2.3", instanceId = "instance-abcdefgh";
-    String licenseKey = "L".repeat(220);
-    String encLicHash = sha256B64(licenseKey);
+    String encSegment = "SGVsbG8tRW5jcnlwdGVkVXNlcklkPT0=";
+    String licenseKey = "PFX~rnd~" + encSegment;
+
+    String encLicHash = sha256B64(encSegment);
 
     SignatureData original =
         SignatureData.builder()
@@ -182,10 +183,37 @@ class SignatureValidatorImplTest {
             .encryptedLicenseKeyHash(encLicHash)
             .build();
 
-    String sigB64 = signPayloadJsonHash(kp.getPrivate(), original.toJson());
-
+    String sigB64 = signPayloadJson(kp.getPrivate(), original.toJson());
     IssueTokenRequest tampered = issueReq(serviceId, "9.9.9", instanceId, sigB64, licenseKey, null);
 
     assertThrows(SignatureInvalidException.class, () -> validator.validate(tampered));
+  }
+
+  @Test
+  @DisplayName(
+      "IssueTokenRequest with invalid licenseKey format (not 3 segments) -> SignatureInvalidException")
+  void issue_invalidLicenseKeyFormat() throws Exception {
+    KeyPair kp = genEd25519KeyPair();
+    String pubB64 = x509PublicKeyB64(kp.getPublic());
+    SignatureValidator validator = new SignatureValidatorImpl(pubB64);
+
+    String serviceId = "svcA", ver = "1.0.0", instanceId = "instance-abcdefgh";
+
+    String encSegment = "SGVsbG8tRW5jcnlwdGVkVXNlcklkPT0=";
+    String encLicHash = sha256B64(encSegment);
+    SignatureData payload =
+        SignatureData.builder()
+            .serviceId(serviceId)
+            .serviceVersion(ver)
+            .instanceId(instanceId)
+            .encryptedLicenseKeyHash(encLicHash)
+            .build();
+    String sigB64 = signPayloadJson(kp.getPrivate(), payload.toJson());
+
+    String badLicenseKey = "ONLY_TWO_SEGMENTS~oops";
+
+    IssueTokenRequest req = issueReq(serviceId, ver, instanceId, sigB64, badLicenseKey, null);
+
+    assertThrows(SignatureInvalidException.class, () -> validator.validate(req));
   }
 }

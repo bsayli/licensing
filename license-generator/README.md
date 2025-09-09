@@ -1,174 +1,163 @@
-# License Management Project
+# License Management Project — **license-generator**
 
-## Overview
-
-This project provides a **modular licensing framework** designed to issue, encrypt, validate, and verify software
-licenses. It integrates with identity providers like **Keycloak** and uses modern cryptography standards to ensure
-license authenticity and user binding.
-
-The system is organized into multiple packages, each with a clear responsibility:
-
-* **`licensekey`**: generation and encryption of license keys.
-* **`signature`**: detached digital signatures over license payloads.
-* **`securekey`**: generation of secure symmetric/asymmetric keys.
-* **`token`**: parsing and validating license tokens (JWT).
-* **`common`**: shared constants, utilities, and domain-level definitions.
-* **`cli`**: command-line tooling for encryption, key generation, token validation, and signatures.
+> Tools and libraries for generating keys, license strings, detached signatures, and validating JWT-based license tokens. This README is aimed at **devs/ops** who provision keys and run CLI flows.
 
 ---
 
-## Core Concepts
+## Who should read this?
 
-### 1. License Key Format
-
-A license key has three segments:
-
-```
-PREFIX ~ RANDOM_URLSAFE_BASE64 ~ ENCRYPTED_USER_ID
-```
-
-* **PREFIX** → Project/brand identifier (e.g., `BSAYLI`).
-* **Random** → 32-byte URL-safe Base64 string.
-* **Encrypted User ID** → AES/GCM-encrypted Keycloak UUID.
-
-All segments are wrapped in the immutable DTO: `LicenseKeyData`.
-
-### 2. Cryptography
-
-* **AES/GCM** → for encrypting user identifiers & license keys.
-* **SHA-256** → for hashing license-related data.
-* **DSA / EdDSA (Ed25519)** → for digital signatures.
-* **JWT (EdDSA)** → license tokens validated with Ed25519 public keys.
-
-Cryptographic constants and utilities are centralized in:
-
-* `CryptoConstants`
-* `CryptoUtils`
-
-### 3. JWT Claims
-
-JWT tokens embed license-related claims:
-
-* `licenseStatus` → Active, Expired, etc.
-* `licenseTier` → Free, Professional, Enterprise.
-* `message` → Additional metadata or user-facing info.
-* Standard JWT claims (`exp`, `iat`, `sub`) are also supported.
+* **Integrators / Client app devs**: skim this for CLI usage, then see the service-side guide in **licensing-service**.
+* **Ops / Security**: use this to **generate**, **rotate**, and **distribute** keys (Ed25519 & AES) and to run offline token checks.
 
 ---
 
-## Package Structure
+## Golden Path (Quickstart)
 
-### `io.github.bsayli.license.common`
+A minimal end‑to‑end flow to produce a license key, sign the request payload, and validate a returned JWT.
 
-* `CryptoConstants` → shared algorithm names, key sizes, Base64 codecs.
-* `CryptoUtils` → helpers for AES-GCM encryption/decryption, array concatenation, Base64 conversions.
-* `LicenseConstants` → license-specific constants (prefix, delimiter, JWT claims).
-
-### `io.github.bsayli.license.licensekey`
-
-* `UserIdEncrypter` → AES/GCM-based encryption of Keycloak UUIDs.
-* `LicenseKeyGenerator` → builds full license keys using prefix, random segment, and encrypted user id.
-* `model.LicenseKeyData` → immutable record representing license key segments.
-
-### `io.github.bsayli.license.signature`
-
-* `SignatureGenerator` → creates detached signatures for license payloads.
-* `SignatureValidator` → verifies detached signatures with DSA public keys.
-* `model.SignatureData` → JSON payload containing service/license metadata.
-
-### `io.github.bsayli.license.securekey`
-
-* `SecureKeyGenerator` → generates AES symmetric keys.
-* `SecureEdDSAKeyPairGenerator` → generates Ed25519 key pairs for signatures.
-
-### `io.github.bsayli.license.token`
-
-* `JwtTokenExtractor` → validates JWT license tokens and extracts `LicenseValidationResult`.
-* `model.LicenseValidationResult` → DTO holding validation outcome.
-
-### `io.github.bsayli.license.cli`
-
-Command-line tools for common licensing flows:
-
-* `EncryptUserIdCli` → Encrypt or decrypt a Keycloak user UUID.
-* `LicenseKeyGeneratorCli` → Generate a license key (PREFIX \~ RANDOM \~ ENCRYPTED\_USER\_ID).
-* `LicenseTokenCli` → Validate JWT license tokens.
-* `SignatureCli` → Create or verify detached digital signatures.
-* `KeygenCli` → Generate AES symmetric keys or Ed25519 key pairs.
-
----
-
-## Example Flows
-
-### A. License Key Issuance
-
-1. User registers in Keycloak → UUID generated.
-2. `UserIdEncrypter.encrypt(UUID)` → secure identifier.
-3. `LicenseKeyGenerator.generateLicenseKey(encryptedId)` → produces license key string.
-4. Optional: sign license data with `SignatureGenerator`.
-
-### B. License Validation via JWT
-
-1. Application receives JWT from licensing server.
-2. `JwtTokenExtractor(publicKeyBase64).validateAndGetToken(token)` → verifies signature & expiration.
-3. Returns `LicenseValidationResult` with tier, status, expiration.
-
----
-
-## CLI Usage
-
-After packaging the project with Maven:
+### 0) Build
 
 ```bash
 mvn -q -DskipTests package
 ```
 
-Run any CLI with `exec-maven-plugin`:
+### 1) Generate keys
+
+**Ed25519 keypair (for signatures & JWT verification, SPKI pub / PKCS#8 priv):**
 
 ```bash
-mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
-  -Dexec.mainClass=io.github.bsayli.license.cli.EncryptUserIdCli \
-  -Dexec.args="--userId ba035b3e-d8b6-4a09-89c7-ab0459f2585b"
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.Ed25519KeygenCli
 ```
 
-### Available CLIs
+This prints Base64 keys to stdout and/or writes to files if you pass `--outPrivate` / `--outPublic`.
 
-* **EncryptUserIdCli**
+**AES key (32 bytes) for encrypting Keycloak UUID → ENCRYPTED\_USER\_ID:**
 
 ```bash
-mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.KeygenCli \
+  -Dexec.args="--type aes"
+```
+
+### 2) Produce a license key (PREFIX~~RANDOM~~ENCRYPTED\_USER\_ID)
+
+```bash
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.LicenseKeyGeneratorCli \
+  -Dexec.args="--userId <KEYCLOAK_USER_UUID>"
+```
+
+Output looks like:
+
+```
+BSAYLI~<RANDOM_URLSAFE_BASE64>~<ENCRYPTED_USER_ID>
+```
+
+### 3) Create a **detached signature** for the request
+
+The licensing-service expects a detached **Ed25519** signature over the canonical JSON **SignatureData** (see [Canonical Signing Contract](#canonical-signing-contract)).
+
+```bash
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.SignatureCli \
+  -Dexec.args='--mode sign \
+               --privateKey <BASE64_PKCS8_PRIV> \
+               --dataJson {"serviceId":"crm","serviceVersion":"1.5.0","instanceId":"crm~host~mac","encryptedLicenseKeyHash":"<Base64(SHA-256 of 3rd licenseKey segment)>"}'
+```
+
+Copy the resulting Base64 signature as the `signature` field in the **/issue** request.
+
+### 4) Ask the licensing-service for a token (server side)
+
+Use the REST API from the **licensing-service** project (`POST /v1/licenses/tokens`). See that README for cURL.
+
+### 5) Validate the returned JWT offline (optional)
+
+```bash
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.LicenseTokenCli \
+  -Dexec.args="--publicKey <BASE64_SPKI_ED25519> --token <JWT>"
+```
+
+The CLI verifies EdDSA signature/expiry and prints claims (`licenseStatus`, `licenseTier`, optional `message`).
+
+---
+
+## What this module contains
+
+### Packages
+
+* **`io.github.bsayli.license.common`**
+
+    * `CryptoConstants`, `CryptoUtils` – algorithms, sizes, Base64 helpers, AES‑GCM utils
+    * `LicenseConstants` – license prefix/delimiter + JWT claim keys
+* **`io.github.bsayli.license.licensekey`**
+
+    * `UserIdEncrypter` – AES/GCM encrypt/decrypt for Keycloak UUID
+    * `LicenseKeyGenerator` – builds `PREFIX~RANDOM~ENCRYPTED_USER_ID`
+    * `model.LicenseKeyData` – immutable value object
+* **`io.github.bsayli.license.signature`**
+
+    * `SignatureGenerator` / `SignatureValidator` – Ed25519 detached signature
+    * `model.SignatureData` – canonical JSON payload for signing
+* **`io.github.bsayli.license.securekey`**
+
+    * `SecureKeyGenerator` – AES (symmetric)
+    * `SecureEdDSAKeyPairGenerator` – Ed25519 keypair (SPKI/PKCS#8)
+* **`io.github.bsayli.license.token`**
+
+    * `JwtTokenExtractor` – validates JWT (EdDSA) with public key and returns `LicenseValidationResult`
+    * `model.LicenseValidationResult` – tier, status, expiration summary
+* **`io.github.bsayli.license.cli`** – runnable tools (see below)
+
+---
+
+## CLI Reference
+
+> All commands assume you already ran `mvn -q -DskipTests package` in this module.
+
+### EncryptUserIdCli
+
+AES/GCM encrypts/decrypts a Keycloak UUID for use in the license key.
+
+```bash
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
   -Dexec.mainClass=io.github.bsayli.license.cli.EncryptUserIdCli \
   -Dexec.args="--userId <uuid>"
 ```
 
-* **LicenseKeyGeneratorCli**
+### LicenseKeyGeneratorCli
+
+Builds the final license key: `PREFIX~RANDOM~ENCRYPTED_USER_ID`.
 
 ```bash
-mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
   -Dexec.mainClass=io.github.bsayli.license.cli.LicenseKeyGeneratorCli \
   -Dexec.args="--userId <uuid>"
 ```
 
-* **LicenseTokenCli**
+### SignatureCli
+
+Create or verify **detached** Ed25519 signatures over a JSON payload.
 
 ```bash
-mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
-  -Dexec.mainClass=io.github.bsayli.license.cli.LicenseTokenCli \
-  -Dexec.args="--token <jwt> --publicKey <base64>"
-```
-
-* **SignatureCli**
-
-```bash
-mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
+# sign
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
   -Dexec.mainClass=io.github.bsayli.license.cli.SignatureCli \
-  -Dexec.args="--mode sign|verify --data <json> --key <key>"
+  -Dexec.args='--mode sign --dataJson <json> --privateKey <BASE64_PKCS8_PRIV>'
+
+# verify
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.SignatureCli \
+  -Dexec.args='--mode verify --dataJson <json> --signatureB64 <BASE64_SIG> --publicKey <BASE64_SPKI_PUB>'
 ```
 
-* **KeygenCli**
+### LicenseTokenCli
+
+Offline JWT validation (EdDSA) and claim extraction.
 
 ```bash
-mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
-  -Dexec.mainClass=io.github.bsayli.license.cli.KeygenCli \
-  -Dexec.args="--type aes|ed25519"
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.Licen
 ```

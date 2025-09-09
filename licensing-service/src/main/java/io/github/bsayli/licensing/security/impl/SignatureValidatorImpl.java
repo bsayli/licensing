@@ -6,82 +6,114 @@ import io.github.bsayli.licensing.domain.model.SignatureData;
 import io.github.bsayli.licensing.security.SignatureValidator;
 import io.github.bsayli.licensing.service.exception.security.SignatureInvalidException;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyFactory;
-import java.security.MessageDigest;
-import java.security.Signature;
+import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 public class SignatureValidatorImpl implements SignatureValidator {
 
-  private static final String ALGORITHM_SHA_256 = "SHA-256";
-  private static final String ALGORITHM_DSA = "DSA";
-  private static final String ALGORITHM_SHA256WITHDSA = "SHA256withDSA";
+  private static final String ALG_ED25519 = "Ed25519";
+  private static final String ALG_EDDSA_BC = "EdDSA";
+  private static final String PROVIDER_BC = "BC";
 
-  private final byte[] signaturePublicKey;
+  private final PublicKey publicKey;
 
   public SignatureValidatorImpl(String signaturePublicKeyBase64) {
-    this.signaturePublicKey = Base64.getDecoder().decode(signaturePublicKeyBase64);
+    if (signaturePublicKeyBase64 == null || signaturePublicKeyBase64.isBlank()) {
+      throw new SignatureInvalidException();
+    }
+    try {
+      byte[] der = Base64.getDecoder().decode(signaturePublicKeyBase64);
+      this.publicKey = loadEd25519PublicKey(der);
+    } catch (Exception e) {
+      throw new SignatureInvalidException(e);
+    }
   }
 
   @Override
   public void validate(IssueTokenRequest request) throws SignatureInvalidException {
-    ensureBase64(request.signature());
-    SignatureData data =
-        SignatureData.builder()
+    ensureStdBase64(request.signature());
+
+    String encSegment = extractEncryptedUserIdSegment(request.licenseKey());
+
+    SignatureData data = SignatureData.builder()
             .serviceId(request.serviceId())
             .serviceVersion(request.serviceVersion())
             .instanceId(request.instanceId())
-            .encryptedLicenseKeyHash(sha256Base64(request.licenseKey()))
+            .encryptedLicenseKeyHash(sha256Base64(encSegment)) // <-- only 3rd segment is hashed
             .build();
-    verify(request.signature(), data);
+
+    verifyEd25519(request.signature(), data);
   }
 
   @Override
-  public void validate(ValidateTokenRequest request, String token)
-      throws SignatureInvalidException {
-    ensureBase64(request.signature());
-    SignatureData data =
-        SignatureData.builder()
+  public void validate(ValidateTokenRequest request, String token) throws SignatureInvalidException {
+    ensureStdBase64(request.signature());
+
+    SignatureData data = SignatureData.builder()
             .serviceId(request.serviceId())
             .serviceVersion(request.serviceVersion())
             .instanceId(request.instanceId())
             .licenseTokenHash(sha256Base64(token))
             .build();
-    verify(request.signature(), data);
+
+    verifyEd25519(request.signature(), data);
   }
 
-  private void verify(String signatureBase64, SignatureData payload) {
+  private PublicKey loadEd25519PublicKey(byte[] spkiDer) throws GeneralSecurityException {
     try {
-      byte[] jsonHash = sha256(payload.toJson().getBytes(StandardCharsets.UTF_8));
-      Signature sig = Signature.getInstance(ALGORITHM_SHA256WITHDSA);
-      sig.initVerify(
-          KeyFactory.getInstance(ALGORITHM_DSA)
-              .generatePublic(new X509EncodedKeySpec(signaturePublicKey)));
-      sig.update(jsonHash);
-      boolean ok = sig.verify(Base64.getDecoder().decode(signatureBase64));
+      KeyFactory kf = KeyFactory.getInstance(ALG_ED25519);
+      return kf.generatePublic(new X509EncodedKeySpec(spkiDer));
+    } catch (NoSuchAlgorithmException e) {
+      KeyFactory kf = KeyFactory.getInstance(ALG_EDDSA_BC, PROVIDER_BC);
+      return kf.generatePublic(new X509EncodedKeySpec(spkiDer));
+    }
+  }
+
+  private void verifyEd25519(String signatureBase64, SignatureData payload) {
+    try {
+      byte[] data = payload.toJson().getBytes(StandardCharsets.UTF_8);
+      byte[] sigBytes = Base64.getDecoder().decode(signatureBase64);
+
+      Signature sig;
+      try {
+        sig = Signature.getInstance(ALG_ED25519);
+      } catch (NoSuchAlgorithmException e) {
+        sig = Signature.getInstance(ALG_EDDSA_BC, PROVIDER_BC);
+      }
+
+      sig.initVerify(publicKey);
+      sig.update(data);
+      boolean ok = sig.verify(sigBytes);
       if (!ok) throw new SignatureInvalidException();
     } catch (Exception e) {
       throw new SignatureInvalidException(e);
     }
   }
 
-  private void ensureBase64(String s) {
-    if (s == null || !s.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$")) {
+  private String sha256Base64(String s) {
+    try {
+      MessageDigest md = MessageDigest.getInstance("SHA-256");
+      return Base64.getEncoder().encodeToString(md.digest(s.getBytes(StandardCharsets.UTF_8)));
+    } catch (NoSuchAlgorithmException e) {
+      throw new SignatureInvalidException(e);
+    }
+  }
+
+  private void ensureStdBase64(String s) {
+    if (s == null || s.isBlank()) throw new SignatureInvalidException();
+    if (!s.matches("^[A-Za-z0-9+/]+={0,2}$")) {
       throw new SignatureInvalidException();
     }
   }
 
-  private String sha256Base64(String data) {
-    return Base64.getEncoder().encodeToString(sha256(data.getBytes(StandardCharsets.UTF_8)));
-  }
-
-  private byte[] sha256(byte[] bytes) {
-    try {
-      MessageDigest md = MessageDigest.getInstance(ALGORITHM_SHA_256);
-      return md.digest(bytes);
-    } catch (Exception e) {
-      throw new SignatureInvalidException(e);
-    }
+  // Expected license key format: PREFIX~random~encryptedUserId
+  private String extractEncryptedUserIdSegment(String licenseKey) {
+    if (licenseKey == null) throw new SignatureInvalidException();
+    String[] parts = licenseKey.split("~", -1);
+    if (parts.length != 3) throw new SignatureInvalidException();
+    String enc = parts[2];
+    if (enc == null || enc.isBlank()) throw new SignatureInvalidException();
+    return enc;
   }
 }

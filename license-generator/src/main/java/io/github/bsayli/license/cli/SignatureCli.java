@@ -16,14 +16,15 @@ public final class SignatureCli {
   private static final String MODE_SIGN = "sign";
   private static final String MODE_VERIFY = "verify";
 
-  // sign mode args
   private static final String ARG_SERVICE_ID = "--serviceId";
   private static final String ARG_SERVICE_VERSION = "--serviceVersion";
   private static final String ARG_INSTANCE_ID = "--instanceId";
-  private static final String ARG_ENC_KEY = "--encKey"; // encrypted license key (raw string)
-  private static final String ARG_TOKEN = "--token"; // license token (JWT)
+  private static final String ARG_ENC_KEY = "--encKey"; // raw encrypted license key
+  private static final String ARG_TOKEN = "--token"; // JWT license token
 
-  // verify mode args
+  private static final String ARG_PRIVATE_KEY = "--privateKey"; // Base64 PKCS#8 Ed25519 (sign)
+  private static final String ARG_PUBLIC_KEY = "--publicKey"; // Base64 SPKI   Ed25519 (verify)
+
   private static final String ARG_DATA_JSON = "--dataJson"; // exact JSON used for signing
   private static final String ARG_SIGNATURE = "--signatureB64"; // Base64 detached signature
 
@@ -45,8 +46,7 @@ public final class SignatureCli {
     }
 
     String mode = read(ARG_MODE, argv).orElse(null);
-    if (mode == null
-        || (!MODE_SIGN.equalsIgnoreCase(mode) && !MODE_VERIFY.equalsIgnoreCase(mode))) {
+    if ((!MODE_SIGN.equalsIgnoreCase(mode) && !MODE_VERIFY.equalsIgnoreCase(mode))) {
       log.error("Missing or invalid --mode (expected: sign | verify)");
       printUsage(EXIT_USAGE);
     }
@@ -62,6 +62,8 @@ public final class SignatureCli {
     String serviceId = require(ARG_SERVICE_ID, argv, "Missing --serviceId");
     String serviceVersion = require(ARG_SERVICE_VERSION, argv, "Missing --serviceVersion");
     String instanceId = require(ARG_INSTANCE_ID, argv, "Missing --instanceId");
+    String privateKeyB64 =
+        require(ARG_PRIVATE_KEY, argv, "Missing --privateKey (PKCS#8 Base64 Ed25519)");
 
     Optional<String> encKeyOpt = read(ARG_ENC_KEY, argv);
     Optional<String> tokenOpt = read(ARG_TOKEN, argv);
@@ -98,9 +100,9 @@ public final class SignatureCli {
                 .build();
       }
 
-      String json = payload.toJson();
-      String signatureB64 = SignatureGenerator.createSignature(payload);
+      String signatureB64 = SignatureGenerator.createSignature(payload, privateKeyB64);
 
+      String json = payload.toJson();
       log.info("Signed payload JSON:");
       log.info("{}", json);
       log.info("Signature (Base64): {}", signatureB64);
@@ -114,9 +116,11 @@ public final class SignatureCli {
   private static void runVerify(List<String> argv) {
     String dataJson = require(ARG_DATA_JSON, argv, "Missing --dataJson");
     String signatureB64 = require(ARG_SIGNATURE, argv, "Missing --signatureB64");
+    String publicKeyB64 =
+        require(ARG_PUBLIC_KEY, argv, "Missing --publicKey (SPKI Base64 Ed25519)");
 
     try {
-      SignatureValidator validator = new SignatureValidator();
+      SignatureValidator validator = new SignatureValidator(publicKeyB64);
       boolean ok = validator.validateSignature(signatureB64, dataJson);
       if (ok) {
         log.info("Signature is VALID");
@@ -150,7 +154,7 @@ public final class SignatureCli {
             () -> {
               log.error(onMissing);
               printUsage(EXIT_USAGE);
-              return ""; // unreachable
+              return "";
             });
   }
 
@@ -164,36 +168,42 @@ public final class SignatureCli {
   private static void printUsage(int exitCode) {
     log.info(
         """
-                Usage:
-                  # Sign with encrypted license key (detached signature over canonical JSON)
-                  java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
-                      --mode sign \\
-                      --serviceId <id> --serviceVersion <ver> --instanceId <inst> \\
-                      --encKey <encrypted-license-key>
+            Usage:
 
-                  # Sign with license token (hash-only)
-                  java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
-                      --mode sign \\
-                      --serviceId <id> --serviceVersion <ver> --instanceId <inst> \\
-                      --token <jwt>
+              # SIGN (Ed25519, PKCS#8 private key Base64)
+              java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
+                --mode sign \\
+                --serviceId <id> --serviceVersion <ver> --instanceId <inst> \\
+                --encKey <encrypted-license-key> \\
+                --privateKey <base64-pkcs8-ed25519>
 
-                  # Verify an existing signature against the exact JSON
-                  java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
-                      --mode verify \\
-                      --dataJson '{...}' \\
-                      --signatureB64 <base64-signature>
+              # or with token (exactly one of --encKey or --token)
+              java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
+                --mode sign \\
+                --serviceId <id> --serviceVersion <ver> --instanceId <inst> \\
+                --token <jwt> \\
+                --privateKey <base64-pkcs8-ed25519>
 
-                Options:
-                  --mode sign|verify
-                  --serviceId <id>
-                  --serviceVersion <version>
-                  --instanceId <instance>
-                  --encKey <encrypted-license-key>
-                  --token <jwt>
-                  --dataJson <json>
-                  --signatureB64 <base64>
-                  --help, -h
-                """);
+              # VERIFY (Ed25519, SPKI public key Base64)
+              java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
+                --mode verify \\
+                --dataJson '{...}' \\
+                --signatureB64 <base64-signature> \\
+                --publicKey <base64-spki-ed25519>
+
+            Options:
+              --mode sign|verify
+              --serviceId <id>
+              --serviceVersion <version>
+              --instanceId <instance>
+              --encKey <encrypted-license-key>
+              --token <jwt>
+              --privateKey <base64-pkcs8-ed25519>  (sign)
+              --publicKey  <base64-spki-ed25519>  (verify)
+              --dataJson <json>                   (verify)
+              --signatureB64 <base64>             (verify)
+              --help, -h
+            """);
     System.exit(exitCode);
   }
 }

@@ -9,7 +9,6 @@ import io.github.bsayli.licensing.common.exception.ServiceErrorCode;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.domain.model.LicenseStatus;
 import io.github.bsayli.licensing.domain.result.LicenseValidationResult;
-import io.github.bsayli.licensing.security.LicenseKeyEncryptor;
 import io.github.bsayli.licensing.security.UserIdEncryptor;
 import io.github.bsayli.licensing.service.LicenseEvaluationService;
 import io.github.bsayli.licensing.service.exception.token.TokenExpiredException;
@@ -31,7 +30,6 @@ class LicenseValidationServiceImplTest {
   @Mock private LicenseEvaluationService licenseEvaluationService;
   @Mock private TokenRequestValidator tokenValidationService;
   @Mock private LicenseKeyRequestValidator licenseKeyValidationService;
-  @Mock private LicenseKeyEncryptor licenseKeyEncryptor;
   @Mock private UserIdEncryptor userIdEncryptor;
 
   @InjectMocks private LicenseValidationServiceImpl service;
@@ -49,20 +47,13 @@ class LicenseValidationServiceImplTest {
 
   @Test
   @DisplayName(
-      "validateLicense(IssueTokenRequest): validates signature, decrypts key/user, checks cache, evaluates and returns ENCRYPTED user with LICENSE_KEY_VALID message")
+      "validateLicense(IssueTokenRequest): imza doğrula → licenseKey'den userId çıkar → cache kontrol → evaluate → ENCRYPTED user dön")
   void issueTokenFlow_shouldValidateAndReturnEncryptedUser() {
     var req =
         new IssueTokenRequest(
-            "crm",
-            "1.2.3",
-            "instance-12345678",
-            "sig-xxxxx",
-            "chk-xxxxx",
-            "ENCRYPTED_LICENSE_KEY",
-            false);
+            "crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx", "LICENSE_KEY", false);
 
-    when(licenseKeyEncryptor.decrypt("ENCRYPTED_LICENSE_KEY")).thenReturn("DECRYPTED_KEY");
-    when(userIdEncryptor.extractAndDecryptUserId("DECRYPTED_KEY")).thenReturn("user-123");
+    when(userIdEncryptor.extractAndDecryptUserId("LICENSE_KEY")).thenReturn("user-123");
     var info = licenseInfo("user-123", "PRO", LicenseStatus.ACTIVE);
     when(licenseEvaluationService.evaluateLicense(req, "user-123")).thenReturn(info);
     when(userIdEncryptor.encrypt("user-123")).thenReturn("enc-user-123");
@@ -76,15 +67,14 @@ class LicenseValidationServiceImplTest {
     assertEquals("PRO", res.licenseTier());
     assertEquals(LicenseStatus.ACTIVE, res.licenseStatus());
     assertEquals("license.key.valid", res.message());
+
     verify(licenseKeyValidationService).assertSignatureValid(req);
-    verify(licenseKeyEncryptor).decrypt("ENCRYPTED_LICENSE_KEY");
-    verify(userIdEncryptor).extractAndDecryptUserId("DECRYPTED_KEY");
+    verify(userIdEncryptor).extractAndDecryptUserId("LICENSE_KEY");
     verify(licenseKeyValidationService).assertNoConflictingCachedContext(req, "user-123");
     verify(licenseEvaluationService).evaluateLicense(req, "user-123");
     verify(userIdEncryptor).encrypt("user-123");
     verifyNoMoreInteractions(
         licenseKeyValidationService,
-        licenseKeyEncryptor,
         userIdEncryptor,
         licenseEvaluationService,
         tokenValidationService);
@@ -92,20 +82,13 @@ class LicenseValidationServiceImplTest {
 
   @Test
   @DisplayName(
-      "validateLicense(IssueTokenRequest): when forceTokenRefresh=true it should SKIP conflicting context check")
+      "validateLicense(IssueTokenRequest): forceTokenRefresh=true olduğunda cache çatışma kontrolü atlanır")
   void issueTokenFlow_forceRefresh_skipsConflictCheck() {
     var req =
         new IssueTokenRequest(
-            "crm",
-            "1.2.3",
-            "instance-12345678",
-            "sig-xxxxx",
-            "chk-xxxxx",
-            "ENCRYPTED_LICENSE_KEY",
-            true);
+            "crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx", "LICENSE_KEY", true);
 
-    when(licenseKeyEncryptor.decrypt("ENCRYPTED_LICENSE_KEY")).thenReturn("DECRYPTED_KEY");
-    when(userIdEncryptor.extractAndDecryptUserId("DECRYPTED_KEY")).thenReturn("user-999");
+    when(userIdEncryptor.extractAndDecryptUserId("LICENSE_KEY")).thenReturn("user-999");
     var info = licenseInfo("user-999", "PRO", LicenseStatus.ACTIVE);
     when(licenseEvaluationService.evaluateLicense(req, "user-999")).thenReturn(info);
     when(userIdEncryptor.encrypt("user-999")).thenReturn("enc-user-999");
@@ -114,13 +97,15 @@ class LicenseValidationServiceImplTest {
 
     assertTrue(res.valid());
     assertEquals("enc-user-999", res.userId());
+
     verify(licenseKeyValidationService).assertSignatureValid(req);
+    verify(userIdEncryptor).extractAndDecryptUserId("LICENSE_KEY");
     verify(licenseKeyValidationService, never()).assertNoConflictingCachedContext(any(), any());
   }
 
   @Test
   @DisplayName(
-      "validateLicense(ValidateTokenRequest): valid token path returns TOKEN_VALID message without re-evaluation")
+      "validateLicense(ValidateTokenRequest): geçerli token → tekrar evaluate yapılmaz, TOKEN_VALID döner")
   void validateTokenFlow_valid_noRefresh() {
     var req =
         new ValidateTokenRequest("billing", "2.0.0", "instance-abcdef12", "sig-yyyy", "chk-zzzz");
@@ -137,17 +122,14 @@ class LicenseValidationServiceImplTest {
     assertNull(res.licenseTier());
     assertNull(res.licenseStatus());
     assertNull(res.serviceStatus());
+
     verify(tokenValidationService).assertValid(req, token);
-    verifyNoInteractions(
-        licenseEvaluationService,
-        userIdEncryptor,
-        licenseKeyValidationService,
-        licenseKeyEncryptor);
+    verifyNoInteractions(licenseEvaluationService, userIdEncryptor, licenseKeyValidationService);
   }
 
   @Test
   @DisplayName(
-      "validateLicense(ValidateTokenRequest): expired token path evaluates and returns TOKEN_REFRESHED with encrypted user")
+      "validateLicense(ValidateTokenRequest): süresi dolmuş token → eski encUserId ile evaluate ve TOKEN_REFRESHED")
   void validateTokenFlow_expired_triggersRefresh() {
     var req =
         new ValidateTokenRequest("crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx");
@@ -179,6 +161,6 @@ class LicenseValidationServiceImplTest {
     verify(licenseEvaluationService).evaluateLicense(req, "user-42");
     verify(userIdEncryptor).encrypt("user-42");
     verifyNoMoreInteractions(tokenValidationService, userIdEncryptor, licenseEvaluationService);
-    verifyNoInteractions(licenseKeyValidationService, licenseKeyEncryptor);
+    verifyNoInteractions(licenseKeyValidationService);
   }
 }

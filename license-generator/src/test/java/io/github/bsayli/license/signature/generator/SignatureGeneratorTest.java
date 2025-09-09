@@ -4,64 +4,91 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import io.github.bsayli.license.signature.model.SignatureData;
 import io.github.bsayli.license.signature.validator.SignatureValidator;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.util.Base64;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("unit")
-@DisplayName("Unit Test: SignatureGenerator")
+@DisplayName("Unit Test: SignatureGenerator (Ed25519)")
 class SignatureGeneratorTest {
+
+  private static KeyPair generateEd25519() throws Exception {
+    return KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
+  }
+
+  private static String b64(byte[] bytes) {
+    return Base64.getEncoder().encodeToString(bytes);
+  }
 
   @Test
   @DisplayName("Signing payload (encryptedLicenseKeyHash) then verifying should succeed")
   void sign_verify_withEncryptedKeyHash_ok() throws Exception {
+    KeyPair kp = generateEd25519();
+    String privateKeyB64 = b64(kp.getPrivate().getEncoded()); // PKCS#8
+    String publicKeyB64 = b64(kp.getPublic().getEncoded()); // SPKI
+
     SignatureData payload = SignatureGenerator.sampleSignatureDataWithLicenseKey();
     String json = payload.toJson();
 
-    String signatureB64 = SignatureGenerator.createSignature(payload);
+    String signatureB64 = SignatureGenerator.createSignature(payload, privateKeyB64);
 
-    SignatureValidator validator = new SignatureValidator();
+    SignatureValidator validator = new SignatureValidator(publicKeyB64);
     assertTrue(validator.validateSignature(signatureB64, json));
   }
 
   @Test
   @DisplayName("Signing payload (licenseTokenHash) then verifying should succeed")
   void sign_verify_withLicenseTokenHash_ok() throws Exception {
+    KeyPair kp = generateEd25519();
+    String privateKeyB64 = b64(kp.getPrivate().getEncoded());
+    String publicKeyB64 = b64(kp.getPublic().getEncoded());
+
     SignatureData payload = SignatureGenerator.sampleSignatureDataWithLicenseToken();
     String json = payload.toJson();
 
-    String signatureB64 = SignatureGenerator.createSignature(payload);
+    String signatureB64 = SignatureGenerator.createSignature(payload, privateKeyB64);
 
-    SignatureValidator validator = new SignatureValidator();
+    SignatureValidator validator = new SignatureValidator(publicKeyB64);
     assertTrue(validator.validateSignature(signatureB64, json));
   }
 
   @Test
   @DisplayName("Altering JSON after signing should fail verification")
   void tampered_json_shouldFailVerification() throws Exception {
+    KeyPair kp = generateEd25519();
+    String privateKeyB64 = b64(kp.getPrivate().getEncoded());
+    String publicKeyB64 = b64(kp.getPublic().getEncoded());
+
     SignatureData payload = SignatureGenerator.sampleSignatureDataWithLicenseKey();
     String json = payload.toJson();
 
-    String signatureB64 = SignatureGenerator.createSignature(payload);
+    String signatureB64 = SignatureGenerator.createSignature(payload, privateKeyB64);
     String tamperedJson = json + " ";
 
-    SignatureValidator validator = new SignatureValidator();
+    SignatureValidator validator = new SignatureValidator(publicKeyB64);
     assertFalse(validator.validateSignature(signatureB64, tamperedJson));
   }
 
   @Test
   @DisplayName("Altering signature bytes should fail verification")
   void tampered_signature_shouldFailVerification() throws Exception {
+    KeyPair kp = generateEd25519();
+    String privateKeyB64 = b64(kp.getPrivate().getEncoded());
+    String publicKeyB64 = b64(kp.getPublic().getEncoded());
+
     SignatureData payload = SignatureGenerator.sampleSignatureDataWithLicenseKey();
     String json = payload.toJson();
 
-    String signatureB64 = SignatureGenerator.createSignature(payload);
+    String signatureB64 = SignatureGenerator.createSignature(payload, privateKeyB64);
 
-    byte[] sig = java.util.Base64.getDecoder().decode(signatureB64);
+    byte[] sig = Base64.getDecoder().decode(signatureB64);
     sig[sig.length - 1] ^= 0x01; // son baytta bit çevir
-    String tamperedSigB64 = java.util.Base64.getEncoder().encodeToString(sig);
+    String tamperedSigB64 = Base64.getEncoder().encodeToString(sig);
 
-    SignatureValidator validator = new SignatureValidator();
+    SignatureValidator validator = new SignatureValidator(publicKeyB64);
     assertFalse(validator.validateSignature(tamperedSigB64, json));
   }
 }
