@@ -19,7 +19,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
   private static final String[] WHITELIST = {
-    "/actuator/health", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+    "/actuator/health", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs.yaml"
   };
 
   @Bean

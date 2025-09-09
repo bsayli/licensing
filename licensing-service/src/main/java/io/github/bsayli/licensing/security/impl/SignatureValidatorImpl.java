@@ -14,6 +14,10 @@ import java.util.Base64;
 
 public class SignatureValidatorImpl implements SignatureValidator {
 
+  private static final String ALGORITHM_SHA_256 = "SHA-256";
+  private static final String ALGORITHM_DSA = "DSA";
+  private static final String ALGORITHM_SHA256WITHDSA = "SHA256withDSA";
+
   private final byte[] signaturePublicKey;
 
   public SignatureValidatorImpl(String signaturePublicKeyBase64) {

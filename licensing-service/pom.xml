@@ -19,6 +19,7 @@
         <keycloak.version>26.0.6</keycloak.version>
         <jjwt.version>0.12.7</jjwt.version>
         <bcprov-jdk18on.version>1.81</bcprov-jdk18on.version>
+        <springdoc-openapi-starter.version>2.8.11</springdoc-openapi-starter.version>
     </properties>
     <dependencies>
         <dependency>
@@ -41,6 +42,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc-openapi-starter.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.retry</groupId>
             <artifactId>spring-retry</artifactId>

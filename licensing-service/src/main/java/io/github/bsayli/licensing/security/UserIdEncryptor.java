@@ -4,17 +4,9 @@ import io.github.bsayli.licensing.service.exception.license.LicenseInvalidExcept
 
 public interface UserIdEncryptor {
 
-  String MESSAGE_LICENSE_KEY_INVALID = "License Key Invalid!";
+  String extractAndDecryptUserId(String licenseKey) throws LicenseInvalidException;
 
-  String LICENSEKEYPREFIX = "C9INE";
-  String ALGORITHM = "AES/GCM/NoPadding";
-  int GCM_IV_LENGTH = 12; // Recommended for GCM
-  int GCM_TAG_LENGTH = 16; // 128 bits
-  String DELIMITER = "~";
+  String encrypt(String userId) throws LicenseInvalidException;
 
-  public String extractAndDecryptUserId(String licenseKey) throws LicenseInvalidException;
-
-  public String encrypt(String userId) throws LicenseInvalidException;
-
-  public String decrypt(String userId) throws LicenseInvalidException;
+  String decrypt(String userId) throws LicenseInvalidException;
 }
