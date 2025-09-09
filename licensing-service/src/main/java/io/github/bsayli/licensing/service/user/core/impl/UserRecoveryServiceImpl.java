@@ -2,7 +2,7 @@ package io.github.bsayli.licensing.service.user.core.impl;
 
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.service.exception.ConnectionExceptionPredicate;
-import io.github.bsayli.licensing.service.exception.internal.InternalServerErrorException;
+import io.github.bsayli.licensing.service.exception.internal.LicenseServiceInternalException;
 import io.github.bsayli.licensing.service.user.core.UserRecoveryService;
 import io.github.bsayli.licensing.service.user.orchestration.UserCacheManagementService;
 import jakarta.ws.rs.ProcessingException;
@@ -26,6 +26,6 @@ public class UserRecoveryServiceImpl implements UserRecoveryService {
         return cached;
       }
     }
-    throw new InternalServerErrorException(cause);
+    throw new LicenseServiceInternalException(cause);
   }
 }

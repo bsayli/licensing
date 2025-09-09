@@ -3,10 +3,11 @@ package io.github.bsayli.licensing.service.user.core.impl;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.repository.exception.UserNotFoundException;
 import io.github.bsayli.licensing.repository.user.UserRepository;
+import io.github.bsayli.licensing.service.exception.ConnectionExceptionPredicate;
+import io.github.bsayli.licensing.service.exception.internal.LicenseServiceInternalException;
 import io.github.bsayli.licensing.service.exception.license.LicenseNotFoundException;
 import io.github.bsayli.licensing.service.user.core.UserRecoveryService;
 import io.github.bsayli.licensing.service.user.core.UserService;
-import jakarta.ws.rs.ProcessingException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -63,7 +64,12 @@ public class UserServiceImpl implements UserService {
   }
 
   @Recover
-  public Optional<LicenseInfo> recoverUser(ProcessingException pe, String userId) {
-    return userRecoveryService.recoverUser(userId, pe);
+  public Optional<LicenseInfo> recoverUser(Throwable cause, String userId) {
+    if (cause instanceof jakarta.ws.rs.ProcessingException pe
+        && ConnectionExceptionPredicate.isConnectionBasedException.test(pe)) {
+      return userRecoveryService.recoverUser(userId, pe);
+    }
+    if (cause instanceof RuntimeException re) throw re;
+    throw new LicenseServiceInternalException(cause);
   }
 }

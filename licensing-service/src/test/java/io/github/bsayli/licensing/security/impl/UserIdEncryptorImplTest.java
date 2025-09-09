@@ -33,7 +33,7 @@ class UserIdEncryptorImplTest {
     var enc = new UserIdEncryptorImpl(validKeyB64());
     String user = "u-42";
     String encUser = enc.encrypt(user);
-    String license = "C9INE~meta~" + encUser;
+    String license = "BSAYLI~meta~" + encUser;
     String out = enc.extractAndDecryptUserId(license);
     assertEquals(user, out);
   }

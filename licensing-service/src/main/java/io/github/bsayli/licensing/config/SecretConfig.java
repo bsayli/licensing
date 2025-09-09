@@ -1,9 +1,8 @@
 package io.github.bsayli.licensing.config;
 
-import io.github.bsayli.licensing.security.LicenseKeyEncryptor;
+import io.github.bsayli.licensing.common.i18n.LocalizedMessageResolver;
 import io.github.bsayli.licensing.security.SignatureValidator;
 import io.github.bsayli.licensing.security.UserIdEncryptor;
-import io.github.bsayli.licensing.security.impl.LicenseKeyEncryptorImpl;
 import io.github.bsayli.licensing.security.impl.SignatureValidatorImpl;
 import io.github.bsayli.licensing.security.impl.UserIdEncryptorImpl;
 import io.github.bsayli.licensing.service.jwt.JwtService;
@@ -18,9 +17,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class SecretConfig {
-
-  @Value("${license.secret.key}")
-  private String licenseSecretKey;
 
   @Value("${userid.secret.key}")
   private String userIdSecretKey;
@@ -46,17 +42,14 @@ public class SecretConfig {
   }
 
   @Bean
-  LicenseKeyEncryptor licenseKeyEncryptor() {
-    return new LicenseKeyEncryptorImpl(licenseSecretKey);
-  }
-
-  @Bean
-  JwtService jwtService(KeyFactory eddsaKeyFactory) throws InvalidKeySpecException {
+  JwtService jwtService(KeyFactory eddsaKeyFactory, LocalizedMessageResolver messageResolver)
+      throws InvalidKeySpecException {
     return new JwtServiceImpl(
         licenseJwtPrivateKey,
         licenseJwtPublicKey,
         tokenTtl,
         tokenMaxJitter,
+        messageResolver,
         Clock.systemUTC(),
         null,
         eddsaKeyFactory);

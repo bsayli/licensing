@@ -18,6 +18,6 @@ public record IssueTokenRequest(
         String signature,
     @Size(min = 20, max = 500, message = "{checksum.size}") String checksum,
     @NotBlank(message = "{license.key.required}")
-        @Size(min = 200, max = 400, message = "{license.key.size}")
+        @Size(min = 100, max = 200, message = "{license.key.size}")
         String licenseKey,
     boolean forceTokenRefresh) {}

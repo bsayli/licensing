@@ -11,10 +11,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -43,16 +41,15 @@ public class LicenseControllerAdvice {
         .addArgument(fieldErrorCount)
         .log("Request validation failed (MethodArgumentNotValidException). fieldErrors={} ");
 
-    Locale locale = LocaleContextHolder.getLocale();
     List<ApiError> errors = new ArrayList<>();
     for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
       String keyOrText = fe.getDefaultMessage();
-      String resolved = resolveMessageKeyOrText(keyOrText, locale);
+      String resolved = resolveStrict(keyOrText); // strict key resolution, no fallback
       errors.add(
           new ApiError(ServiceErrorCode.INVALID_PARAMETER.name(), fe.getField() + ": " + resolved));
     }
 
-    String topMsg = messageResolver.getMessage("request.validation.failed", locale);
+    String topMsg = messageResolver.getMessage("request.validation.failed");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(ApiResponse.error(HttpStatus.BAD_REQUEST, topMsg, errors));
   }
@@ -67,16 +64,16 @@ public class LicenseControllerAdvice {
         .addArgument(violationCount)
         .log("Constraint violation on request parameters. violations={} ");
 
-    Locale locale = LocaleContextHolder.getLocale();
     List<ApiError> errors = new ArrayList<>();
     for (ConstraintViolation<?> v : ex.getConstraintViolations()) {
-      String keyOrText = v.getMessageTemplate();
-      String resolved = resolveMessageKeyOrText(keyOrText, locale, v.getMessage());
+      String template = v.getMessageTemplate(); // usually "{key}"
+      String resolved =
+          resolveStrict(template, v.getMessage()); // second arg used only when not {key}
       String path = v.getPropertyPath().toString().replace(".validatedValue", "");
       errors.add(new ApiError(ServiceErrorCode.INVALID_PARAMETER.name(), path + ": " + resolved));
     }
 
-    String topMsg = messageResolver.getMessage("request.validation.failed", locale);
+    String topMsg = messageResolver.getMessage("request.validation.failed");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(ApiResponse.error(HttpStatus.BAD_REQUEST, topMsg, errors));
   }
@@ -89,9 +86,7 @@ public class LicenseControllerAdvice {
         .addArgument(ex.getParameterName())
         .log("Missing request parameter: {}");
 
-    Locale locale = LocaleContextHolder.getLocale();
-    String msg = messageResolver.getMessage("request.param.missing", locale, ex.getParameterName());
-
+    String msg = messageResolver.getMessage("request.param.missing", ex.getParameterName());
     List<ApiError> errors = List.of(new ApiError(ServiceErrorCode.MISSING_PARAMETER.name(), msg));
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(ApiResponse.error(HttpStatus.BAD_REQUEST, msg, errors));
@@ -101,9 +96,7 @@ public class LicenseControllerAdvice {
   public ResponseEntity<ApiResponse<Void>> handleMissingHeader(MissingRequestHeaderException ex) {
     log.atWarn().setCause(ex).addArgument(ex.getHeaderName()).log("Missing request header: {}");
 
-    Locale locale = LocaleContextHolder.getLocale();
-    String msg = messageResolver.getMessage("request.header.missing", locale, ex.getHeaderName());
-
+    String msg = messageResolver.getMessage("request.header.missing", ex.getHeaderName());
     List<ApiError> errors = List.of(new ApiError(ServiceErrorCode.MISSING_PARAMETER.name(), msg));
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(ApiResponse.error(HttpStatus.BAD_REQUEST, msg, errors));
@@ -120,15 +113,13 @@ public class LicenseControllerAdvice {
         .addArgument(http.value())
         .addArgument(code)
         .addArgument(ex.getMessageKey())
-        .log("Service exception. statusCode={}, code={}, messageKey={}");
+        .log("Service exception. statusCode={}, code={}, messageKey={} ");
 
-    Locale locale = LocaleContextHolder.getLocale();
-    String detail = messageResolver.getMessage(ex.getMessageKey(), locale, ex.getArgs());
-    String top = messageResolver.getMessage("license.validation.failed", locale);
+    String detail = messageResolver.getMessage(ex.getMessageKey(), ex.getArgs());
+    String top = messageResolver.getMessage("license.validation.failed");
 
     ApiResponse<Void> body =
         ApiResponse.error(http, top, List.of(new ApiError(code.name(), detail)));
-
     return ResponseEntity.status(http).body(body);
   }
 
@@ -140,10 +131,8 @@ public class LicenseControllerAdvice {
         .addArgument(ex.getMessageKey())
         .log("Repository exception. errorCode={}, messageKey={} ");
 
-    Locale locale = LocaleContextHolder.getLocale();
-
-    String detail = messageResolver.getMessage(ex.getMessageKey(), locale, ex.getMessageArgs());
-    String top = messageResolver.getMessage("repository.operation.failed", locale);
+    String detail = messageResolver.getMessage(ex.getMessageKey(), ex.getMessageArgs());
+    String top = messageResolver.getMessage("repository.operation.failed");
 
     HttpStatus http =
         switch (ex.getErrorCode()) {
@@ -153,7 +142,6 @@ public class LicenseControllerAdvice {
 
     ApiResponse<Void> body =
         ApiResponse.error(http, top, List.of(new ApiError(ex.getErrorCode().name(), detail)));
-
     return ResponseEntity.status(http).body(body);
   }
 
@@ -165,11 +153,8 @@ public class LicenseControllerAdvice {
         .addArgument(ex.getMessageKey())
         .log("User operation exception. errorCode={}, messageKey={} ");
 
-    Locale locale = LocaleContextHolder.getLocale();
-
-    String detail = messageResolver.getMessage(ex.getMessageKey(), locale, ex.getMessageArgs());
-
-    String top = messageResolver.getMessage("user.operation.failed", locale);
+    String detail = messageResolver.getMessage(ex.getMessageKey(), ex.getMessageArgs());
+    String top = messageResolver.getMessage("user.operation.failed");
 
     HttpStatus http =
         switch (ex.getErrorCode()) {
@@ -179,7 +164,6 @@ public class LicenseControllerAdvice {
 
     ApiResponse<Void> body =
         ApiResponse.error(http, top, List.of(new ApiError(ex.getErrorCode().name(), detail)));
-
     return ResponseEntity.status(http).body(body);
   }
 
@@ -187,9 +171,7 @@ public class LicenseControllerAdvice {
   public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
     log.atError().setCause(ex).log("Unexpected error in License API");
 
-    Locale locale = LocaleContextHolder.getLocale();
-    String msg = messageResolver.getMessage("license.validation.error", locale);
-
+    String msg = messageResolver.getMessage("license.validation.error");
     List<ApiError> errors =
         List.of(new ApiError(ServiceErrorCode.INTERNAL_SERVER_ERROR.name(), msg));
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -220,18 +202,15 @@ public class LicenseControllerAdvice {
     };
   }
 
-  private String resolveMessageKeyOrText(String maybeKey, Locale locale) {
-    return resolveMessageKeyOrText(maybeKey, locale, maybeKey);
-  }
-
-  private String resolveMessageKeyOrText(String maybeKey, Locale locale, String fallback) {
-    if (maybeKey == null) return fallback;
-    String key = maybeKey;
-    if (key.startsWith("{") && key.endsWith("}")) {
-      key = key.substring(1, key.length() - 1);
-    } else {
-      return maybeKey;
+  private String resolveStrict(String keyOrText, Object... args) {
+    if (keyOrText == null) return null;
+    String s = keyOrText.trim();
+    if (s.startsWith("{") && s.endsWith("}")) {
+      String key = s.substring(1, s.length() - 1);
+      return (args == null || args.length == 0)
+          ? messageResolver.getMessage(key)
+          : messageResolver.getMessage(key, args);
     }
-    return messageResolver.getMessage(key, locale);
+    return keyOrText;
   }
 }

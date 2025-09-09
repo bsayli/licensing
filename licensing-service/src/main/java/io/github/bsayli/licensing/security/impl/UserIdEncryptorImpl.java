@@ -13,7 +13,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class UserIdEncryptorImpl implements UserIdEncryptor {
 
-  private static final String LICENSE_KEY_PREFIX = "C9INE";
+  private static final String LICENSE_KEY_PREFIX = "BSAYLI";
   private static final String CIPHER_TRANSFORMATION = "AES/GCM/NoPadding";
   private static final String KEY_ALGORITHM = "AES";
   private static final int GCM_IV_LENGTH = 12;

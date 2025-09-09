@@ -5,7 +5,6 @@ import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
 import io.github.bsayli.licensing.common.exception.ServiceErrorCode;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.domain.result.LicenseValidationResult;
-import io.github.bsayli.licensing.security.LicenseKeyEncryptor;
 import io.github.bsayli.licensing.security.UserIdEncryptor;
 import io.github.bsayli.licensing.service.LicenseEvaluationService;
 import io.github.bsayli.licensing.service.LicenseValidationService;
@@ -24,19 +23,16 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
   private final LicenseEvaluationService licenseEvaluationService;
   private final TokenRequestValidator tokenValidationService;
   private final LicenseKeyRequestValidator licenseKeyValidationService;
-  private final LicenseKeyEncryptor licenseKeyEncryptor;
   private final UserIdEncryptor userIdEncryptor;
 
   public LicenseValidationServiceImpl(
       LicenseEvaluationService licenseEvaluationService,
       TokenRequestValidator tokenValidationService,
       LicenseKeyRequestValidator licenseKeyValidationService,
-      LicenseKeyEncryptor licenseKeyEncryptor,
       UserIdEncryptor userIdEncryptor) {
     this.licenseEvaluationService = licenseEvaluationService;
     this.tokenValidationService = tokenValidationService;
     this.licenseKeyValidationService = licenseKeyValidationService;
-    this.licenseKeyEncryptor = licenseKeyEncryptor;
     this.userIdEncryptor = userIdEncryptor;
   }
 
@@ -44,13 +40,11 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
   public LicenseValidationResult validateLicense(IssueTokenRequest request) {
     licenseKeyValidationService.assertSignatureValid(request);
 
-    String decryptedLicenseKey = licenseKeyEncryptor.decrypt(request.licenseKey());
-    String userId = userIdEncryptor.extractAndDecryptUserId(decryptedLicenseKey);
+    String userId = userIdEncryptor.extractAndDecryptUserId(request.licenseKey());
 
     if (!request.forceTokenRefresh()) {
       licenseKeyValidationService.assertNoConflictingCachedContext(request, userId);
     }
-
     LicenseInfo info = licenseEvaluationService.evaluateLicense(request, userId);
 
     return new LicenseValidationResult.Builder()
@@ -67,7 +61,6 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
   public LicenseValidationResult validateLicense(ValidateTokenRequest request, String token) {
     try {
       tokenValidationService.assertValid(request, token);
-
       return new LicenseValidationResult.Builder().valid(true).message(MSG_TOKEN_VALID).build();
 
     } catch (TokenExpiredException e) {

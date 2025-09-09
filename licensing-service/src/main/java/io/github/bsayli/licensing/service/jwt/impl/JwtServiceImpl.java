@@ -1,13 +1,12 @@
 package io.github.bsayli.licensing.service.jwt.impl;
 
+import io.github.bsayli.licensing.common.i18n.LocalizedMessageResolver;
 import io.github.bsayli.licensing.domain.model.LicenseStatus;
 import io.github.bsayli.licensing.service.jwt.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -27,11 +26,11 @@ import java.util.regex.Pattern;
 public class JwtServiceImpl implements JwtService {
 
   private static final String KEY_ALG = "EdDSA";
-  private static final String KEY_PROVIDER = "BC";
   private static final String JWT_DOT_REGEX = "\\.";
   private static final int JWT_EXPECTED_PARTS = 3;
   private static final String CLAIM_LICENSE_STATUS = "licenseStatus";
   private static final String CLAIM_LICENSE_TIER = "licenseTier";
+  private static final String CLAIM_MESSAGE = "message";
 
   private static final Base64.Decoder B64_DEC = Base64.getDecoder();
   private static final Base64.Decoder B64URL_DEC = Base64.getUrlDecoder();
@@ -43,31 +42,21 @@ public class JwtServiceImpl implements JwtService {
   private final Duration maxJitter;
   private final Clock clock;
   private final LongSupplier jitterSupplier;
-
-  public JwtServiceImpl(
-      String privateKeyBase64, String publicKeyBase64, Duration tokenTtl, Duration maxJitter)
-      throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
-    this(
-        privateKeyBase64,
-        publicKeyBase64,
-        tokenTtl,
-        maxJitter,
-        Clock.systemUTC(),
-        null,
-        KeyFactory.getInstance(KEY_ALG, KEY_PROVIDER));
-  }
+  private final LocalizedMessageResolver messageResolver;
 
   public JwtServiceImpl(
       String privateKeyBase64,
       String publicKeyBase64,
       Duration tokenTtl,
       Duration maxJitter,
+      LocalizedMessageResolver messageResolver,
       Clock clock,
       LongSupplier jitterSupplier,
       KeyFactory keyFactory)
       throws InvalidKeySpecException {
 
     Objects.requireNonNull(keyFactory, "keyFactory");
+    Objects.requireNonNull(messageResolver, "messageResolver");
 
     byte[] priv = B64_DEC.decode(privateKeyBase64);
     this.privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(priv));
@@ -78,6 +67,7 @@ public class JwtServiceImpl implements JwtService {
     this.tokenTtl = (tokenTtl == null) ? Duration.ZERO : tokenTtl;
     this.maxJitter = (maxJitter == null) ? Duration.ZERO : maxJitter;
     this.clock = (clock == null) ? Clock.systemUTC() : clock;
+    this.messageResolver = messageResolver;
 
     if (jitterSupplier != null) {
       this.jitterSupplier = jitterSupplier;
@@ -99,19 +89,16 @@ public class JwtServiceImpl implements JwtService {
   @Override
   public String generateToken(String clientId, String licenseTier, LicenseStatus licenseStatus) {
     Instant now = clock.instant();
+    Instant expiry = now.plus(tokenTtl).plusMillis(jitterSupplier.getAsLong());
 
-    long jitterMs = jitterSupplier.getAsLong();
-    if (jitterMs < 0L) jitterMs = 0L;
-    if (!maxJitter.isZero() && jitterMs > maxJitter.toMillis()) {
-      jitterMs = maxJitter.toMillis();
-    }
-
-    Instant expiry = now.plus(tokenTtl).plusMillis(jitterMs);
+    String message =
+        messageResolver.getMessage("license.message." + licenseStatus.name().toLowerCase());
 
     return Jwts.builder()
         .subject(clientId)
         .claim(CLAIM_LICENSE_STATUS, licenseStatus.name())
         .claim(CLAIM_LICENSE_TIER, licenseTier)
+        .claim(CLAIM_MESSAGE, message)
         .issuedAt(Date.from(now))
         .expiration(Date.from(expiry))
         .signWith(privateKey)

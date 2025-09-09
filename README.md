@@ -1,17 +1,31 @@
 # Welcome to the Licensing Project!
 
-This repository contains the source code for a complete licensing system. It is structured into four subprojects:
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/bsayli/licensing/actions)
+[![JDK](https://img.shields.io/badge/JDK-17%2B-blue)](https://openjdk.org/projects/jdk/17/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-* **license-generator**: Java project for license key generation and encryption samples.
-* **licensing-service**: Web project that handles the core licensing functionalities.
-* **licensing-service-sdk**: SDK for integrating licensing features into other applications.
+## Project Purpose
+
+This project provides a **complete licensing framework** for applications, combining secure key generation, detached digital signatures, and token validation (JWT/EdDSA). It is designed to ensure license authenticity, prevent misuse, and integrate seamlessly with **Keycloak** for user identity and license metadata.
+
+---
+
+## Subprojects
+
+* **license-generator**: Java project for license key generation, encryption, and cryptographic tooling.
+* **licensing-service**: Spring Boot application that issues and validates license tokens.
+* **licensing-service-sdk**: SDK for integrating licensing capabilities into external applications.
 * **licensing-service-sdk-cli**: Command-line tool for testing and interacting with the licensing service.
+
+---
 
 ## Repository Structure
 
 * **db**: Keycloak database backup (`licensing-keycloak.zip`)
 * **docker-compose**: Docker Compose files to run servers and client
 * **scripts**: Script to run the client (`run_license_sdk_cli.sh`)
+
+---
 
 ## Prerequisites
 
@@ -142,14 +156,12 @@ chmod +x run_license_sdk_cli.sh
 
 ---
 
-✅ **Note:** CLI examples must always be provided **on a single line**. If parameters contain spaces or special
-characters, they should be enclosed in quotes `"..."`.
+✅ **Note:** CLI examples must always be provided **on a single line**. If parameters contain spaces or special characters, they should be enclosed in quotes `"..."`.
 
 ---
 
 ## Feedback & Questions
 
-If you notice any issues in this documentation or have suggestions for improvements, feel free to open an issue or a
-pull request.
-For any questions related to the project, I’ll be glad to help — just leave a comment in the repository’s discussion or
-issue tracker.
+If you notice any issues in this documentation or have suggestions for improvements, feel free to open an issue or a pull request.
+
+For any questions related to the project, please leave a comment in the repository’s discussion or issue tracker.
