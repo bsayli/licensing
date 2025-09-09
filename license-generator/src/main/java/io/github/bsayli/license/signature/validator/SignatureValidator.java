@@ -24,7 +24,8 @@ public final class SignatureValidator {
     }
   }
 
-  public boolean validateSignature(String signatureB64, String canonicalJson) throws GeneralSecurityException {
+  public boolean validateSignature(String signatureB64, String canonicalJson)
+      throws GeneralSecurityException {
     byte[] sig = Base64.getDecoder().decode(signatureB64);
     byte[] data = canonicalJson.getBytes(StandardCharsets.UTF_8);
 
