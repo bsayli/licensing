@@ -1,8 +1,8 @@
 package io.github.bsayli.licensing.service.validation.impl;
 
 import com.fasterxml.jackson.core.Version;
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.config.ServiceCatalogProperties;
 import io.github.bsayli.licensing.domain.model.LicenseChecksumVersionInfo;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
@@ -34,14 +34,14 @@ public class LicenseServicePolicyValidatorImpl implements LicenseServicePolicyVa
   }
 
   @Override
-  public void assertValid(LicenseInfo licenseInfo, IssueTokenRequest request) {
+  public void assertValid(LicenseInfo licenseInfo, IssueAccessRequest request) {
     validateServiceId(licenseInfo, request.serviceId());
     validateChecksum(licenseInfo, request.serviceId(), request.checksum());
     validateVersion(licenseInfo, request.serviceId(), request.serviceVersion(), request.checksum());
   }
 
   @Override
-  public void assertValid(LicenseInfo licenseInfo, ValidateTokenRequest request) {
+  public void assertValid(LicenseInfo licenseInfo, ValidateAccessRequest request) {
     validateServiceId(licenseInfo, request.serviceId());
     validateChecksum(licenseInfo, request.serviceId(), request.checksum());
     validateVersion(licenseInfo, request.serviceId(), request.serviceVersion(), request.checksum());

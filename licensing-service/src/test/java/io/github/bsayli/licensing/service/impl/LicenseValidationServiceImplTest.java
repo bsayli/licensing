@@ -3,8 +3,8 @@ package io.github.bsayli.licensing.service.impl;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.common.exception.ServiceErrorCode;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.domain.model.LicenseStatus;
@@ -50,7 +50,7 @@ class LicenseValidationServiceImplTest {
       "validateLicense(IssueTokenRequest): imza doğrula → licenseKey'den userId çıkar → cache kontrol → evaluate → ENCRYPTED user dön")
   void issueTokenFlow_shouldValidateAndReturnEncryptedUser() {
     var req =
-        new IssueTokenRequest(
+        new IssueAccessRequest(
             "crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx", "LICENSE_KEY", false);
 
     when(userIdEncryptor.extractAndDecryptUserId("LICENSE_KEY")).thenReturn("user-123");
@@ -85,7 +85,7 @@ class LicenseValidationServiceImplTest {
       "validateLicense(IssueTokenRequest): forceTokenRefresh=true olduğunda cache çatışma kontrolü atlanır")
   void issueTokenFlow_forceRefresh_skipsConflictCheck() {
     var req =
-        new IssueTokenRequest(
+        new IssueAccessRequest(
             "crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx", "LICENSE_KEY", true);
 
     when(userIdEncryptor.extractAndDecryptUserId("LICENSE_KEY")).thenReturn("user-999");
@@ -108,7 +108,7 @@ class LicenseValidationServiceImplTest {
       "validateLicense(ValidateTokenRequest): geçerli token → tekrar evaluate yapılmaz, TOKEN_VALID döner")
   void validateTokenFlow_valid_noRefresh() {
     var req =
-        new ValidateTokenRequest("billing", "2.0.0", "instance-abcdef12", "sig-yyyy", "chk-zzzz");
+        new ValidateAccessRequest("billing", "2.0.0", "instance-abcdef12", "sig-yyyy", "chk-zzzz");
     String token = "jwt-current";
 
     doNothing().when(tokenValidationService).assertValid(req, token);
@@ -132,7 +132,7 @@ class LicenseValidationServiceImplTest {
       "validateLicense(ValidateTokenRequest): süresi dolmuş token → eski encUserId ile evaluate ve TOKEN_REFRESHED")
   void validateTokenFlow_expired_triggersRefresh() {
     var req =
-        new ValidateTokenRequest("crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx");
+        new ValidateAccessRequest("crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx");
     String token = "jwt-expired";
     String encUserFromException = "enc-U-42";
 

@@ -1,8 +1,8 @@
 package io.github.bsayli.licensing.service.impl;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.LicenseValidationResponse;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.LicenseAccessResponse;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.common.exception.ServiceErrorCode;
 import io.github.bsayli.licensing.domain.result.LicenseValidationResult;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
@@ -32,7 +32,7 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
   }
 
   @Override
-  public LicenseValidationResponse issueToken(IssueTokenRequest request) {
+  public LicenseAccessResponse issueAccess(IssueAccessRequest request) {
     LicenseValidationResult result = licenseValidationService.validateLicense(request);
 
     String clientId = clientIdGenerator.getClientId(request);
@@ -49,11 +49,11 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
             request.instanceId(),
             request.checksum(),
             request.signature());
-    return LicenseValidationResponse.created(token);
+    return LicenseAccessResponse.created(token);
   }
 
   @Override
-  public LicenseValidationResponse validateToken(ValidateTokenRequest request, String token) {
+  public LicenseAccessResponse validateAccess(ValidateAccessRequest request, String token) {
     LicenseValidationResult result = licenseValidationService.validateLicense(request, token);
 
     if (ServiceErrorCode.TOKEN_REFRESHED == result.serviceStatus()) {
@@ -67,9 +67,9 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
               request.instanceId(),
               request.checksum(),
               request.signature());
-      return LicenseValidationResponse.refreshed(newToken);
+      return LicenseAccessResponse.refreshed(newToken);
     }
 
-    return LicenseValidationResponse.active();
+    return LicenseAccessResponse.active();
   }
 }

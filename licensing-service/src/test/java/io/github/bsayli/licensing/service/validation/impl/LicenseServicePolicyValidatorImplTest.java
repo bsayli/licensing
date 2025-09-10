@@ -2,8 +2,8 @@ package io.github.bsayli.licensing.service.validation.impl;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.config.ServiceCatalogProperties;
 import io.github.bsayli.licensing.domain.model.LicenseChecksumVersionInfo;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
@@ -47,18 +47,18 @@ class LicenseServicePolicyValidatorImplTest {
         .build();
   }
 
-  private static IssueTokenRequest issue(String id, String version, String checksum) {
+  private static IssueAccessRequest issue(String id, String version, String checksum) {
     String instanceId = "instance-abcdefgh";
     String signature = "s".repeat(40);
     String licenseKey = "l".repeat(220);
     boolean force = false;
-    return new IssueTokenRequest(id, version, instanceId, signature, checksum, licenseKey, force);
+    return new IssueAccessRequest(id, version, instanceId, signature, checksum, licenseKey, force);
   }
 
-  private static ValidateTokenRequest validateReq(String id, String version, String checksum) {
+  private static ValidateAccessRequest validateReq(String id, String version, String checksum) {
     String instanceId = "instance-abcdefgh";
     String signature = "s".repeat(40);
-    return new ValidateTokenRequest(id, version, instanceId, signature, checksum);
+    return new ValidateAccessRequest(id, version, instanceId, signature, checksum);
   }
 
   private static LicenseServicePolicyValidatorImpl svc(

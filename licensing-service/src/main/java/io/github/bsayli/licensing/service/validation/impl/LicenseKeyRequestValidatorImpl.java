@@ -1,6 +1,6 @@
 package io.github.bsayli.licensing.service.validation.impl;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.domain.model.ClientCachedLicenseData;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.security.SignatureValidator;
@@ -33,12 +33,12 @@ public class LicenseKeyRequestValidatorImpl implements LicenseKeyRequestValidato
   }
 
   @Override
-  public void assertSignatureValid(IssueTokenRequest request) {
+  public void assertSignatureValid(IssueAccessRequest request) {
     signatureValidator.validate(request);
   }
 
   @Override
-  public void assertNoConflictingCachedContext(IssueTokenRequest request, String userId) {
+  public void assertNoConflictingCachedContext(IssueAccessRequest request, String userId) {
     String clientId = clientIdGenerator.getClientId(request);
     Optional<ClientCachedLicenseData> cachedOpt = cacheService.find(clientId);
 

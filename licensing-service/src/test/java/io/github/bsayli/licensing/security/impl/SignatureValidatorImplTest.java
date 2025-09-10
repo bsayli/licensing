@@ -2,8 +2,8 @@ package io.github.bsayli.licensing.security.impl;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.domain.model.SignatureData;
 import io.github.bsayli.licensing.security.SignatureValidator;
 import io.github.bsayli.licensing.service.exception.security.SignatureInvalidException;
@@ -43,19 +43,19 @@ class SignatureValidatorImplTest {
     return Base64.getEncoder().encodeToString(sig.sign());
   }
 
-  private static IssueTokenRequest issueReq(
+  private static IssueAccessRequest issueReq(
       String svcId,
       String ver,
       String instanceId,
       String sigB64,
       String licenseKey,
       String checksum) {
-    return new IssueTokenRequest(svcId, ver, instanceId, sigB64, checksum, licenseKey, false);
+    return new IssueAccessRequest(svcId, ver, instanceId, sigB64, checksum, licenseKey, false);
   }
 
-  private static ValidateTokenRequest validateReq(
+  private static ValidateAccessRequest validateReq(
       String svcId, String ver, String instanceId, String sigB64, String checksum) {
-    return new ValidateTokenRequest(svcId, ver, instanceId, sigB64, checksum);
+    return new ValidateAccessRequest(svcId, ver, instanceId, sigB64, checksum);
   }
 
   @Test
@@ -85,7 +85,7 @@ class SignatureValidatorImplTest {
 
     String sigB64 = signPayloadJson(kp.getPrivate(), payload.toJson());
 
-    IssueTokenRequest req = issueReq(serviceId, serviceVer, instanceId, sigB64, licenseKey, null);
+    IssueAccessRequest req = issueReq(serviceId, serviceVer, instanceId, sigB64, licenseKey, null);
 
     assertDoesNotThrow(() -> validator.validate(req));
   }
@@ -114,7 +114,7 @@ class SignatureValidatorImplTest {
 
     String sigB64 = signPayloadJson(kp.getPrivate(), payload.toJson());
 
-    ValidateTokenRequest req = validateReq(serviceId, serviceVer, instanceId, sigB64, null);
+    ValidateAccessRequest req = validateReq(serviceId, serviceVer, instanceId, sigB64, null);
 
     assertDoesNotThrow(() -> validator.validate(req, jwtToken));
   }
@@ -132,7 +132,7 @@ class SignatureValidatorImplTest {
     String licenseKey = "PFX~rnd~" + encSegment;
 
     String badSig = "***not-base64***";
-    IssueTokenRequest req = issueReq(serviceId, ver, instanceId, badSig, licenseKey, null);
+    IssueAccessRequest req = issueReq(serviceId, ver, instanceId, badSig, licenseKey, null);
 
     assertThrows(SignatureInvalidException.class, () -> validator.validate(req));
   }
@@ -158,7 +158,7 @@ class SignatureValidatorImplTest {
             .build();
 
     String sigB64 = signPayloadJson(signerKp.getPrivate(), payload.toJson());
-    ValidateTokenRequest req = validateReq(serviceId, ver, instanceId, sigB64, null);
+    ValidateAccessRequest req = validateReq(serviceId, ver, instanceId, sigB64, null);
 
     assertThrows(SignatureInvalidException.class, () -> validator.validate(req, token));
   }
@@ -184,7 +184,8 @@ class SignatureValidatorImplTest {
             .build();
 
     String sigB64 = signPayloadJson(kp.getPrivate(), original.toJson());
-    IssueTokenRequest tampered = issueReq(serviceId, "9.9.9", instanceId, sigB64, licenseKey, null);
+    IssueAccessRequest tampered =
+        issueReq(serviceId, "9.9.9", instanceId, sigB64, licenseKey, null);
 
     assertThrows(SignatureInvalidException.class, () -> validator.validate(tampered));
   }
@@ -212,7 +213,7 @@ class SignatureValidatorImplTest {
 
     String badLicenseKey = "ONLY_TWO_SEGMENTS~oops";
 
-    IssueTokenRequest req = issueReq(serviceId, ver, instanceId, sigB64, badLicenseKey, null);
+    IssueAccessRequest req = issueReq(serviceId, ver, instanceId, sigB64, badLicenseKey, null);
 
     assertThrows(SignatureInvalidException.class, () -> validator.validate(req));
   }

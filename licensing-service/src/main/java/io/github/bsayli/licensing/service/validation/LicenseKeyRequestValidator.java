@@ -1,10 +1,10 @@
 package io.github.bsayli.licensing.service.validation;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
 
 public interface LicenseKeyRequestValidator {
 
-  void assertSignatureValid(IssueTokenRequest request);
+  void assertSignatureValid(IssueAccessRequest request);
 
-  void assertNoConflictingCachedContext(IssueTokenRequest request, String userId);
+  void assertNoConflictingCachedContext(IssueAccessRequest request, String userId);
 }

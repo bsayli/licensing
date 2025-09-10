@@ -1,14 +1,14 @@
 package io.github.bsayli.licensing.client.adapter;
 
 import io.github.bsayli.licensing.client.common.contract.ApiClientResponse;
-import io.github.bsayli.licensing.client.generated.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.client.generated.dto.LicenseValidationResponse;
-import io.github.bsayli.licensing.client.generated.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
+import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
 
 public interface LicensingServiceClientAdapter {
 
-  ApiClientResponse<LicenseValidationResponse> issueToken(IssueTokenRequest request);
+  ApiClientResponse<LicenseAccessResponse> issueAccess(IssueAccessRequest request);
 
-  ApiClientResponse<LicenseValidationResponse> validateToken(
-      String licenseToken, ValidateTokenRequest request);
+  ApiClientResponse<LicenseAccessResponse> validateAccess(
+      String licenseToken, ValidateAccessRequest request);
 }

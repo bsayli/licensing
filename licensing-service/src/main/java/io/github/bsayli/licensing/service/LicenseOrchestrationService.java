@@ -1,11 +1,11 @@
 package io.github.bsayli.licensing.service;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.LicenseValidationResponse;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.LicenseAccessResponse;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 
 public interface LicenseOrchestrationService {
-  LicenseValidationResponse issueToken(IssueTokenRequest request);
+  LicenseAccessResponse issueAccess(IssueAccessRequest request);
 
-  LicenseValidationResponse validateToken(ValidateTokenRequest request, String bearerToken);
+  LicenseAccessResponse validateAccess(ValidateAccessRequest request, String bearerToken);
 }
