@@ -130,5 +130,5 @@ target/licensing-service-client-0.1.0.jar
 
 ## See Also
 
-* [licensing-service](../licensing-service) — REST service implementation
-* [license-generator](../license-generator) — CLI utilities for keys and signatures
+* [licensing-service](../licensing-service/README.md) — REST service implementation
+* [license-generator](../license-generator/README.md) — CLI utilities for keys and signatures
