@@ -1,6 +1,6 @@
-package io.github.bsayli.licensing.common.openapi;
+package io.github.bsayli.licensing.sdk.common.openapi;
 
-import static io.github.bsayli.licensing.common.openapi.OpenApiConstants.*;
+import static io.github.bsayli.licensing.sdk.common.openapi.OpenApiConstants.*;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

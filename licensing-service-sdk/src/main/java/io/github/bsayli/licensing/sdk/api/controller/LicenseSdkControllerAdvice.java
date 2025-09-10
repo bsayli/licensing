@@ -1,4 +1,4 @@
-package io.github.bsayli.licensing.sdk.controller;
+package io.github.bsayli.licensing.sdk.api.controller;
 
 import io.github.bsayli.licensing.sdk.exception.LicenseServiceClientErrorException;
 import io.github.bsayli.licensing.sdk.exception.LicenseServiceServerErrorException;

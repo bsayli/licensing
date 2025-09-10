@@ -1,4 +1,3 @@
-// src/main/java/io/github/bsayli/licensing/config/security/RestAuthenticationEntryPoint.java
 package io.github.bsayli.licensing.config.security;
 
 import jakarta.annotation.PostConstruct;
