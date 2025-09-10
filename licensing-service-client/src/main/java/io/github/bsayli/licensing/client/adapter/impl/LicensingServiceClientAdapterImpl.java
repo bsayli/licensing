@@ -3,36 +3,35 @@ package io.github.bsayli.licensing.client.adapter.impl;
 import io.github.bsayli.licensing.client.adapter.LicensingServiceClientAdapter;
 import io.github.bsayli.licensing.client.common.contract.ApiClientResponse;
 import io.github.bsayli.licensing.client.common.core.ApiClientExecutor;
-import io.github.bsayli.licensing.client.generated.api.LicenseValidationControllerApi;
-import io.github.bsayli.licensing.client.generated.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.client.generated.dto.LicenseValidationResponse;
-import io.github.bsayli.licensing.client.generated.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.client.generated.api.LicenseControllerApi;
+import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
+import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
 import org.springframework.stereotype.Service;
 
 @Service
 public class LicensingServiceClientAdapterImpl implements LicensingServiceClientAdapter {
 
-  private final LicenseValidationControllerApi api;
+  private final LicenseControllerApi api;
   private final ApiClientExecutor executor;
 
-  public LicensingServiceClientAdapterImpl(
-      LicenseValidationControllerApi api, ApiClientExecutor executor) {
+  public LicensingServiceClientAdapterImpl(LicenseControllerApi api, ApiClientExecutor executor) {
     this.api = api;
     this.executor = executor;
   }
 
   @Override
-  public ApiClientResponse<LicenseValidationResponse> issueToken(IssueTokenRequest request) {
+  public ApiClientResponse<LicenseAccessResponse> issueAccess(IssueAccessRequest request) {
     return executor.handle(
-        "issueToken", LicenseValidationResponse.class, () -> api.issueToken(request));
+        "issueAccess", LicenseAccessResponse.class, () -> api.createAccess(request));
   }
 
   @Override
-  public ApiClientResponse<LicenseValidationResponse> validateToken(
-      String licenseToken, ValidateTokenRequest request) {
+  public ApiClientResponse<LicenseAccessResponse> validateAccess(
+      String licenseToken, ValidateAccessRequest request) {
     return executor.handle(
-        "validateToken",
-        LicenseValidationResponse.class,
-        () -> api.validateToken(licenseToken, request));
+        "validateAccess",
+        LicenseAccessResponse.class,
+        () -> api.validateAccess(licenseToken, request));
   }
 }

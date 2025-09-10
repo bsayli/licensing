@@ -3,9 +3,9 @@ package io.github.bsayli.licensing.api.controller;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.LicenseValidationResponse;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.LicenseAccessResponse;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.common.api.ApiResponse;
 import io.github.bsayli.licensing.common.i18n.LocalizedMessageResolver;
 import io.github.bsayli.licensing.service.LicenseOrchestrationService;
@@ -21,19 +21,19 @@ import org.springframework.http.ResponseEntity;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Unit Test: LicenseValidationController")
-class LicenseValidationControllerTest {
+@DisplayName("Unit Test: LicenseController")
+class LicenseControllerTest {
 
   @Mock private LicenseOrchestrationService service;
   @Mock private LocalizedMessageResolver messageResolver;
 
-  @InjectMocks private LicenseValidationController controller;
+  @InjectMocks private LicenseController controller;
 
   @Test
-  @DisplayName("POST /v1/licenses/tokens -> 200 OK + ApiResponse with created token")
-  void issueToken_shouldReturnOkWithToken() {
+  @DisplayName("POST /v1/licenses/access -> 200 OK + ApiResponse with created token")
+  void createAccess() {
     var req =
-        new IssueTokenRequest(
+        new IssueAccessRequest(
             "crm",
             "1.2.3",
             "instance-12345678",
@@ -42,10 +42,10 @@ class LicenseValidationControllerTest {
             "LK_...base64...",
             false);
 
-    when(service.issueToken(req)).thenReturn(LicenseValidationResponse.created("jwt-token"));
+    when(service.issueAccess(req)).thenReturn(LicenseAccessResponse.created("jwt-token"));
     when(messageResolver.getMessage("license.validation.success")).thenReturn("License is valid");
 
-    ResponseEntity<ApiResponse<LicenseValidationResponse>> resp = controller.issueToken(req);
+    ResponseEntity<ApiResponse<LicenseAccessResponse>> resp = controller.createAccess(req);
 
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertNotNull(resp.getBody());
@@ -55,24 +55,22 @@ class LicenseValidationControllerTest {
     assertEquals("jwt-token", resp.getBody().data().licenseToken());
     assertTrue(resp.getBody().errors().isEmpty());
 
-    verify(service).issueToken(req);
+    verify(service).issueAccess(req);
     verify(messageResolver).getMessage("license.validation.success");
     verifyNoMoreInteractions(service, messageResolver);
   }
 
   @Test
-  @DisplayName("POST /v1/licenses/tokens/validate -> 200 OK + ApiResponse with refreshed token")
-  void validateToken_shouldReturnOkWithRefreshedToken() {
+  @DisplayName("POST /v1/licenses/access/validate -> 200 OK + ApiResponse with refreshed token")
+  void validateToken_shouldReturnOkWithRefreshedAccess() {
     String token = "header.jwt.token";
     var req =
-        new ValidateTokenRequest("crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx");
+        new ValidateAccessRequest("crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx");
 
-    when(service.validateToken(req, token))
-        .thenReturn(LicenseValidationResponse.refreshed("new-jwt"));
+    when(service.validateAccess(req, token)).thenReturn(LicenseAccessResponse.refreshed("new-jwt"));
     when(messageResolver.getMessage("license.validation.success")).thenReturn("License is valid");
 
-    ResponseEntity<ApiResponse<LicenseValidationResponse>> resp =
-        controller.validateToken(token, req);
+    ResponseEntity<ApiResponse<LicenseAccessResponse>> resp = controller.validateAccess(token, req);
 
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertNotNull(resp.getBody());
@@ -82,23 +80,22 @@ class LicenseValidationControllerTest {
     assertEquals("new-jwt", resp.getBody().data().licenseToken());
     assertTrue(resp.getBody().errors().isEmpty());
 
-    verify(service).validateToken(req, token);
+    verify(service).validateAccess(req, token);
     verify(messageResolver).getMessage("license.validation.success");
     verifyNoMoreInteractions(service, messageResolver);
   }
 
   @Test
-  @DisplayName("POST /v1/licenses/tokens/validate -> 200 OK + ApiResponse ACTIVE (no token)")
-  void validateToken_shouldReturnOkActive() {
+  @DisplayName("POST /v1/licenses/access/validate -> 200 OK + ApiResponse ACTIVE (no token)")
+  void validateAccess_shouldReturnOkActive() {
     String token = "header.jwt.token";
     var req =
-        new ValidateTokenRequest("billing", "2.0.0", "instance-abcdef12", "sig-yyy", "chk-zzz");
+        new ValidateAccessRequest("billing", "2.0.0", "instance-abcdef12", "sig-yyy", "chk-zzz");
 
-    when(service.validateToken(req, token)).thenReturn(LicenseValidationResponse.active());
+    when(service.validateAccess(req, token)).thenReturn(LicenseAccessResponse.active());
     when(messageResolver.getMessage("license.validation.success")).thenReturn("License is valid");
 
-    ResponseEntity<ApiResponse<LicenseValidationResponse>> resp =
-        controller.validateToken(token, req);
+    ResponseEntity<ApiResponse<LicenseAccessResponse>> resp = controller.validateAccess(token, req);
 
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertNotNull(resp.getBody());
@@ -106,7 +103,7 @@ class LicenseValidationControllerTest {
     assertNotNull(resp.getBody().data());
     assertNull(resp.getBody().data().licenseToken());
 
-    verify(service).validateToken(req, token);
+    verify(service).validateAccess(req, token);
     verify(messageResolver).getMessage("license.validation.success");
     verifyNoMoreInteractions(service, messageResolver);
   }

@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.service.impl;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.common.exception.ServiceErrorCode;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.domain.result.LicenseValidationResult;
@@ -37,7 +37,7 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
   }
 
   @Override
-  public LicenseValidationResult validateLicense(IssueTokenRequest request) {
+  public LicenseValidationResult validateLicense(IssueAccessRequest request) {
     licenseKeyValidationService.assertSignatureValid(request);
 
     String userId = userIdEncryptor.extractAndDecryptUserId(request.licenseKey());
@@ -58,7 +58,7 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
   }
 
   @Override
-  public LicenseValidationResult validateLicense(ValidateTokenRequest request, String token) {
+  public LicenseValidationResult validateLicense(ValidateAccessRequest request, String token) {
     try {
       tokenValidationService.assertValid(request, token);
       return new LicenseValidationResult.Builder().valid(true).message(MSG_TOKEN_VALID).build();

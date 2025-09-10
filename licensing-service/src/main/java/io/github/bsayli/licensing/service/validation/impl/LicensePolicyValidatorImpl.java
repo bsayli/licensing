@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.service.validation.impl;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.domain.model.LicenseStatus;
 import io.github.bsayli.licensing.service.exception.license.LicenseExpiredException;
@@ -17,26 +17,26 @@ import org.springframework.util.CollectionUtils;
 @Service
 public class LicensePolicyValidatorImpl implements LicensePolicyValidator {
 
-  private final LicenseServicePolicyValidator detailValidator;
+  private final LicenseServicePolicyValidator servicePolicyValidator;
 
-  public LicensePolicyValidatorImpl(LicenseServicePolicyValidator detailValidator) {
-    this.detailValidator = detailValidator;
+  public LicensePolicyValidatorImpl(LicenseServicePolicyValidator servicePolicyValidator) {
+    this.servicePolicyValidator = servicePolicyValidator;
   }
 
   @Override
-  public void assertValid(LicenseInfo licenseInfo, IssueTokenRequest request) {
+  public void assertValid(LicenseInfo licenseInfo, IssueAccessRequest request) {
     assertNotExpired(licenseInfo);
     assertActive(licenseInfo);
     assertWithinUsageLimit(licenseInfo, request.instanceId());
-    detailValidator.assertValid(licenseInfo, request);
+    servicePolicyValidator.assertValid(licenseInfo, request);
   }
 
   @Override
-  public void assertValid(LicenseInfo licenseInfo, ValidateTokenRequest request) {
+  public void assertValid(LicenseInfo licenseInfo, ValidateAccessRequest request) {
     assertNotExpired(licenseInfo);
     assertActive(licenseInfo);
     assertWithinUsageLimit(licenseInfo, request.instanceId());
-    detailValidator.assertValid(licenseInfo, request);
+    servicePolicyValidator.assertValid(licenseInfo, request);
   }
 
   @Override

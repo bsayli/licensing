@@ -1,12 +1,12 @@
 package io.github.bsayli.licensing.security;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.service.exception.security.SignatureInvalidException;
 
 public interface SignatureValidator {
 
-  void validate(IssueTokenRequest request) throws SignatureInvalidException;
+  void validate(IssueAccessRequest request) throws SignatureInvalidException;
 
-  void validate(ValidateTokenRequest request, String token) throws SignatureInvalidException;
+  void validate(ValidateAccessRequest request, String token) throws SignatureInvalidException;
 }

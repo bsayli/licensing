@@ -1,6 +1,6 @@
 package io.github.bsayli.licensing.service.validation.impl;
 
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.domain.model.ClientCachedLicenseData;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.security.SignatureValidator;
@@ -42,7 +42,7 @@ public class TokenRequestValidatorImpl implements TokenRequestValidator {
   }
 
   @Override
-  public void assertValid(ValidateTokenRequest request, String token) {
+  public void assertValid(ValidateAccessRequest request, String token) {
     signatureValidator.validate(request, token);
 
     if (!jwtService.validateTokenFormat(token)) {
@@ -71,7 +71,7 @@ public class TokenRequestValidatorImpl implements TokenRequestValidator {
     }
   }
 
-  private void assertRequestMatchesCache(ValidateTokenRequest request, String token) {
+  private void assertRequestMatchesCache(ValidateAccessRequest request, String token) {
     String clientId = clientIdGenerator.getClientId(request);
     Optional<ClientCachedLicenseData> cachedOpt = cacheService.find(clientId);
     if (cachedOpt.isEmpty()) {
@@ -94,7 +94,7 @@ public class TokenRequestValidatorImpl implements TokenRequestValidator {
     }
   }
 
-  private void throwTokenExceptionBasedOnCache(ValidateTokenRequest request, String token) {
+  private void throwTokenExceptionBasedOnCache(ValidateAccessRequest request, String token) {
     String clientId = clientIdGenerator.getClientId(request);
     Optional<ClientCachedLicenseData> cachedOpt = cacheService.find(clientId);
 

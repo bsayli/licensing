@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.security.impl;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.domain.model.SignatureData;
 import io.github.bsayli.licensing.security.SignatureValidator;
 import io.github.bsayli.licensing.service.exception.security.SignatureInvalidException;
@@ -31,7 +31,7 @@ public class SignatureValidatorImpl implements SignatureValidator {
   }
 
   @Override
-  public void validate(IssueTokenRequest request) throws SignatureInvalidException {
+  public void validate(IssueAccessRequest request) throws SignatureInvalidException {
     ensureStdBase64(request.signature());
 
     String encSegment = extractEncryptedUserIdSegment(request.licenseKey());
@@ -48,7 +48,7 @@ public class SignatureValidatorImpl implements SignatureValidator {
   }
 
   @Override
-  public void validate(ValidateTokenRequest request, String token)
+  public void validate(ValidateAccessRequest request, String token)
       throws SignatureInvalidException {
     ensureStdBase64(request.signature());
 

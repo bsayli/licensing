@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.generator.impl;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.domain.model.ClientInfo;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import java.nio.charset.StandardCharsets;
@@ -17,13 +17,13 @@ public class ClientIdGeneratorImpl implements ClientIdGenerator {
   private static final String ALGORITHM = "SHA-256";
 
   @Override
-  public String getClientId(IssueTokenRequest request) {
+  public String getClientId(IssueAccessRequest request) {
     return buildClientId(
         request.instanceId(), request.serviceId(), request.serviceVersion(), request.checksum());
   }
 
   @Override
-  public String getClientId(ValidateTokenRequest request) {
+  public String getClientId(ValidateAccessRequest request) {
     return buildClientId(
         request.instanceId(), request.serviceId(), request.serviceVersion(), request.checksum());
   }

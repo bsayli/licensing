@@ -2,8 +2,8 @@ package io.github.bsayli.licensing.generator.impl;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.domain.model.ClientInfo;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -34,9 +34,9 @@ class ClientIdGeneratorImplTest {
       "getClientId(IssueTokenRequest) should produce deterministic value with/without checksum")
   void issueTokenRequest_idStable() throws Exception {
     var reqWithChecksum =
-        new IssueTokenRequest("crm", "1.2.3", "inst-12345678", "sig", "chk", "LK", false);
+        new IssueAccessRequest("crm", "1.2.3", "inst-12345678", "sig", "chk", "LK", false);
     var reqNoChecksum =
-        new IssueTokenRequest("crm", "1.2.3", "inst-12345678", "sig", null, "LK", false);
+        new IssueAccessRequest("crm", "1.2.3", "inst-12345678", "sig", null, "LK", false);
 
     String id1 = generator.getClientId(reqWithChecksum);
     String id2 = generator.getClientId(reqNoChecksum);
@@ -50,8 +50,8 @@ class ClientIdGeneratorImplTest {
   @DisplayName("getClientId(ValidateTokenRequest) should match IssueTokenRequest for same inputs")
   void validate_vs_issue_sameResult() throws Exception {
     var issue =
-        new IssueTokenRequest("billing", "2.0.0", "inst-ABCD1234", "sig", "cs", "LK", false);
-    var valid = new ValidateTokenRequest("billing", "2.0.0", "inst-ABCD1234", "sig", "cs");
+        new IssueAccessRequest("billing", "2.0.0", "inst-ABCD1234", "sig", "cs", "LK", false);
+    var valid = new ValidateAccessRequest("billing", "2.0.0", "inst-ABCD1234", "sig", "cs");
 
     String idIssue = generator.getClientId(issue);
     String idValid = generator.getClientId(valid);

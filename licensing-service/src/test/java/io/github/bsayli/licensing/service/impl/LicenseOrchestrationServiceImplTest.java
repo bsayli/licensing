@@ -3,9 +3,10 @@ package io.github.bsayli.licensing.service.impl;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.LicenseValidationResponse;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.LicenseAccessResponse;
+import io.github.bsayli.licensing.api.dto.LicenseAccessStatus;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.common.exception.ServiceErrorCode;
 import io.github.bsayli.licensing.domain.model.LicenseStatus;
 import io.github.bsayli.licensing.domain.result.LicenseValidationResult;
@@ -44,10 +45,10 @@ class LicenseOrchestrationServiceImplTest {
   }
 
   @Test
-  @DisplayName("issueToken: forceTokenRefresh=true => blacklist current token, issue & cache new")
-  void issueToken_forceRefresh_true() {
+  @DisplayName("issueAccess: forceTokenRefresh=true => blacklist current token, issue & cache new")
+  void issueAccess_forceRefresh_true() {
     var req =
-        new IssueTokenRequest(
+        new IssueAccessRequest(
             "crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx", "LK_...base64...", true);
 
     var result = baseResult();
@@ -58,11 +59,11 @@ class LicenseOrchestrationServiceImplTest {
             "client-123", result, "crm", "1.2.3", "instance-12345678", "chk-xxxxx", "sig-xxxxx"))
         .thenReturn("jwt-new");
 
-    LicenseValidationResponse resp = service.issueToken(req);
+    LicenseAccessResponse resp = service.issueAccess(req);
 
     assertNotNull(resp);
     assertEquals("jwt-new", resp.licenseToken());
-    assertEquals(io.github.bsayli.licensing.api.dto.LicenseTokenStatus.TOKEN_CREATED, resp.status());
+    assertEquals(LicenseAccessStatus.TOKEN_CREATED, resp.status());
 
     verify(licenseValidationService).validateLicense(req);
     verify(clientIdGenerator).getClientId(req);
@@ -75,10 +76,10 @@ class LicenseOrchestrationServiceImplTest {
   }
 
   @Test
-  @DisplayName("issueToken: forceTokenRefresh=false => do NOT blacklist, issue & cache new")
-  void issueToken_forceRefresh_false() {
+  @DisplayName("issueAccess: forceTokenRefresh=false => do NOT blacklist, issue & cache new")
+  void issueAccess_forceRefresh_false() {
     var req =
-        new IssueTokenRequest(
+        new IssueAccessRequest(
             "billing",
             "2.0.0",
             "instance-abcdef12",
@@ -101,11 +102,11 @@ class LicenseOrchestrationServiceImplTest {
             "sig-yyyyy"))
         .thenReturn("jwt-created");
 
-    LicenseValidationResponse resp = service.issueToken(req);
+    LicenseAccessResponse resp = service.issueAccess(req);
 
     assertNotNull(resp);
     assertEquals("jwt-created", resp.licenseToken());
-    assertEquals(io.github.bsayli.licensing.api.dto.LicenseTokenStatus.TOKEN_CREATED, resp.status());
+    assertEquals(LicenseAccessStatus.TOKEN_CREATED, resp.status());
 
     verify(licenseValidationService).validateLicense(req);
     verify(clientIdGenerator).getClientId(req);
@@ -123,11 +124,12 @@ class LicenseOrchestrationServiceImplTest {
   }
 
   @Test
-  @DisplayName("validateToken: serviceStatus=TOKEN_REFRESHED => issue & cache and return refreshed")
-  void validateToken_refreshed() {
+  @DisplayName(
+      "validateAccess: serviceStatus=TOKEN_REFRESHED => issue & cache and return refreshed")
+  void validateAccess_refreshed() {
     // given
     var req =
-        new ValidateTokenRequest("crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx");
+        new ValidateAccessRequest("crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx");
     String oldToken = "jwt-old";
 
     var refreshedResult =
@@ -153,11 +155,11 @@ class LicenseOrchestrationServiceImplTest {
             "sig-xxxxx"))
         .thenReturn("jwt-new");
 
-    LicenseValidationResponse resp = service.validateToken(req, oldToken);
+    LicenseAccessResponse resp = service.validateAccess(req, oldToken);
 
     assertNotNull(resp);
     assertEquals("jwt-new", resp.licenseToken());
-    assertEquals(io.github.bsayli.licensing.api.dto.LicenseTokenStatus.TOKEN_REFRESHED, resp.status());
+    assertEquals(LicenseAccessStatus.TOKEN_REFRESHED, resp.status());
 
     verify(licenseValidationService).validateLicense(req, oldToken);
     verify(clientIdGenerator).getClientId(req);
@@ -175,22 +177,23 @@ class LicenseOrchestrationServiceImplTest {
   }
 
   @Test
-  @DisplayName("validateToken: active (no refresh) => return ACTIVE without issuing new token")
-  void validateToken_active() {
+  @DisplayName("validateAccess: active (no refresh) => return ACTIVE without issuing new token")
+  void validateAccess_active() {
 
     var req =
-        new ValidateTokenRequest("billing", "2.0.0", "instance-abcdef12", "sig-yyyyy", "chk-zzzzz");
+        new ValidateAccessRequest(
+            "billing", "2.0.0", "instance-abcdef12", "sig-yyyyy", "chk-zzzzz");
     String token = "jwt-current";
 
     var activeResult = new LicenseValidationResult.Builder().valid(true).message("active").build();
 
     when(licenseValidationService.validateLicense(req, token)).thenReturn(activeResult);
 
-    LicenseValidationResponse resp = service.validateToken(req, token);
+    LicenseAccessResponse resp = service.validateAccess(req, token);
 
     assertNotNull(resp);
     assertNull(resp.licenseToken());
-    assertEquals(io.github.bsayli.licensing.api.dto.LicenseTokenStatus.TOKEN_ACTIVE, resp.status());
+    assertEquals(LicenseAccessStatus.TOKEN_ACTIVE, resp.status());
 
     verify(licenseValidationService).validateLicense(req, token);
     verifyNoInteractions(clientIdGenerator, tokenManager, jwtBlacklistService);

@@ -3,7 +3,7 @@ package io.github.bsayli.licensing.service.validation.impl;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.domain.model.ClientCachedLicenseData;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.security.SignatureValidator;
@@ -32,8 +32,8 @@ class LicenseKeyRequestValidatorImplTest {
 
   @InjectMocks private LicenseKeyRequestValidatorImpl validator;
 
-  private IssueTokenRequest req(String checksum) {
-    return new IssueTokenRequest("crm", "1.2.3", "inst-1", "sig", checksum, "LK", false);
+  private IssueAccessRequest req(String checksum) {
+    return new IssueAccessRequest("crm", "1.2.3", "inst-1", "sig", checksum, "LK", false);
   }
 
   private ClientCachedLicenseData cached(
@@ -49,7 +49,7 @@ class LicenseKeyRequestValidatorImplTest {
   @Test
   @DisplayName("assertSignatureValid should delegate to SignatureValidator")
   void assertSignatureValid_delegates() {
-    IssueTokenRequest request = req("chk");
+    IssueAccessRequest request = req("chk");
     assertDoesNotThrow(() -> validator.assertSignatureValid(request));
     verify(signatureValidator).validate(request);
   }
@@ -57,7 +57,7 @@ class LicenseKeyRequestValidatorImplTest {
   @Test
   @DisplayName("assertNoConflictingCachedContext should return when cache empty")
   void assertNoConflictingCachedContext_cacheEmpty() {
-    IssueTokenRequest request = req("chk");
+    IssueAccessRequest request = req("chk");
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
     when(cache.find("client-1")).thenReturn(Optional.empty());
 
@@ -68,7 +68,7 @@ class LicenseKeyRequestValidatorImplTest {
   @DisplayName(
       "assertNoConflictingCachedContext should throw TokenAlreadyExistsException for same context")
   void assertNoConflictingCachedContext_sameContext() {
-    IssueTokenRequest request = req("chk");
+    IssueAccessRequest request = req("chk");
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
 
     ClientCachedLicenseData c = cached("crm", "1.2.3", "chk", "encU");
@@ -84,7 +84,7 @@ class LicenseKeyRequestValidatorImplTest {
   @DisplayName(
       "assertNoConflictingCachedContext should throw InvalidRequestException for different context")
   void assertNoConflictingCachedContext_differentContext() {
-    IssueTokenRequest request = req("chk");
+    IssueAccessRequest request = req("chk");
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
 
     ClientCachedLicenseData c = cached("crm", "9.9.9", "chk", "encU");

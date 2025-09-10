@@ -1,6 +1,6 @@
 # Licensing Service
 
-A Spring Boot 3 application that issues and validates license **tokens (JWT/EdDSA)** for client applications. It
+A Spring Boot 3 application that issues and validates license **access tokens (JWT/EdDSA)** for client applications. It
 integrates with **Keycloak** to read per‑user license metadata, provides **detached signature** verification for request
 integrity, and uses **Caffeine** caches for performance and token/session handling. This document describes only the *
 *licensing-service** subproject.
@@ -13,8 +13,8 @@ integrity, and uses **Caffeine** caches for performance and token/session handli
 * [High-Level Flow](#high-level-flow)
 * [API](#api)
 
-    * [Issue Token](#issue-token)
-    * [Validate Token](#validate-token)
+    * [Issue Access](#issue-access)
+    * [Validate Access](#validate-access)
 * [Validation & Errors](#validation--errors)
 * [Security](#security)
 * [Configuration](#configuration)
@@ -32,7 +32,7 @@ integrity, and uses **Caffeine** caches for performance and token/session handli
 
 ## Key Capabilities
 
-* **License issue/validate** via REST
+* **License access issue/validate** via REST
 * **JWT (EdDSA/Ed25519)** signing & verification
 * **Detached signature** validation on requests
 * **Keycloak** as user/license source
@@ -46,14 +46,14 @@ integrity, and uses **Caffeine** caches for performance and token/session handli
 
 ## High-Level Flow
 
-1. **Client** calls `POST /v1/licenses/tokens` with a license key + detached signature.
+1. **Client** calls `POST /v1/licenses/access` with a license key + detached signature.
 2. Service **decrypts** the license key → extracts **userId**.
 3. Service **evaluates license** (Keycloak + policy checks).
 4. Service **issues JWT** and **caches** client session context.
-5. Client later calls `POST /v1/licenses/tokens/validate` with the JWT + detached signature.
+5. Client later calls `POST /v1/licenses/access/validate` with the JWT + detached signature.
 6. Service verifies signature, JWT validity/blacklist, and **matches request to cached context**.
 
-    * If expired *and* cache matches → returns **TOKEN\_REFRESHED** and a new JWT.
+* If expired *and* cache matches → returns **TOKEN\_REFRESHED** and a new JWT.
 
 ---
 
@@ -65,13 +65,13 @@ Base path (configurable):
 /licensing-service
 ```
 
-Controller: `LicenseValidationController`
+Controller: `LicenseController`
 
-### Issue Token
+### Issue Access
 
-`POST /v1/licenses/tokens`
+`POST /v1/licenses/access`
 
-**Request Body** — `IssueTokenRequest`
+**Request Body** — `IssueAccessRequest`
 
 ```json
 {
@@ -85,7 +85,7 @@ Controller: `LicenseValidationController`
 }
 ```
 
-**Response** — `ApiResponse<LicenseValidationResponse>`
+**Response** — `ApiResponse<LicenseAccessResponse>`
 
 ```json
 {
@@ -93,7 +93,7 @@ Controller: `LicenseValidationController`
   "message": "License is valid",
   "data": {
     "status": "TOKEN_CREATED | TOKEN_ACTIVE | TOKEN_REFRESHED",
-    "token": "<JWT>"
+    "licenseToken": "<JWT>"
   },
   "errors": []
 }
@@ -113,12 +113,12 @@ curl -u licensingUser:licensingPass \
         "licenseKey":"<LICENSE_KEY>",
         "forceTokenRefresh":false
       }' \
-  http://localhost:8081/licensing-service/v1/licenses/tokens
+  http://localhost:8081/licensing-service/v1/licenses/access
 ```
 
-### Validate Token
+### Validate Access
 
-`POST /v1/licenses/tokens/validate`
+`POST /v1/licenses/access/validate`
 
 **Headers**
 
@@ -126,7 +126,7 @@ curl -u licensingUser:licensingPass \
 License-Token: <JWT>
 ```
 
-**Request Body** — `ValidateTokenRequest`
+**Request Body** — `ValidateAccessRequest`
 
 ```json
 {
@@ -138,7 +138,7 @@ License-Token: <JWT>
 }
 ```
 
-**Response** — `ApiResponse<LicenseValidationResponse>`
+**Response** — `ApiResponse<LicenseAccessResponse>`
 
 ```json
 {
@@ -146,7 +146,7 @@ License-Token: <JWT>
   "message": "License is valid",
   "data": {
     "status": "TOKEN_ACTIVE | TOKEN_REFRESHED",
-    "token": "<NEW_JWT_IF_REFRESHED>"
+    "licenseToken": "<NEW_JWT_IF_REFRESHED>"
   },
   "errors": []
 }
@@ -165,7 +165,7 @@ curl -u licensingUser:licensingPass \
         "signature":"<BASE64>",
         "checksum":"<OPTIONAL>"
       }' \
-  http://localhost:8081/licensing-service/v1/licenses/tokens/validate
+  http://localhost:8081/licensing-service/v1/licenses/access/validate
 ```
 
 ---
@@ -269,7 +269,8 @@ Defined in `CacheConfig` (Caffeine):
 * **Format pre-check**: base64url parts & `alg` header enforcement
 * **Detached signature** (`SignatureValidator`): validates Base64 signature over canonical JSON payload (
   `SignatureData`)
-* **AES/GCM** utilities\*\*:\*\*
+* **AES/GCM** utilities:
+
     * `UserIdEncryptorImpl` — encrypt/decrypt user UUIDs
 
 > For key generation and signing helpers, see the **license-generator** subproject.
@@ -322,8 +323,8 @@ docker-compose up -d
 licensing-service/
 ├─ src/main/java/io/github/bsayli/licensing/
 │  ├─ api/
-│  │  ├─ controller/LicenseValidationController.java
-│  │  ├─ dto/(IssueTokenRequest, ValidateTokenRequest, LicenseValidationResponse)
+│  │  ├─ controller/LicenseController.java
+│  │  ├─ dto/(IssueAccessRequest, ValidateAccessRequest, LicenseAccessResponse)
 │  │  └─ validation/annotations/ValidLicenseToken.java
 │  ├─ common/(api, exception, i18n, openapi)
 │  ├─ config/(CacheConfig, CryptoProviderConfig, SecretConfig, security/*)

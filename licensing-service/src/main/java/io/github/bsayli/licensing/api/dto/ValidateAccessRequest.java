@@ -3,7 +3,7 @@ package io.github.bsayli.licensing.api.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record ValidateTokenRequest(
+public record ValidateAccessRequest(
     @NotBlank(message = "{service.id.required}")
         @Size(min = 3, max = 50, message = "{service.id.size}")
         String serviceId,

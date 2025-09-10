@@ -3,8 +3,8 @@ package io.github.bsayli.licensing.service.impl;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.domain.model.LicenseStatus;
 import io.github.bsayli.licensing.service.exception.license.LicenseNotFoundException;
@@ -47,7 +47,7 @@ class LicenseEvaluationServiceImplTest {
   @Test
   @DisplayName("evaluateLicense(IssueTokenRequest): records usage when instance is missing")
   void issueToken_recordsUsage_whenMissing() {
-    var request = new IssueTokenRequest("crm", "1.2.3", "inst-001", "sig", "chk", "LK", false);
+    var request = new IssueAccessRequest("crm", "1.2.3", "inst-001", "sig", "chk", "LK", false);
     var info = licenseInfoWithInstances("user-1", "PRO", LicenseStatus.ACTIVE, List.of("inst-XYZ"));
 
     when(userService.getLicenseInfo("user-1")).thenReturn(Optional.of(info));
@@ -67,7 +67,7 @@ class LicenseEvaluationServiceImplTest {
   @Test
   @DisplayName("evaluateLicense(IssueTokenRequest): does not record usage when instance exists")
   void issueToken_doesNotRecord_whenExists() {
-    var request = new IssueTokenRequest("crm", "1.2.3", "inst-XYZ", "sig", "chk", "LK", false);
+    var request = new IssueAccessRequest("crm", "1.2.3", "inst-XYZ", "sig", "chk", "LK", false);
     var info =
         licenseInfoWithInstances("user-2", "BASIC", LicenseStatus.ACTIVE, List.of("inst-XYZ"));
 
@@ -88,7 +88,7 @@ class LicenseEvaluationServiceImplTest {
   @Test
   @DisplayName("evaluateLicense(ValidateTokenRequest): records usage when instance is missing")
   void validateToken_recordsUsage_whenMissing() {
-    var request = new ValidateTokenRequest("billing", "2.0.0", "inst-ABC", "sig", "chk");
+    var request = new ValidateAccessRequest("billing", "2.0.0", "inst-ABC", "sig", "chk");
     var info = licenseInfoWithInstances("user-3", "ENTERPRISE", LicenseStatus.ACTIVE, List.of());
 
     when(userService.getLicenseInfo("user-3")).thenReturn(Optional.of(info));
@@ -108,7 +108,7 @@ class LicenseEvaluationServiceImplTest {
   @Test
   @DisplayName("evaluateLicense: throws LicenseNotFoundException when repository returns empty")
   void evaluate_throws_whenUserMissing() {
-    var request = new IssueTokenRequest("crm", "1.2.3", "inst-001", "sig", "chk", "LK", false);
+    var request = new IssueAccessRequest("crm", "1.2.3", "inst-001", "sig", "chk", "LK", false);
     when(userService.getLicenseInfo("missing-user")).thenReturn(Optional.empty());
 
     assertThrows(

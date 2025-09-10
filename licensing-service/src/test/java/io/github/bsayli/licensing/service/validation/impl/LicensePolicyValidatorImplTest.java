@@ -3,8 +3,8 @@ package io.github.bsayli.licensing.service.validation.impl;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.domain.model.LicenseServiceIdVersionInfo;
 import io.github.bsayli.licensing.domain.model.LicenseStatus;
@@ -50,14 +50,14 @@ class LicensePolicyValidatorImplTest {
         .build();
   }
 
-  private static IssueTokenRequest issueReq(String instanceId) {
+  private static IssueAccessRequest issueReq(String instanceId) {
 
-    return new IssueTokenRequest(
+    return new IssueAccessRequest(
         "svcA", "1.0.0", instanceId, "s".repeat(40), null, "l".repeat(220), false);
   }
 
-  private static ValidateTokenRequest validateReq(String instanceId) {
-    return new ValidateTokenRequest("svcA", "1.0.0", instanceId, "s".repeat(40), null);
+  private static ValidateAccessRequest validateReq(String instanceId) {
+    return new ValidateAccessRequest("svcA", "1.0.0", instanceId, "s".repeat(40), null);
   }
 
   @BeforeEach

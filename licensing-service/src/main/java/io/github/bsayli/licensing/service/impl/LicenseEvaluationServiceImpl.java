@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.service.impl;
 
-import io.github.bsayli.licensing.api.dto.IssueTokenRequest;
-import io.github.bsayli.licensing.api.dto.ValidateTokenRequest;
+import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.service.LicenseEvaluationService;
 import io.github.bsayli.licensing.service.exception.license.LicenseNotFoundException;
@@ -23,13 +23,13 @@ public class LicenseEvaluationServiceImpl implements LicenseEvaluationService {
   }
 
   @Override
-  public LicenseInfo evaluateLicense(IssueTokenRequest request, String userId) {
+  public LicenseInfo evaluateLicense(IssueAccessRequest request, String userId) {
     return fetchEvaluateAndMaybeRecordUsage(
         userId, request.instanceId(), info -> licenseValidationService.assertValid(info, request));
   }
 
   @Override
-  public LicenseInfo evaluateLicense(ValidateTokenRequest request, String userId) {
+  public LicenseInfo evaluateLicense(ValidateAccessRequest request, String userId) {
     return fetchEvaluateAndMaybeRecordUsage(
         userId, request.instanceId(), info -> licenseValidationService.assertValid(info, request));
   }
