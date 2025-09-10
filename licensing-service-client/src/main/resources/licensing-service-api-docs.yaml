@@ -1,0 +1,182 @@
+openapi: 3.1.0
+info:
+  title: Licensing Service API
+  description: Licensing Service type-safe generic API responses with OpenAPI
+  version: 1.0.1
+servers:
+- url: http://localhost:8081/licensing-service
+  description: Licensing Service URL
+paths:
+  /v1/licenses/tokens:
+    post:
+      tags:
+      - license-validation-controller
+      operationId: issueToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IssueTokenRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseLicenseValidationResponse"
+  /v1/licenses/tokens/validate:
+    post:
+      tags:
+      - license-validation-controller
+      operationId: validateToken
+      parameters:
+      - name: License-Token
+        in: header
+        required: true
+        schema:
+          type: string
+          maxLength: 400
+          minLength: 200
+          pattern: "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateTokenRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseLicenseValidationResponse"
+components:
+  schemas:
+    IssueTokenRequest:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          maxLength: 50
+          minLength: 3
+        serviceVersion:
+          type: string
+          maxLength: 20
+          minLength: 3
+        instanceId:
+          type: string
+          maxLength: 200
+          minLength: 8
+        signature:
+          type: string
+          maxLength: 500
+          minLength: 20
+        checksum:
+          type: string
+          maxLength: 500
+          minLength: 20
+        licenseKey:
+          type: string
+          maxLength: 200
+          minLength: 100
+        forceTokenRefresh:
+          type: boolean
+      required:
+      - instanceId
+      - licenseKey
+      - serviceId
+      - serviceVersion
+      - signature
+    ApiError:
+      type: object
+      properties:
+        errorCode:
+          type: string
+        message:
+          type: string
+    ApiResponseLicenseValidationResponse:
+      allOf:
+      - $ref: "#/components/schemas/ApiResponse"
+      - type: object
+        properties:
+          data:
+            $ref: "#/components/schemas/LicenseValidationResponse"
+      x-api-wrapper: true
+      x-api-wrapper-datatype: LicenseValidationResponse
+    LicenseValidationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - TOKEN_CREATED
+          - TOKEN_REFRESHED
+          - TOKEN_ACTIVE
+        licenseToken:
+          type: string
+    ValidateTokenRequest:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          maxLength: 50
+          minLength: 3
+        serviceVersion:
+          type: string
+          maxLength: 20
+          minLength: 3
+        instanceId:
+          type: string
+          maxLength: 200
+          minLength: 8
+        signature:
+          type: string
+          maxLength: 500
+          minLength: 20
+        checksum:
+          type: string
+          maxLength: 500
+          minLength: 20
+      required:
+      - instanceId
+      - serviceId
+      - serviceVersion
+      - signature
+    ApiResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              errorCode:
+                type: string
+              message:
+                type: string
+    ApiResponseVoid:
+      type: object
+      properties:
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: object
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              errorCode:
+                type: string
+              message:
+                type: string

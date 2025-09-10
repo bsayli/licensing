@@ -93,7 +93,9 @@ class UserServiceImplTest {
   @Test
   @DisplayName("@Recover recoverUser delegates to UserRecoveryService")
   void recoverUser_delegates() {
-    ProcessingException pe = new ProcessingException("x");
+    ProcessingException pe =
+        new ProcessingException(new java.net.SocketTimeoutException("read timed out"));
+
     Optional<LicenseInfo> expected = Optional.of(sample("u4"));
     when(userRecoveryService.recoverUser("u4", pe)).thenReturn(expected);
 

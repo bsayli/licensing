@@ -71,6 +71,36 @@ mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
 
 Copy the resulting Base64 signature as the `signature` field in the **/issue** request.
 
+### 3b) Create a **detached signature** for a license token (validation flow)
+
+When you already obtained a JWT from the licensing-service and need to call `/v1/licenses/tokens/validate`, you must
+send a detached Ed25519 signature computed over the canonical JSON that contains the **SHA-256 hash of the license token
+**.
+
+```bash
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.SignatureCli \
+  -Dexec.args="--mode sign \
+               --serviceId crm \
+               --serviceVersion 1.5.0 \
+               --instanceId licensing-service~demo~00:11:22:33:44:55 \
+               --token <JWT_FROM_ISSUE_RESPONSE> \
+               --privateKey <BASE64_PKCS8_PRIV>"
+```
+
+The CLI will output:
+
+* The canonical JSON (`SignatureData`) with `licenseTokenHash` field set.
+* The detached signature (Base64).
+
+Copy the detached signature into the `signature` field of your `/tokens/validate` request body.
+
+---
+
+ℹ️ **Where to add this section:** place it right after the existing step
+`### 3) Create a **detached signature** for the request` in your **license-generator/README.md**. This way both
+license-key and license-token signing flows are documented together.
+
 ### 4) Ask the licensing-service for a token (server side)
 
 Use the REST API from the **licensing-service** project (`POST /v1/licenses/tokens`). See that README for cURL.

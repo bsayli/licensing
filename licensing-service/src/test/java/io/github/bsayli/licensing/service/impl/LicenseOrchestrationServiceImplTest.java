@@ -62,7 +62,7 @@ class LicenseOrchestrationServiceImplTest {
 
     assertNotNull(resp);
     assertEquals("jwt-new", resp.licenseToken());
-    assertEquals(io.github.bsayli.licensing.api.dto.LicenseTokenStatus.CREATED, resp.status());
+    assertEquals(io.github.bsayli.licensing.api.dto.LicenseTokenStatus.TOKEN_CREATED, resp.status());
 
     verify(licenseValidationService).validateLicense(req);
     verify(clientIdGenerator).getClientId(req);
@@ -105,7 +105,7 @@ class LicenseOrchestrationServiceImplTest {
 
     assertNotNull(resp);
     assertEquals("jwt-created", resp.licenseToken());
-    assertEquals(io.github.bsayli.licensing.api.dto.LicenseTokenStatus.CREATED, resp.status());
+    assertEquals(io.github.bsayli.licensing.api.dto.LicenseTokenStatus.TOKEN_CREATED, resp.status());
 
     verify(licenseValidationService).validateLicense(req);
     verify(clientIdGenerator).getClientId(req);
@@ -157,7 +157,7 @@ class LicenseOrchestrationServiceImplTest {
 
     assertNotNull(resp);
     assertEquals("jwt-new", resp.licenseToken());
-    assertEquals(io.github.bsayli.licensing.api.dto.LicenseTokenStatus.REFRESHED, resp.status());
+    assertEquals(io.github.bsayli.licensing.api.dto.LicenseTokenStatus.TOKEN_REFRESHED, resp.status());
 
     verify(licenseValidationService).validateLicense(req, oldToken);
     verify(clientIdGenerator).getClientId(req);
@@ -190,7 +190,7 @@ class LicenseOrchestrationServiceImplTest {
 
     assertNotNull(resp);
     assertNull(resp.licenseToken());
-    assertEquals(io.github.bsayli.licensing.api.dto.LicenseTokenStatus.ACTIVE, resp.status());
+    assertEquals(io.github.bsayli.licensing.api.dto.LicenseTokenStatus.TOKEN_ACTIVE, resp.status());
 
     verify(licenseValidationService).validateLicense(req, token);
     verifyNoInteractions(clientIdGenerator, tokenManager, jwtBlacklistService);
