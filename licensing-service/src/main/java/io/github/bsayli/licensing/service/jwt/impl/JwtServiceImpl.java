@@ -89,7 +89,14 @@ public class JwtServiceImpl implements JwtService {
   @Override
   public String generateToken(String clientId, String licenseTier, LicenseStatus licenseStatus) {
     Instant now = clock.instant();
-    Instant expiry = now.plus(tokenTtl).plusMillis(jitterSupplier.getAsLong());
+
+    long jitterMs = jitterSupplier.getAsLong();
+    if (jitterMs < 0L) jitterMs = 0L;
+    if (!maxJitter.isZero() && jitterMs > maxJitter.toMillis()) {
+      jitterMs = maxJitter.toMillis();
+    }
+
+    Instant expiry = now.plus(tokenTtl).plusMillis(jitterMs);
 
     String message =
         messageResolver.getMessage("license.message." + licenseStatus.name().toLowerCase());
