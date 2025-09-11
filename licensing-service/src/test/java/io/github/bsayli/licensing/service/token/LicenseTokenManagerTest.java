@@ -7,7 +7,7 @@ import io.github.bsayli.licensing.common.exception.ServiceErrorCode;
 import io.github.bsayli.licensing.domain.model.ClientInfo;
 import io.github.bsayli.licensing.domain.model.LicenseStatus;
 import io.github.bsayli.licensing.domain.result.LicenseValidationResult;
-import io.github.bsayli.licensing.service.ClientSessionCache;
+import io.github.bsayli.licensing.service.ClientSessionCacheService;
 import io.github.bsayli.licensing.service.jwt.JwtService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -25,7 +25,7 @@ class LicenseTokenManagerTest {
   @DisplayName("issueAndCache should generate token, cache ClientInfo, and return token")
   void issueAndCache_writesAndReturnsToken() {
     JwtService jwt = mock(JwtService.class);
-    ClientSessionCache cache = mock(ClientSessionCache.class);
+    ClientSessionCacheService cache = mock(ClientSessionCacheService.class);
     LicenseTokenManager mgr = new LicenseTokenManager(jwt, cache);
 
     LicenseValidationResult result =

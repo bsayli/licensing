@@ -4,10 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
-import io.github.bsayli.licensing.domain.model.ClientCachedLicenseData;
+import io.github.bsayli.licensing.domain.model.ClientSessionSnapshot;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.security.SignatureValidator;
-import io.github.bsayli.licensing.service.ClientSessionCache;
+import io.github.bsayli.licensing.service.ClientSessionCacheService;
 import io.github.bsayli.licensing.service.exception.request.InvalidRequestException;
 import io.github.bsayli.licensing.service.exception.token.TokenAccessDeniedException;
 import io.github.bsayli.licensing.service.exception.token.TokenExpiredException;
@@ -32,7 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class TokenRequestValidatorImplTest {
 
   @Mock private JwtService jwtService;
-  @Mock private ClientSessionCache cache;
+  @Mock private ClientSessionCacheService cache;
   @Mock private JwtBlacklistService blacklist;
   @Mock private ClientIdGenerator clientIdGenerator;
   @Mock private SignatureValidator signatureValidator;
@@ -43,9 +43,9 @@ class TokenRequestValidatorImplTest {
     return new ValidateAccessRequest("inst-12345678", "chk", "crm", "1.2.3", "sig");
   }
 
-  private static ClientCachedLicenseData cached(
+  private static ClientSessionSnapshot cached(
       String token, String serviceId, String version, String checksum, String encUserId) {
-    return new ClientCachedLicenseData.Builder()
+    return new ClientSessionSnapshot.Builder()
         .licenseToken(token)
         .encUserId(encUserId)
         .serviceId(serviceId)

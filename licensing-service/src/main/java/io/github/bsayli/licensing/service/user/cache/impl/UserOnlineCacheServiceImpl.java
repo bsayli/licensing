@@ -1,5 +1,6 @@
 package io.github.bsayli.licensing.service.user.cache.impl;
 
+import io.github.bsayli.licensing.cache.CacheNames;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.service.user.cache.UserCacheService;
 import java.util.Optional;
@@ -10,42 +11,35 @@ import org.springframework.stereotype.Service;
 @Service("userOnlineCacheService")
 public class UserOnlineCacheServiceImpl implements UserCacheService {
 
-  private static final String CACHE_NAME = "userInfoCache";
-
-  private final CacheManager cacheManager;
+  private final Cache cache;
 
   public UserOnlineCacheServiceImpl(CacheManager cacheManager) {
-    this.cacheManager = cacheManager;
+    this.cache = requireCache(cacheManager, CacheNames.USER_INFO);
+  }
+
+  private static Cache requireCache(CacheManager mgr, String name) {
+    Cache c = mgr.getCache(name);
+    if (c == null) throw new IllegalStateException("Cache not configured: " + name);
+    return c;
   }
 
   @Override
   public Optional<LicenseInfo> get(String userId) {
-    Cache cache = cacheManager.getCache(CACHE_NAME);
-    if (cache == null) return Optional.empty();
-    LicenseInfo info = cache.get(userId, LicenseInfo.class);
-    return Optional.ofNullable(info);
+    return Optional.ofNullable(cache.get(userId, LicenseInfo.class));
   }
 
   @Override
   public void put(String userId, LicenseInfo licenseInfo) {
-    Cache cache = cacheManager.getCache(CACHE_NAME);
-    if (cache != null) {
-      cache.put(userId, licenseInfo);
-    }
+    cache.put(userId, licenseInfo);
   }
 
   @Override
   public void evict(String userId) {
-    Cache cache = cacheManager.getCache(CACHE_NAME);
-    if (cache != null) {
-      cache.evict(userId);
-    }
+    cache.evict(userId);
   }
 
   @Override
   public boolean exists(String userId) {
-    Cache cache = cacheManager.getCache(CACHE_NAME);
-    if (cache == null) return false;
     return cache.get(userId) != null;
   }
 }
