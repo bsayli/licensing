@@ -8,7 +8,6 @@ import io.github.bsayli.licensing.domain.model.LicenseStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -20,15 +19,13 @@ import org.springframework.cache.CacheManager;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Unit Test: UserOfflineCacheServiceImp")
+@DisplayName("Unit Test: UserOfflineCacheServiceImpl")
 class UserOfflineCacheServiceImplTest {
 
   private static final String CACHE_NAME = "userOfflineInfoCache";
 
   @Mock private CacheManager cacheManager;
   @Mock private Cache cache;
-
-  private UserOfflineCacheServiceImpl service;
 
   private static LicenseInfo sample() {
     return new LicenseInfo.Builder()
@@ -43,30 +40,23 @@ class UserOfflineCacheServiceImplTest {
         .build();
   }
 
-  @BeforeEach
-  void setUp() {
-    service = new UserOfflineCacheServiceImpl(cacheManager);
-  }
-
   @Test
-  @DisplayName("get: returns Optional.empty when cache is missing")
-  void get_cacheNull() {
+  @DisplayName("ctor: cache yoksa fail-fast -> IllegalStateException")
+  void ctor_cache_missing_failfast() {
     when(cacheManager.getCache(CACHE_NAME)).thenReturn(null);
-
-    Optional<LicenseInfo> out = service.get("u");
-
-    assertTrue(out.isEmpty());
+    assertThrows(IllegalStateException.class, () -> new UserOfflineCacheServiceImpl(cacheManager));
     verify(cacheManager).getCache(CACHE_NAME);
     verifyNoMoreInteractions(cacheManager);
     verifyNoInteractions(cache);
   }
 
   @Test
-  @DisplayName("get: returns Optional.empty when value is absent")
+  @DisplayName("get: değer yoksa Optional.empty döner")
   void get_valueNull() {
     when(cacheManager.getCache(CACHE_NAME)).thenReturn(cache);
     when(cache.get("u", LicenseInfo.class)).thenReturn(null);
 
+    UserOfflineCacheServiceImpl service = new UserOfflineCacheServiceImpl(cacheManager);
     Optional<LicenseInfo> out = service.get("u");
 
     assertTrue(out.isEmpty());
@@ -76,12 +66,13 @@ class UserOfflineCacheServiceImplTest {
   }
 
   @Test
-  @DisplayName("get: returns Optional.of when value is present")
+  @DisplayName("get: değer varsa Optional.of döner")
   void get_valuePresent() {
     LicenseInfo li = sample();
     when(cacheManager.getCache(CACHE_NAME)).thenReturn(cache);
     when(cache.get("u", LicenseInfo.class)).thenReturn(li);
 
+    UserOfflineCacheServiceImpl service = new UserOfflineCacheServiceImpl(cacheManager);
     Optional<LicenseInfo> out = service.get("u");
 
     assertTrue(out.isPresent());
@@ -92,23 +83,12 @@ class UserOfflineCacheServiceImplTest {
   }
 
   @Test
-  @DisplayName("put: no-op when cache is missing")
-  void put_cacheNull() {
-    when(cacheManager.getCache(CACHE_NAME)).thenReturn(null);
-
-    service.put("u", sample());
-
-    verify(cacheManager).getCache(CACHE_NAME);
-    verifyNoMoreInteractions(cacheManager);
-    verifyNoInteractions(cache);
-  }
-
-  @Test
-  @DisplayName("put: delegates to cache.put when cache is present")
+  @DisplayName("put: cache.put'e delege eder")
   void put_cachePresent() {
     LicenseInfo li = sample();
     when(cacheManager.getCache(CACHE_NAME)).thenReturn(cache);
 
+    UserOfflineCacheServiceImpl service = new UserOfflineCacheServiceImpl(cacheManager);
     service.put("u", li);
 
     verify(cacheManager).getCache(CACHE_NAME);
@@ -117,22 +97,11 @@ class UserOfflineCacheServiceImplTest {
   }
 
   @Test
-  @DisplayName("evict: no-op when cache is missing")
-  void evict_cacheNull() {
-    when(cacheManager.getCache(CACHE_NAME)).thenReturn(null);
-
-    service.evict("u");
-
-    verify(cacheManager).getCache(CACHE_NAME);
-    verifyNoMoreInteractions(cacheManager);
-    verifyNoInteractions(cache);
-  }
-
-  @Test
-  @DisplayName("evict: delegates to cache.evict when cache is present")
+  @DisplayName("evict: cache.evict'e delege eder")
   void evict_cachePresent() {
     when(cacheManager.getCache(CACHE_NAME)).thenReturn(cache);
 
+    UserOfflineCacheServiceImpl service = new UserOfflineCacheServiceImpl(cacheManager);
     service.evict("u");
 
     verify(cacheManager).getCache(CACHE_NAME);
@@ -141,23 +110,12 @@ class UserOfflineCacheServiceImplTest {
   }
 
   @Test
-  @DisplayName("exists: returns false when cache is missing")
-  void exists_cacheNull() {
-    when(cacheManager.getCache(CACHE_NAME)).thenReturn(null);
-
-    assertFalse(service.exists("u"));
-
-    verify(cacheManager).getCache(CACHE_NAME);
-    verifyNoMoreInteractions(cacheManager);
-    verifyNoInteractions(cache);
-  }
-
-  @Test
-  @DisplayName("exists: returns false when value is absent")
+  @DisplayName("exists: değer yoksa false")
   void exists_valueNull() {
     when(cacheManager.getCache(CACHE_NAME)).thenReturn(cache);
     when(cache.get("u")).thenReturn(null);
 
+    UserOfflineCacheServiceImpl service = new UserOfflineCacheServiceImpl(cacheManager);
     assertFalse(service.exists("u"));
 
     verify(cacheManager).getCache(CACHE_NAME);
@@ -166,11 +124,13 @@ class UserOfflineCacheServiceImplTest {
   }
 
   @Test
-  @DisplayName("exists: returns true when value is present")
+  @DisplayName("exists: değer varsa true")
   void exists_valuePresent() {
     when(cacheManager.getCache(CACHE_NAME)).thenReturn(cache);
-    when(cache.get("u")).thenReturn(mock(Cache.ValueWrapper.class));
+    Cache.ValueWrapper wrapper = mock(Cache.ValueWrapper.class);
+    when(cache.get("u")).thenReturn(wrapper);
 
+    UserOfflineCacheServiceImpl service = new UserOfflineCacheServiceImpl(cacheManager);
     assertTrue(service.exists("u"));
 
     verify(cacheManager).getCache(CACHE_NAME);

@@ -1,10 +1,10 @@
 package io.github.bsayli.licensing.service.validation.impl;
 
 import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
-import io.github.bsayli.licensing.domain.model.ClientCachedLicenseData;
+import io.github.bsayli.licensing.domain.model.ClientSessionSnapshot;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.security.SignatureValidator;
-import io.github.bsayli.licensing.service.ClientSessionCache;
+import io.github.bsayli.licensing.service.ClientSessionCacheService;
 import io.github.bsayli.licensing.service.exception.request.InvalidRequestException;
 import io.github.bsayli.licensing.service.exception.token.TokenAccessDeniedException;
 import io.github.bsayli.licensing.service.exception.token.TokenExpiredException;
@@ -23,14 +23,14 @@ import org.springframework.stereotype.Service;
 public class TokenRequestValidatorImpl implements TokenRequestValidator {
 
   private final JwtService jwtService;
-  private final ClientSessionCache cacheService;
+  private final ClientSessionCacheService cacheService;
   private final JwtBlacklistService jwtBlacklistService;
   private final ClientIdGenerator clientIdGenerator;
   private final SignatureValidator signatureValidator;
 
   public TokenRequestValidatorImpl(
       JwtService jwtService,
-      ClientSessionCache cacheService,
+      ClientSessionCacheService cacheService,
       ClientIdGenerator clientIdGenerator,
       JwtBlacklistService jwtBlacklistService,
       SignatureValidator signatureValidator) {
@@ -73,21 +73,21 @@ public class TokenRequestValidatorImpl implements TokenRequestValidator {
 
   private void assertRequestMatchesCache(ValidateAccessRequest request, String token) {
     String clientId = clientIdGenerator.getClientId(request);
-    Optional<ClientCachedLicenseData> cachedOpt = cacheService.find(clientId);
+    Optional<ClientSessionSnapshot> cachedOpt = cacheService.find(clientId);
     if (cachedOpt.isEmpty()) {
       return;
     }
 
-    ClientCachedLicenseData cached = cachedOpt.get();
+    ClientSessionSnapshot cached = cachedOpt.get();
 
-    boolean tokenMatches = Objects.equals(cached.getLicenseToken(), token);
+    boolean tokenMatches = Objects.equals(cached.licenseToken(), token);
     if (!tokenMatches) {
       throw new TokenInvalidException();
     }
 
-    boolean serviceMatches = Objects.equals(cached.getServiceId(), request.serviceId());
-    boolean versionMatches = Objects.equals(cached.getServiceVersion(), request.serviceVersion());
-    boolean checksumMatches = Objects.equals(cached.getChecksum(), request.checksum());
+    boolean serviceMatches = Objects.equals(cached.serviceId(), request.serviceId());
+    boolean versionMatches = Objects.equals(cached.serviceVersion(), request.serviceVersion());
+    boolean checksumMatches = Objects.equals(cached.checksum(), request.checksum());
 
     if (!(serviceMatches && versionMatches && checksumMatches)) {
       throw new InvalidRequestException();
@@ -96,15 +96,15 @@ public class TokenRequestValidatorImpl implements TokenRequestValidator {
 
   private void throwTokenExceptionBasedOnCache(ValidateAccessRequest request, String token) {
     String clientId = clientIdGenerator.getClientId(request);
-    Optional<ClientCachedLicenseData> cachedOpt = cacheService.find(clientId);
+    Optional<ClientSessionSnapshot> cachedOpt = cacheService.find(clientId);
 
     if (cachedOpt.isEmpty()) {
       throw new TokenIsTooOldForRefreshException();
     }
 
-    ClientCachedLicenseData cached = cachedOpt.get();
-    if (Objects.equals(cached.getLicenseToken(), token)) {
-      throw new TokenExpiredException(cached.getEncUserId());
+    ClientSessionSnapshot cached = cachedOpt.get();
+    if (Objects.equals(cached.licenseToken(), token)) {
+      throw new TokenExpiredException(cached.encUserId());
     } else {
       throw new TokenInvalidException();
     }

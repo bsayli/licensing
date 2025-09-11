@@ -1,7 +1,8 @@
 package io.github.bsayli.licensing.service.jwt.impl;
 
-import io.github.bsayli.licensing.domain.model.ClientCachedLicenseData;
-import io.github.bsayli.licensing.service.ClientSessionCache;
+import io.github.bsayli.licensing.cache.CacheNames;
+import io.github.bsayli.licensing.domain.model.ClientSessionSnapshot;
+import io.github.bsayli.licensing.service.ClientSessionCacheService;
 import io.github.bsayli.licensing.service.jwt.JwtBlacklistService;
 import java.util.Objects;
 import java.util.Optional;
@@ -12,23 +13,27 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtBlacklistServiceImpl implements JwtBlacklistService {
 
-  private static final String BLACKLIST_CACHE = "blacklistedTokens";
   private static final Boolean MARKER = Boolean.TRUE;
 
-  private final ClientSessionCache sessionCache;
+  private final ClientSessionCacheService sessionCache;
   private final Cache blacklist;
 
-  public JwtBlacklistServiceImpl(ClientSessionCache sessionCache, CacheManager cacheManager) {
+  public JwtBlacklistServiceImpl(
+      ClientSessionCacheService sessionCache, CacheManager cacheManager) {
     this.sessionCache = Objects.requireNonNull(sessionCache, "sessionCache");
-    this.blacklist =
-        Objects.requireNonNull(
-            cacheManager.getCache(BLACKLIST_CACHE), "Cache not configured: " + BLACKLIST_CACHE);
+    this.blacklist = requireCache(cacheManager, CacheNames.BLACKLISTED_TOKENS);
+  }
+
+  private static Cache requireCache(CacheManager mgr, String name) {
+    Cache c = mgr.getCache(name);
+    if (c == null) throw new IllegalStateException("Cache not configured: " + name);
+    return c;
   }
 
   @Override
   public void addCurrentTokenToBlacklist(String clientId) {
-    Optional<ClientCachedLicenseData> cached = sessionCache.find(clientId);
-    cached.map(ClientCachedLicenseData::getLicenseToken).ifPresent(this::put);
+    Optional<ClientSessionSnapshot> cached = sessionCache.find(clientId);
+    cached.map(ClientSessionSnapshot::licenseToken).ifPresent(this::put);
   }
 
   @Override

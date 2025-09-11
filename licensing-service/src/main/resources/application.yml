@@ -17,6 +17,38 @@ spring:
     basename: messages
     encoding: UTF-8
     fallback-to-system-locale: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:RedBar9182_}
+      timeout: 5s
+      client-type: lettuce
+      lettuce:
+        pool:
+          enabled: true
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+        shutdown-timeout: 5s
+
+
+cache:
+  default-spec:
+    ttl-minutes: 10
+  caches:
+    userInfoCache:
+      ttl-minutes: 60
+      type: io.github.bsayli.licensing.domain.model.LicenseInfo
+    userOfflineInfoCache:
+      ttl-minutes: 1440
+      type: io.github.bsayli.licensing.domain.model.LicenseInfo
+    activeClients:
+      ttl-minutes: 180
+      type: io.github.bsayli.licensing.domain.model.ClientSessionSnapshot
+    blacklistedTokens:
+      ttl-minutes: 180
+      type: java.lang.Boolean
 
 logging:
   level:

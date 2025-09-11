@@ -1,4 +1,4 @@
-package io.github.bsayli.licensing.sdk.model;
+package io.github.bsayli.licensing.sdk.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;

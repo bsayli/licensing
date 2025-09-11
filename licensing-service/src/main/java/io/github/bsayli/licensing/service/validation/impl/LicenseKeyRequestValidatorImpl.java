@@ -1,11 +1,11 @@
 package io.github.bsayli.licensing.service.validation.impl;
 
 import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
-import io.github.bsayli.licensing.domain.model.ClientCachedLicenseData;
+import io.github.bsayli.licensing.domain.model.ClientSessionSnapshot;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.security.SignatureValidator;
 import io.github.bsayli.licensing.security.UserIdEncryptor;
-import io.github.bsayli.licensing.service.ClientSessionCache;
+import io.github.bsayli.licensing.service.ClientSessionCacheService;
 import io.github.bsayli.licensing.service.exception.request.InvalidRequestException;
 import io.github.bsayli.licensing.service.exception.token.TokenAlreadyExistsException;
 import io.github.bsayli.licensing.service.validation.LicenseKeyRequestValidator;
@@ -16,13 +16,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class LicenseKeyRequestValidatorImpl implements LicenseKeyRequestValidator {
 
-  private final ClientSessionCache cacheService;
+  private final ClientSessionCacheService cacheService;
   private final ClientIdGenerator clientIdGenerator;
   private final UserIdEncryptor userIdEncryptor;
   private final SignatureValidator signatureValidator;
 
   public LicenseKeyRequestValidatorImpl(
-      ClientSessionCache cacheService,
+      ClientSessionCacheService cacheService,
       ClientIdGenerator clientIdGenerator,
       UserIdEncryptor userIdEncryptor,
       SignatureValidator signatureValidator) {
@@ -40,19 +40,18 @@ public class LicenseKeyRequestValidatorImpl implements LicenseKeyRequestValidato
   @Override
   public void assertNoConflictingCachedContext(IssueAccessRequest request, String userId) {
     String clientId = clientIdGenerator.getClientId(request);
-    Optional<ClientCachedLicenseData> cachedOpt = cacheService.find(clientId);
+    Optional<ClientSessionSnapshot> cachedOpt = cacheService.find(clientId);
 
     if (cachedOpt.isEmpty()) {
       return;
     }
 
-    ClientCachedLicenseData cached = cachedOpt.get();
-    String cachedUserId = userIdEncryptor.decrypt(cached.getEncUserId());
+    ClientSessionSnapshot cached = cachedOpt.get();
+    String cachedUserId = userIdEncryptor.decrypt(cached.encUserId());
 
-    boolean sameServiceId = Objects.equals(cached.getServiceId(), request.serviceId());
-    boolean sameServiceVersion =
-        Objects.equals(cached.getServiceVersion(), request.serviceVersion());
-    boolean sameChecksum = Objects.equals(cached.getChecksum(), request.checksum());
+    boolean sameServiceId = Objects.equals(cached.serviceId(), request.serviceId());
+    boolean sameServiceVersion = Objects.equals(cached.serviceVersion(), request.serviceVersion());
+    boolean sameChecksum = Objects.equals(cached.checksum(), request.checksum());
     boolean sameUser = Objects.equals(cachedUserId, userId);
 
     boolean sameContext = sameServiceId && sameServiceVersion && sameChecksum && sameUser;

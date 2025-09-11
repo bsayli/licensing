@@ -4,11 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
-import io.github.bsayli.licensing.domain.model.ClientCachedLicenseData;
+import io.github.bsayli.licensing.domain.model.ClientSessionSnapshot;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.security.SignatureValidator;
 import io.github.bsayli.licensing.security.UserIdEncryptor;
-import io.github.bsayli.licensing.service.ClientSessionCache;
+import io.github.bsayli.licensing.service.ClientSessionCacheService;
 import io.github.bsayli.licensing.service.exception.request.InvalidRequestException;
 import io.github.bsayli.licensing.service.exception.token.TokenAlreadyExistsException;
 import java.util.Optional;
@@ -25,7 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("Unit Test: LicenseKeyRequestValidatorImpl")
 class LicenseKeyRequestValidatorImplTest {
 
-  @Mock private ClientSessionCache cache;
+  @Mock private ClientSessionCacheService cache;
   @Mock private ClientIdGenerator clientIdGenerator;
   @Mock private UserIdEncryptor userIdEncryptor;
   @Mock private SignatureValidator signatureValidator;
@@ -43,13 +43,13 @@ class LicenseKeyRequestValidatorImplTest {
         licenseKey, instanceId, safeChecksum, serviceId, serviceVersion, signature, false);
   }
 
-  private ClientCachedLicenseData cached(
+  private ClientSessionSnapshot cached(
       String serviceId, String version, String checksum, String encUserId) {
-    ClientCachedLicenseData c = mock(ClientCachedLicenseData.class);
-    when(c.getServiceId()).thenReturn(serviceId);
-    when(c.getServiceVersion()).thenReturn(version);
-    when(c.getChecksum()).thenReturn(checksum);
-    when(c.getEncUserId()).thenReturn(encUserId);
+    ClientSessionSnapshot c = mock(ClientSessionSnapshot.class);
+    when(c.serviceId()).thenReturn(serviceId);
+    when(c.serviceVersion()).thenReturn(version);
+    when(c.checksum()).thenReturn(checksum);
+    when(c.encUserId()).thenReturn(encUserId);
     return c;
   }
 
@@ -78,7 +78,7 @@ class LicenseKeyRequestValidatorImplTest {
     IssueAccessRequest request = req("chk");
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
 
-    ClientCachedLicenseData c = cached("crm", "1.2.3", "chk", "encU");
+    ClientSessionSnapshot c = cached("crm", "1.2.3", "chk", "encU");
     when(cache.find("client-1")).thenReturn(Optional.of(c));
     when(userIdEncryptor.decrypt("encU")).thenReturn("user-1");
 
@@ -94,7 +94,7 @@ class LicenseKeyRequestValidatorImplTest {
     IssueAccessRequest request = req("chk");
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
 
-    ClientCachedLicenseData c = cached("crm", "9.9.9", "chk", "encU");
+    ClientSessionSnapshot c = cached("crm", "9.9.9", "chk", "encU");
     when(cache.find("client-1")).thenReturn(Optional.of(c));
     when(userIdEncryptor.decrypt("encU")).thenReturn("user-2");
 

@@ -3,8 +3,8 @@ package io.github.bsayli.licensing.service.jwt.impl;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import io.github.bsayli.licensing.domain.model.ClientCachedLicenseData;
-import io.github.bsayli.licensing.service.ClientSessionCache;
+import io.github.bsayli.licensing.domain.model.ClientSessionSnapshot;
+import io.github.bsayli.licensing.service.ClientSessionCacheService;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -25,14 +25,14 @@ class JwtBlacklistServiceImplTest {
   @Test
   @DisplayName("addCurrentTokenToBlacklist should put current token into cache")
   void addCurrentTokenToBlacklist_putsToken() {
-    var sessionCache = mock(ClientSessionCache.class);
+    var sessionCache = mock(ClientSessionCacheService.class);
     var cacheManager = mock(CacheManager.class);
     var cache = mock(Cache.class);
 
     when(cacheManager.getCache(CACHE_NAME)).thenReturn(cache);
 
-    var cached = mock(ClientCachedLicenseData.class);
-    when(cached.getLicenseToken()).thenReturn("jwt-abc");
+    var cached = mock(ClientSessionSnapshot.class);
+    when(cached.licenseToken()).thenReturn("jwt-abc");
     when(sessionCache.find("client-1")).thenReturn(Optional.of(cached));
 
     var svc = new JwtBlacklistServiceImpl(sessionCache, cacheManager);
@@ -49,7 +49,7 @@ class JwtBlacklistServiceImplTest {
   @Test
   @DisplayName("addCurrentTokenToBlacklist should not call put when token missing")
   void addCurrentTokenToBlacklist_noToken_noPut() {
-    var sessionCache = mock(ClientSessionCache.class);
+    var sessionCache = mock(ClientSessionCacheService.class);
     var cacheManager = mock(CacheManager.class);
     var cache = mock(Cache.class);
 
@@ -66,7 +66,7 @@ class JwtBlacklistServiceImplTest {
   @Test
   @DisplayName("isBlacklisted should return true only when cache returns TRUE")
   void isBlacklisted_behaviour() {
-    var sessionCache = mock(ClientSessionCache.class);
+    var sessionCache = mock(ClientSessionCacheService.class);
     var cacheManager = mock(CacheManager.class);
     var cache = mock(Cache.class);
 

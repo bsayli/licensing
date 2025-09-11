@@ -14,12 +14,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/v1/licenses")
 @Validated
-public class LicenseFacadeController {
+public class LicenseController {
 
   private final LicenseOrchestrationService licenseService;
   private final LocalizedMessageResolver messageResolver;
 
-  public LicenseFacadeController(
+  public LicenseController(
       LicenseOrchestrationService licenseService, LocalizedMessageResolver messageResolver) {
     this.licenseService = licenseService;
     this.messageResolver = messageResolver;

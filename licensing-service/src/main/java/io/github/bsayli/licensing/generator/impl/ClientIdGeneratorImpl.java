@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
-import java.util.Objects;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,47 +17,37 @@ public class ClientIdGeneratorImpl implements ClientIdGenerator {
   private static final char SEP = '\u001F';
   private static final Base64.Encoder B64URL_NOPAD_ENC = Base64.getUrlEncoder().withoutPadding();
 
-  private static final String FIELD_INSTANCE_ID = "instanceId";
-  private static final String FIELD_SERVICE_ID = "serviceId";
-  private static final String FIELD_SERVICE_VERSION = "serviceVersion";
-
-  private static String requireAndNorm(String s, String fieldName) {
-    Objects.requireNonNull(s, fieldName + " must not be null");
-    return s.trim();
-  }
-
-  private static String norm(String s) {
-    return (s == null) ? null : s.trim();
+  private static String trimOrNull(String s) {
+    if (s == null) return null;
+    String t = s.trim();
+    return t.isEmpty() ? null : t;
   }
 
   @Override
   public String getClientId(IssueAccessRequest request) {
-    Objects.requireNonNull(request, "request");
     return buildClientId(
-        requireAndNorm(request.instanceId(), FIELD_INSTANCE_ID),
-        requireAndNorm(request.serviceId(), FIELD_SERVICE_ID),
-        requireAndNorm(request.serviceVersion(), FIELD_SERVICE_VERSION),
-        norm(request.checksum()));
+        request.instanceId(),
+        request.serviceId(),
+        request.serviceVersion(),
+        trimOrNull(request.checksum()));
   }
 
   @Override
   public String getClientId(ValidateAccessRequest request) {
-    Objects.requireNonNull(request, "request");
     return buildClientId(
-        requireAndNorm(request.instanceId(), FIELD_INSTANCE_ID),
-        requireAndNorm(request.serviceId(), FIELD_SERVICE_ID),
-        requireAndNorm(request.serviceVersion(), FIELD_SERVICE_VERSION),
-        norm(request.checksum()));
+        request.instanceId(),
+        request.serviceId(),
+        request.serviceVersion(),
+        trimOrNull(request.checksum()));
   }
 
   @Override
   public String getClientId(ClientInfo clientInfo) {
-    Objects.requireNonNull(clientInfo, "clientInfo");
     return buildClientId(
-        requireAndNorm(clientInfo.instanceId(), FIELD_INSTANCE_ID),
-        requireAndNorm(clientInfo.serviceId(), FIELD_SERVICE_ID),
-        requireAndNorm(clientInfo.serviceVersion(), FIELD_SERVICE_VERSION),
-        norm(clientInfo.checksum()));
+        clientInfo.instanceId(),
+        clientInfo.serviceId(),
+        clientInfo.serviceVersion(),
+        trimOrNull(clientInfo.checksum()));
   }
 
   private String buildClientId(
@@ -71,7 +60,6 @@ public class ClientIdGeneratorImpl implements ClientIdGenerator {
             + serviceVersion
             + SEP
             + (checksum == null ? "" : checksum);
-
     try {
       MessageDigest digest = MessageDigest.getInstance(ALGORITHM);
       byte[] hashed = digest.digest(raw.getBytes(StandardCharsets.UTF_8));

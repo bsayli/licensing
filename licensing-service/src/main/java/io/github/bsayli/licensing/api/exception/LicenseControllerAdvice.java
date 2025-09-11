@@ -66,9 +66,8 @@ public class LicenseControllerAdvice {
 
     List<ApiError> errors = new ArrayList<>();
     for (ConstraintViolation<?> v : ex.getConstraintViolations()) {
-      String template = v.getMessageTemplate(); // usually "{key}"
-      String resolved =
-          resolveStrict(template, v.getMessage()); // second arg used only when not {key}
+      String template = v.getMessageTemplate();
+      String resolved = resolveStrict(template, v.getMessage());
       String path = v.getPropertyPath().toString().replace(".validatedValue", "");
       errors.add(new ApiError(ServiceErrorCode.INVALID_PARAMETER.name(), path + ": " + resolved));
     }
