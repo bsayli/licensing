@@ -1,9 +1,9 @@
-package io.github.bsayli.licensing.api.dto;
+package io.github.bsayli.licensing.sdk.api.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record IssueAccessRequest(
+public record LicenseAccessRequest(
     @NotBlank(message = "{license.key.required}")
         @Size(min = 100, max = 200, message = "{license.key.size}")
         String licenseKey,
@@ -16,8 +16,4 @@ public record IssueAccessRequest(
         String serviceId,
     @NotBlank(message = "{service.version.required}")
         @Size(min = 3, max = 20, message = "{service.version.size}")
-        String serviceVersion,
-    @NotBlank(message = "{signature.required}")
-        @Size(min = 60, max = 200, message = "{signature.size}")
-        String signature,
-    boolean forceTokenRefresh) {}
+        String serviceVersion) {}

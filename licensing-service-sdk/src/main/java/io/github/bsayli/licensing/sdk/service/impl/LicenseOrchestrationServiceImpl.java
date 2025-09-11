@@ -1,97 +1,119 @@
 package io.github.bsayli.licensing.sdk.service.impl;
 
-import static io.github.bsayli.licensing.sdk.model.server.LicenseServerServiceStatus.TOKEN_ACTIVE;
-import static io.github.bsayli.licensing.sdk.model.server.LicenseServerServiceStatus.TOKEN_CREATED;
-import static io.github.bsayli.licensing.sdk.model.server.LicenseServerServiceStatus.TOKEN_REFRESHED;
-
+import io.github.bsayli.licensing.client.common.contract.ApiClientResponse;
+import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
+import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
+import io.github.bsayli.licensing.sdk.api.dto.LicenseAccessRequest;
+import io.github.bsayli.licensing.sdk.api.dto.LicenseToken;
 import io.github.bsayli.licensing.sdk.generator.ClientIdGenerator;
-import io.github.bsayli.licensing.sdk.model.LicenseStatus;
-import io.github.bsayli.licensing.sdk.model.LicenseValidationRequest;
-import io.github.bsayli.licensing.sdk.model.LicenseValidationResponse;
-import io.github.bsayli.licensing.sdk.model.server.LicenseServerServiceStatus;
-import io.github.bsayli.licensing.sdk.model.server.LicenseServerValidationRequest;
-import io.github.bsayli.licensing.sdk.model.server.LicenseServerValidationRequest.Builder;
-import io.github.bsayli.licensing.sdk.model.server.LicenseServerValidationResponse;
 import io.github.bsayli.licensing.sdk.service.LicenseOrchestrationService;
-import io.github.bsayli.licensing.sdk.service.LicenseService;
 import io.github.bsayli.licensing.sdk.service.LicenseTokenService;
+import io.github.bsayli.licensing.sdk.service.client.LicenseServiceClient;
 import org.springframework.stereotype.Service;
 
 @Service
 public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationService {
 
-  private final LicenseService licenseService;
+  private final LicenseServiceClient licenseServiceClient;
   private final LicenseTokenService licenseTokenService;
   private final ClientIdGenerator clientIdGenerator;
 
   public LicenseOrchestrationServiceImpl(
-      LicenseService licenseService,
+      LicenseServiceClient licenseServiceClient,
       LicenseTokenService licenseTokenService,
       ClientIdGenerator clientIdGenerator) {
-    this.licenseService = licenseService;
+    this.licenseServiceClient = licenseServiceClient;
     this.licenseTokenService = licenseTokenService;
     this.clientIdGenerator = clientIdGenerator;
   }
 
   @Override
-  public LicenseValidationResponse getLicenseDetails(LicenseValidationRequest request) {
-    String clientId = clientIdGenerator.getClientId(request);
+  public LicenseToken getLicenseToken(LicenseAccessRequest request) {
+    final String clientId = clientIdGenerator.getClientId(request);
+    final String cached = licenseTokenService.getLicenseToken(clientId);
 
-    LicenseServerValidationRequest serverRequest = createServerRequest(clientId, request);
-    LicenseServerValidationResponse serverResponse =
-        licenseService.getLicenseDetails(serverRequest);
+    if (cached == null) {
+      IssueAccessRequest issueReq =
+          new IssueAccessRequest()
+              .serviceId(request.serviceId())
+              .serviceVersion(request.serviceVersion())
+              .instanceId(request.instanceId())
+              // imza üretimini sonraki adımda ekleyebiliriz:
+              .signature("PLACEHOLDER_SIG")
+              .checksum(request.checksum())
+              .licenseKey(request.licenseKey())
+              .forceTokenRefresh(Boolean.FALSE);
 
-    if (serverResponse != null) {
-      String status = serverResponse.status();
-      String message = serverResponse.message();
-      String serverStatus = serverResponse.status();
+      ApiClientResponse<LicenseAccessResponse> resp = licenseServiceClient.issueAccess(issueReq);
 
-      boolean isTokenBasedSuccessStatus =
-          TOKEN_CREATED.name().equals(serverStatus)
-              || TOKEN_REFRESHED.name().equals(serverStatus)
-              || TOKEN_ACTIVE.name().equals(serverStatus);
-
-      if (serverResponse.success() && isTokenBasedSuccessStatus) {
-        boolean isNewlyCreatedToken =
-            TOKEN_CREATED.name().equals(status) || TOKEN_REFRESHED.name().equals(status);
-        if (isNewlyCreatedToken) {
-          licenseTokenService.storeLicenseToken(clientId, serverResponse.licenseToken());
+      // basit kontrol: 200 ve data/token bekliyoruz
+      if (resp.getStatus() != null && resp.getStatus() == 200 && resp.getData() != null) {
+        String newToken = resp.getData().getLicenseToken();
+        if (newToken == null || newToken.isBlank()) {
+          throw new IllegalStateException("Licensing-service returned success but token is empty.");
         }
-
-        status = LicenseStatus.LICENSE_ACTIVE.name();
-        message = "License is active";
+        licenseTokenService.storeLicenseToken(clientId, newToken);
+        return new LicenseToken(newToken);
       }
 
-      return new LicenseValidationResponse.Builder()
-          .success(serverResponse.success())
-          .status(status)
-          .message(message)
-          .errorDetails(serverResponse.errorDetails())
-          .build();
+      // hata durumunu şimdilik sade şekilde yüzeye taşıyalım
+      throw new IllegalStateException("Issue access failed: " + resp.getMessage());
     }
 
-    return new LicenseValidationResponse.Builder()
-        .success(false)
-        .status(LicenseServerServiceStatus.UNKNOWN_ERROR.name())
-        .message("Unknown Error")
-        .build();
-  }
-
-  private LicenseServerValidationRequest createServerRequest(
-      String clientId, LicenseValidationRequest request) {
-    Builder serverRequestBuilder =
-        new LicenseServerValidationRequest.Builder()
+    // 4) token var => VALIDATE akışı
+    ValidateAccessRequest validateReq =
+        new ValidateAccessRequest()
             .serviceId(request.serviceId())
             .serviceVersion(request.serviceVersion())
             .instanceId(request.instanceId())
-            .licenseKey(request.licenseKey())
+            // imza üretimini sonraki adımda ekleyebiliriz:
+            .signature("PLACEHOLDER_SIG")
             .checksum(request.checksum());
 
-    String licenseToken = licenseTokenService.getLicenseToken(clientId);
-    if (licenseToken != null) {
-      serverRequestBuilder.licenseToken(licenseToken);
+    ApiClientResponse<LicenseAccessResponse> vResp =
+        licenseServiceClient.validateAccess(cached, validateReq);
+
+    // 5) validate başarılı ise:
+    if (vResp.getStatus() != null && vResp.getStatus() == 200 && vResp.getData() != null) {
+      // TOKEN_ACTIVE ise genelde body’de token dönmez; cache’teki aynen kullanılır.
+      String maybeRefreshed = vResp.getData().getLicenseToken();
+      if (maybeRefreshed != null && !maybeRefreshed.isBlank()) {
+        // TOKEN_REFRESHED/CREATED vb. senaryolarda yeni token gelir -> güncelle
+        licenseTokenService.storeLicenseToken(clientId, maybeRefreshed);
+        return new LicenseToken(maybeRefreshed);
+      }
+      // aksi halde cached hâlâ geçerli kabul edilir
+      return new LicenseToken(cached);
     }
 
-    return serverRequestBuilder.build();
+    // 6) validate başarısızsa basit fallback: ISSUE dene (force=false)
+    IssueAccessRequest retryIssue =
+        new IssueAccessRequest()
+            .serviceId(request.serviceId())
+            .serviceVersion(request.serviceVersion())
+            .instanceId(request.instanceId())
+            .signature("PLACEHOLDER_SIG")
+            .checksum(request.checksum())
+            .licenseKey(request.licenseKey())
+            .forceTokenRefresh(Boolean.FALSE);
+
+    ApiClientResponse<LicenseAccessResponse> retryResp =
+        licenseServiceClient.issueAccess(retryIssue);
+
+    if (retryResp.getStatus() != null
+        && retryResp.getStatus() == 200
+        && retryResp.getData() != null) {
+      String newToken = retryResp.getData().getLicenseToken();
+      if (newToken == null || newToken.isBlank()) {
+        throw new IllegalStateException(
+            "Licensing-service returned success but token is empty (retry).");
+      }
+      licenseTokenService.storeLicenseToken(clientId, newToken);
+      return new LicenseToken(newToken);
+    }
+
+    // hâlâ sorun varsa yüzeye taşı
+    throw new IllegalStateException("Validate+fallback issue failed: " + retryResp.getMessage());
   }
 }

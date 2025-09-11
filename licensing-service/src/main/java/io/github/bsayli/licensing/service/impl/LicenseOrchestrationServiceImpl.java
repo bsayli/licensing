@@ -9,6 +9,7 @@ import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.service.LicenseOrchestrationService;
 import io.github.bsayli.licensing.service.LicenseValidationService;
 import io.github.bsayli.licensing.service.jwt.JwtBlacklistService;
+import io.github.bsayli.licensing.service.token.LicenseTokenIssueRequest;
 import io.github.bsayli.licensing.service.token.LicenseTokenManager;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +35,6 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
   @Override
   public LicenseAccessResponse issueAccess(IssueAccessRequest request) {
     LicenseValidationResult result = licenseValidationService.validateLicense(request);
-
     String clientId = clientIdGenerator.getClientId(request);
     if (request.forceTokenRefresh()) {
       jwtBlacklistService.addCurrentTokenToBlacklist(clientId);
@@ -42,13 +42,16 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 
     String token =
         tokenManager.issueAndCache(
-            clientId,
-            result,
-            request.serviceId(),
-            request.serviceVersion(),
-            request.instanceId(),
-            request.checksum(),
-            request.signature());
+            new LicenseTokenIssueRequest.Builder()
+                .clientId(clientId)
+                .result(result)
+                .serviceId(request.serviceId())
+                .serviceVersion(request.serviceVersion())
+                .instanceId(request.instanceId())
+                .checksum(request.checksum())
+                .signature(request.signature())
+                .build());
+
     return LicenseAccessResponse.created(token);
   }
 
@@ -60,13 +63,15 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
       String clientId = clientIdGenerator.getClientId(request);
       String newToken =
           tokenManager.issueAndCache(
-              clientId,
-              result,
-              request.serviceId(),
-              request.serviceVersion(),
-              request.instanceId(),
-              request.checksum(),
-              request.signature());
+              new LicenseTokenIssueRequest.Builder()
+                  .clientId(clientId)
+                  .result(result)
+                  .serviceId(request.serviceId())
+                  .serviceVersion(request.serviceVersion())
+                  .instanceId(request.instanceId())
+                  .checksum(request.checksum())
+                  .signature(request.signature())
+                  .build());
       return LicenseAccessResponse.refreshed(newToken);
     }
 

@@ -17,29 +17,31 @@ public class LicensingServiceApiClientConfig {
 
   @Bean(destroyMethod = "close")
   public CloseableHttpClient licensingServiceHttpClient(
-          @Value("${licensing-service-api.max-connections-total:64}") int maxConnTotal,
-          @Value("${licensing-service-api.max-connections-per-route:16}") int maxConnPerRoute) {
+      @Value("${licensing-service-api.max-connections-total:64}") int maxConnTotal,
+      @Value("${licensing-service-api.max-connections-per-route:16}") int maxConnPerRoute) {
 
-    var cm = PoolingHttpClientConnectionManagerBuilder.create()
+    var cm =
+        PoolingHttpClientConnectionManagerBuilder.create()
             .setMaxConnTotal(maxConnTotal)
             .setMaxConnPerRoute(maxConnPerRoute)
             .build();
 
     return HttpClients.custom()
-            .setConnectionManager(cm)
-            .evictExpiredConnections()
-            .evictIdleConnections(org.apache.hc.core5.util.TimeValue.ofSeconds(30))
-            .setUserAgent("licensing-service-client")
-            .disableAutomaticRetries()
-            .build();
+        .setConnectionManager(cm)
+        .evictExpiredConnections()
+        .evictIdleConnections(org.apache.hc.core5.util.TimeValue.ofSeconds(30))
+        .setUserAgent("licensing-service-client")
+        .disableAutomaticRetries()
+        .build();
   }
 
   @Bean
   public HttpComponentsClientHttpRequestFactory licensingServiceApiRequestFactory(
-          CloseableHttpClient licensingServiceHttpClient,
-          @Value("${licensing-service-api.connect-timeout-seconds:10}") long connectTimeoutSec,
-          @Value("${licensing-service-api.connection-request-timeout-seconds:10}") long connectionReqTimeoutSec,
-          @Value("${licensing-service-api.read-timeout-seconds:15}") long readTimeoutSec) {
+      CloseableHttpClient licensingServiceHttpClient,
+      @Value("${licensing-service-api.connect-timeout-seconds:10}") long connectTimeoutSec,
+      @Value("${licensing-service-api.connection-request-timeout-seconds:10}")
+          long connectionReqTimeoutSec,
+      @Value("${licensing-service-api.read-timeout-seconds:15}") long readTimeoutSec) {
 
     var factory = new HttpComponentsClientHttpRequestFactory(licensingServiceHttpClient);
     factory.setConnectTimeout(Duration.ofSeconds(connectTimeoutSec));
@@ -50,18 +52,17 @@ public class LicensingServiceApiClientConfig {
 
   @Bean
   public RestClient licensingServiceApiRestClient(
-          RestClient.Builder builder,
-          HttpComponentsClientHttpRequestFactory requestFactory) {
+      RestClient.Builder builder, HttpComponentsClientHttpRequestFactory requestFactory) {
     builder.requestFactory(requestFactory);
     return builder.build();
   }
 
   @Bean
   public ApiClient licensingServiceApiClient(
-          RestClient licensingServiceApiRestClient,
-          @Value("${licensing-service-api.base-url}") String baseUrl,
-          @Value("${licensing-service-api.basic.username}") String username,
-          @Value("${licensing-service-api.basic.password}") String password) {
+      RestClient licensingServiceApiRestClient,
+      @Value("${licensing-service-api.base-url}") String baseUrl,
+      @Value("${licensing-service-api.basic.username}") String username,
+      @Value("${licensing-service-api.basic.password}") String password) {
     ApiClient client = new ApiClient(licensingServiceApiRestClient).setBasePath(baseUrl);
     client.setPassword(password);
     client.setUsername(username);

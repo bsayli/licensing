@@ -40,7 +40,7 @@ class TokenRequestValidatorImplTest {
   @InjectMocks private TokenRequestValidatorImpl validator;
 
   private static ValidateAccessRequest req() {
-    return new ValidateAccessRequest("crm", "1.2.3", "inst-12345678", "sig", "chk");
+    return new ValidateAccessRequest("inst-12345678", "chk", "crm", "1.2.3", "sig");
   }
 
   private static ClientCachedLicenseData cached(
@@ -124,7 +124,7 @@ class TokenRequestValidatorImplTest {
   void assertValid_contextMismatch() {
     String token = "a.b.c";
     ValidateAccessRequest request =
-        new ValidateAccessRequest("crm", "9.9.9", "inst-1", "sig", "chk");
+        new ValidateAccessRequest("inst-1", "chk", "crm", "9.9.9", "sig");
 
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
     when(blacklist.isBlacklisted(token)).thenReturn(false);

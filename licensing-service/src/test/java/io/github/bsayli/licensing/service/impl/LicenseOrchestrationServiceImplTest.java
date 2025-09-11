@@ -13,12 +13,15 @@ import io.github.bsayli.licensing.domain.result.LicenseValidationResult;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.service.LicenseValidationService;
 import io.github.bsayli.licensing.service.jwt.JwtBlacklistService;
+import io.github.bsayli.licensing.service.token.LicenseTokenIssueRequest;
 import io.github.bsayli.licensing.service.token.LicenseTokenManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @Tag("unit")
@@ -49,15 +52,13 @@ class LicenseOrchestrationServiceImplTest {
   void issueAccess_forceRefresh_true() {
     var req =
         new IssueAccessRequest(
-            "crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx", "LK_...base64...", true);
+            "LK_...base64...", "instance-12345678", "chk-xxxxx", "crm", "1.2.3", "sig-xxxxx", true);
 
     var result = baseResult();
 
     when(licenseValidationService.validateLicense(req)).thenReturn(result);
     when(clientIdGenerator.getClientId(req)).thenReturn("client-123");
-    when(tokenManager.issueAndCache(
-            "client-123", result, "crm", "1.2.3", "instance-12345678", "chk-xxxxx", "sig-xxxxx"))
-        .thenReturn("jwt-new");
+    when(tokenManager.issueAndCache(any(LicenseTokenIssueRequest.class))).thenReturn("jwt-new");
 
     LicenseAccessResponse resp = service.issueAccess(req);
 
@@ -65,12 +66,20 @@ class LicenseOrchestrationServiceImplTest {
     assertEquals("jwt-new", resp.licenseToken());
     assertEquals(LicenseAccessStatus.TOKEN_CREATED, resp.status());
 
+    ArgumentCaptor<LicenseTokenIssueRequest> captor =
+        ArgumentCaptor.forClass(LicenseTokenIssueRequest.class);
+    verify(tokenManager).issueAndCache(captor.capture());
+    var cmd = captor.getValue();
+    assertEquals("client-123", cmd.clientId());
+    assertEquals("crm", cmd.serviceId());
+    assertEquals("1.2.3", cmd.serviceVersion());
+    assertEquals("instance-12345678", cmd.instanceId());
+    assertEquals("chk-xxxxx", cmd.checksum());
+    assertEquals("sig-xxxxx", cmd.signature());
+
     verify(licenseValidationService).validateLicense(req);
     verify(clientIdGenerator).getClientId(req);
     verify(jwtBlacklistService).addCurrentTokenToBlacklist("client-123");
-    verify(tokenManager)
-        .issueAndCache(
-            "client-123", result, "crm", "1.2.3", "instance-12345678", "chk-xxxxx", "sig-xxxxx");
     verifyNoMoreInteractions(
         licenseValidationService, clientIdGenerator, jwtBlacklistService, tokenManager);
   }
@@ -80,27 +89,19 @@ class LicenseOrchestrationServiceImplTest {
   void issueAccess_forceRefresh_false() {
     var req =
         new IssueAccessRequest(
+            "LK_...base64...",
+            "instance-abcdef12",
+            "chk-zzzzz",
             "billing",
             "2.0.0",
-            "instance-abcdef12",
             "sig-yyyyy",
-            "chk-zzzzz",
-            "LK_...base64...",
             false);
 
     var result = baseResult();
 
     when(licenseValidationService.validateLicense(req)).thenReturn(result);
     when(clientIdGenerator.getClientId(req)).thenReturn("client-789");
-    when(tokenManager.issueAndCache(
-            "client-789",
-            result,
-            "billing",
-            "2.0.0",
-            "instance-abcdef12",
-            "chk-zzzzz",
-            "sig-yyyyy"))
-        .thenReturn("jwt-created");
+    when(tokenManager.issueAndCache(any(LicenseTokenIssueRequest.class))).thenReturn("jwt-created");
 
     LicenseAccessResponse resp = service.issueAccess(req);
 
@@ -108,17 +109,19 @@ class LicenseOrchestrationServiceImplTest {
     assertEquals("jwt-created", resp.licenseToken());
     assertEquals(LicenseAccessStatus.TOKEN_CREATED, resp.status());
 
+    ArgumentCaptor<LicenseTokenIssueRequest> captor =
+        ArgumentCaptor.forClass(LicenseTokenIssueRequest.class);
+    verify(tokenManager).issueAndCache(captor.capture());
+    var cmd = captor.getValue();
+    assertEquals("client-789", cmd.clientId());
+    assertEquals("billing", cmd.serviceId());
+    assertEquals("2.0.0", cmd.serviceVersion());
+    assertEquals("instance-abcdef12", cmd.instanceId());
+    assertEquals("chk-zzzzz", cmd.checksum());
+    assertEquals("sig-yyyyy", cmd.signature());
+
     verify(licenseValidationService).validateLicense(req);
     verify(clientIdGenerator).getClientId(req);
-    verify(tokenManager)
-        .issueAndCache(
-            "client-789",
-            result,
-            "billing",
-            "2.0.0",
-            "instance-abcdef12",
-            "chk-zzzzz",
-            "sig-yyyyy");
     verifyNoInteractions(jwtBlacklistService);
     verifyNoMoreInteractions(licenseValidationService, clientIdGenerator, tokenManager);
   }
@@ -127,9 +130,8 @@ class LicenseOrchestrationServiceImplTest {
   @DisplayName(
       "validateAccess: serviceStatus=TOKEN_REFRESHED => issue & cache and return refreshed")
   void validateAccess_refreshed() {
-    // given
     var req =
-        new ValidateAccessRequest("crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx");
+        new ValidateAccessRequest("instance-12345678", "chk-xxxxx", "crm", "1.2.3", "sig-xxxxx");
     String oldToken = "jwt-old";
 
     var refreshedResult =
@@ -145,15 +147,7 @@ class LicenseOrchestrationServiceImplTest {
 
     when(licenseValidationService.validateLicense(req, oldToken)).thenReturn(refreshedResult);
     when(clientIdGenerator.getClientId(req)).thenReturn("client-123");
-    when(tokenManager.issueAndCache(
-            "client-123",
-            refreshedResult,
-            "crm",
-            "1.2.3",
-            "instance-12345678",
-            "chk-xxxxx",
-            "sig-xxxxx"))
-        .thenReturn("jwt-new");
+    when(tokenManager.issueAndCache(any(LicenseTokenIssueRequest.class))).thenReturn("jwt-new");
 
     LicenseAccessResponse resp = service.validateAccess(req, oldToken);
 
@@ -161,17 +155,19 @@ class LicenseOrchestrationServiceImplTest {
     assertEquals("jwt-new", resp.licenseToken());
     assertEquals(LicenseAccessStatus.TOKEN_REFRESHED, resp.status());
 
+    ArgumentCaptor<LicenseTokenIssueRequest> captor =
+        ArgumentCaptor.forClass(LicenseTokenIssueRequest.class);
+    verify(tokenManager).issueAndCache(captor.capture());
+    var cmd = captor.getValue();
+    assertEquals("client-123", cmd.clientId());
+    assertEquals("crm", cmd.serviceId());
+    assertEquals("1.2.3", cmd.serviceVersion());
+    assertEquals("instance-12345678", cmd.instanceId());
+    assertEquals("chk-xxxxx", cmd.checksum());
+    assertEquals("sig-xxxxx", cmd.signature());
+
     verify(licenseValidationService).validateLicense(req, oldToken);
     verify(clientIdGenerator).getClientId(req);
-    verify(tokenManager)
-        .issueAndCache(
-            "client-123",
-            refreshedResult,
-            "crm",
-            "1.2.3",
-            "instance-12345678",
-            "chk-xxxxx",
-            "sig-xxxxx");
     verifyNoMoreInteractions(licenseValidationService, clientIdGenerator, tokenManager);
     verifyNoInteractions(jwtBlacklistService);
   }
@@ -179,10 +175,9 @@ class LicenseOrchestrationServiceImplTest {
   @Test
   @DisplayName("validateAccess: active (no refresh) => return ACTIVE without issuing new token")
   void validateAccess_active() {
-
     var req =
         new ValidateAccessRequest(
-            "billing", "2.0.0", "instance-abcdef12", "sig-yyyyy", "chk-zzzzz");
+            "instance-abcdef12", "chk-zzzzz", "billing", "2.0.0", "sig-yyyyy");
     String token = "jwt-current";
 
     var activeResult = new LicenseValidationResult.Builder().valid(true).message("active").build();

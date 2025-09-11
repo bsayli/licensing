@@ -20,8 +20,8 @@ public class OpenApiConfig {
 
   @Bean
   public OpenAPI licensingServiceOpenAPI() {
-    var openapi = new OpenAPI()
-            .info(new Info().title(TITLE).version(VERSION).description(DESCRIPTION));
+    var openapi =
+        new OpenAPI().info(new Info().title(TITLE).version(VERSION).description(DESCRIPTION));
 
     if (openapi.getComponents() == null) {
       openapi.components(new Components());
@@ -31,8 +31,10 @@ public class OpenApiConfig {
       openapi.addServersItem(new Server().url(baseUrl).description(SERVER_DESCRIPTION));
     }
 
-    openapi.getComponents().addSecuritySchemes("basicAuth",
-            new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("basic"));
+    openapi
+        .getComponents()
+        .addSecuritySchemes(
+            "basicAuth", new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("basic"));
     openapi.addSecurityItem(new SecurityRequirement().addList("basicAuth"));
 
     return openapi;

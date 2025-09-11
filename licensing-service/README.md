@@ -360,4 +360,5 @@ licensing-service/
 ## See Also
 
 * **[license-generator](../license-generator/README.md)**: key & signature tooling, CLI examples
-* **[licensing-service-sdk](../licensing-service-sdk/README.md)** / **[sdk-cli](../licensing-service-sdk/sdk-cli/README.md)**: client integrations and runnable demo
+* **[licensing-service-sdk](../licensing-service-sdk/README.md)** / *
+  *[sdk-cli](../licensing-service-sdk/sdk-cli/README.md)**: client integrations and runnable demo

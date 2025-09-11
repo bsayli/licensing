@@ -1,8 +1,11 @@
 package io.github.bsayli.licensing.sdk.generator;
 
-import io.github.bsayli.licensing.sdk.model.server.LicenseServerValidationRequest;
+import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
+import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
 
 public interface SignatureGenerator {
 
-  String generateSignature(LicenseServerValidationRequest request);
+  String generateForIssue(IssueAccessRequest request);
+
+  String generateForValidate(String licenseToken, ValidateAccessRequest request);
 }
