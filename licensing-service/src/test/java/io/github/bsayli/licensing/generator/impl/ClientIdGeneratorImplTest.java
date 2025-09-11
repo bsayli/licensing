@@ -19,19 +19,30 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("Unit Test: ClientIdGeneratorImpl")
 class ClientIdGeneratorImplTest {
 
+  private static final char SEP = '\u001F';
+  private static final Base64.Encoder B64URL_NOPAD_ENC = Base64.getUrlEncoder().withoutPadding();
+
   private final ClientIdGeneratorImpl generator = new ClientIdGeneratorImpl();
 
-  private String expected(String instanceId, String serviceId, String version, String checksum)
-      throws Exception {
-    String raw = (instanceId + serviceId + version) + (checksum == null ? "" : checksum);
+  private String expectedUrlSafe(
+      String instanceId, String serviceId, String version, String checksum) throws Exception {
+    String raw =
+        instanceId.trim()
+            + SEP
+            + serviceId.trim()
+            + SEP
+            + version.trim()
+            + SEP
+            + (checksum == null ? "" : checksum.trim());
+
     byte[] hashed =
         MessageDigest.getInstance("SHA-256").digest(raw.getBytes(StandardCharsets.UTF_8));
-    return Base64.getEncoder().encodeToString(hashed);
+    return B64URL_NOPAD_ENC.encodeToString(hashed);
   }
 
   @Test
   @DisplayName(
-      "getClientId(IssueAccessRequest) should produce deterministic value with/without checksum")
+      "getClientId(IssueAccessRequest) deterministic ve checksum var/yok farklı sonuç üretir")
   void issueTokenRequest_idStable() throws Exception {
     var reqWithChecksum =
         new IssueAccessRequest("LK", "inst-12345678", "chk", "crm", "1.2.3", "sig", false);
@@ -41,13 +52,13 @@ class ClientIdGeneratorImplTest {
     String id1 = generator.getClientId(reqWithChecksum);
     String id2 = generator.getClientId(reqNoChecksum);
 
-    assertEquals(expected("inst-12345678", "crm", "1.2.3", "chk"), id1);
-    assertEquals(expected("inst-12345678", "crm", "1.2.3", null), id2);
+    assertEquals(expectedUrlSafe("inst-12345678", "crm", "1.2.3", "chk"), id1);
+    assertEquals(expectedUrlSafe("inst-12345678", "crm", "1.2.3", null), id2);
     assertNotEquals(id1, id2);
   }
 
   @Test
-  @DisplayName("getClientId(ValidateAccessRequest) should match IssueAccessRequest for same inputs")
+  @DisplayName("ValidateAccessRequest ile IssueAccessRequest aynı girdilerde aynı ID’yi verir")
   void validate_vs_issue_sameResult() throws Exception {
     var issue =
         new IssueAccessRequest("LK", "inst-ABCD1234", "cs", "billing", "2.0.0", "sig", false);
@@ -56,13 +67,13 @@ class ClientIdGeneratorImplTest {
     String idIssue = generator.getClientId(issue);
     String idValid = generator.getClientId(valid);
 
-    String exp = expected("inst-ABCD1234", "billing", "2.0.0", "cs");
+    String exp = expectedUrlSafe("inst-ABCD1234", "billing", "2.0.0", "cs");
     assertEquals(exp, idIssue);
     assertEquals(exp, idValid);
   }
 
   @Test
-  @DisplayName("getClientId(ClientInfo) should generate same ID as requests")
+  @DisplayName("ClientInfo ile üretilen ID, aynı alanlarla beklenenle eşleşir")
   void clientInfo_sameResult() throws Exception {
     var info =
         new ClientInfo.Builder()
@@ -76,6 +87,6 @@ class ClientIdGeneratorImplTest {
             .build();
 
     String id = generator.getClientId(info);
-    assertEquals(expected("inst-XYZ00000", "reporting", "3.1.0", "cshm"), id);
+    assertEquals(expectedUrlSafe("inst-XYZ00000", "reporting", "3.1.0", "cshm"), id);
   }
 }

@@ -35,40 +35,42 @@ public class ClientIdGeneratorImpl implements ClientIdGenerator {
   public String getClientId(IssueAccessRequest request) {
     Objects.requireNonNull(request, "request");
     return buildClientId(
-            requireAndNorm(request.instanceId(), FIELD_INSTANCE_ID),
-            requireAndNorm(request.serviceId(), FIELD_SERVICE_ID),
-            requireAndNorm(request.serviceVersion(), FIELD_SERVICE_VERSION),
-            norm(request.checksum())
-    );
+        requireAndNorm(request.instanceId(), FIELD_INSTANCE_ID),
+        requireAndNorm(request.serviceId(), FIELD_SERVICE_ID),
+        requireAndNorm(request.serviceVersion(), FIELD_SERVICE_VERSION),
+        norm(request.checksum()));
   }
 
   @Override
   public String getClientId(ValidateAccessRequest request) {
     Objects.requireNonNull(request, "request");
     return buildClientId(
-            requireAndNorm(request.instanceId(), FIELD_INSTANCE_ID),
-            requireAndNorm(request.serviceId(), FIELD_SERVICE_ID),
-            requireAndNorm(request.serviceVersion(), FIELD_SERVICE_VERSION),
-            norm(request.checksum())
-    );
+        requireAndNorm(request.instanceId(), FIELD_INSTANCE_ID),
+        requireAndNorm(request.serviceId(), FIELD_SERVICE_ID),
+        requireAndNorm(request.serviceVersion(), FIELD_SERVICE_VERSION),
+        norm(request.checksum()));
   }
 
   @Override
   public String getClientId(ClientInfo clientInfo) {
     Objects.requireNonNull(clientInfo, "clientInfo");
     return buildClientId(
-            requireAndNorm(clientInfo.instanceId(), FIELD_INSTANCE_ID),
-            requireAndNorm(clientInfo.serviceId(), FIELD_SERVICE_ID),
-            requireAndNorm(clientInfo.serviceVersion(), FIELD_SERVICE_VERSION),
-            norm(clientInfo.checksum())
-    );
+        requireAndNorm(clientInfo.instanceId(), FIELD_INSTANCE_ID),
+        requireAndNorm(clientInfo.serviceId(), FIELD_SERVICE_ID),
+        requireAndNorm(clientInfo.serviceVersion(), FIELD_SERVICE_VERSION),
+        norm(clientInfo.checksum()));
   }
 
-  private String buildClientId(String instanceId, String serviceId, String serviceVersion, String checksum) {
-    String raw = instanceId + SEP +
-            serviceId + SEP +
-            serviceVersion + SEP +
-            (checksum == null ? "" : checksum);
+  private String buildClientId(
+      String instanceId, String serviceId, String serviceVersion, String checksum) {
+    String raw =
+        instanceId
+            + SEP
+            + serviceId
+            + SEP
+            + serviceVersion
+            + SEP
+            + (checksum == null ? "" : checksum);
 
     try {
       MessageDigest digest = MessageDigest.getInstance(ALGORITHM);
