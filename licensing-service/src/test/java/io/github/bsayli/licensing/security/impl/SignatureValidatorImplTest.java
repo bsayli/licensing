@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("unit")
-@DisplayName("Unit Test: SignatureValidatorImpl (Ed25519)")
+@DisplayName("Unit Test: SignatureValidatorImpl")
 class SignatureValidatorImplTest {
 
   private static KeyPair genEd25519KeyPair() throws Exception {
@@ -50,12 +50,40 @@ class SignatureValidatorImplTest {
       String sigB64,
       String licenseKey,
       String checksum) {
-    return new IssueAccessRequest(svcId, ver, instanceId, sigB64, checksum, licenseKey, false);
+
+    String lk =
+        (licenseKey != null && licenseKey.length() >= 100)
+            ? licenseKey
+            : ("L".repeat(100)
+                + "~rnd~"
+                + "A".repeat(64)); // just in case a caller passes a short key
+
+    String sig = (sigB64 != null && sigB64.length() >= 60) ? sigB64 : "Q".repeat(60);
+    String chk = checksum;
+
+    return new IssueAccessRequest(
+        lk, // licenseKey
+        instanceId, // instanceId
+        chk, // checksum (>= 40 if not null)
+        svcId, // serviceId
+        ver, // serviceVersion
+        sig, // signature
+        false // forceTokenRefresh
+        );
   }
 
+  // NEW order: instanceId, checksum, serviceId, serviceVersion, signature
   private static ValidateAccessRequest validateReq(
       String svcId, String ver, String instanceId, String sigB64, String checksum) {
-    return new ValidateAccessRequest(svcId, ver, instanceId, sigB64, checksum);
+
+    String sig = (sigB64 != null && sigB64.length() >= 60) ? sigB64 : "Q".repeat(60);
+    return new ValidateAccessRequest(
+        instanceId, // instanceId
+        checksum, // checksum (>= 40 if not null)
+        svcId, // serviceId
+        ver, // serviceVersion
+        sig // signature
+        );
   }
 
   @Test

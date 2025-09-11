@@ -1,6 +1,6 @@
 package io.github.bsayli.licensing.sdk.common.i18n.locale.impl;
 
-import io.github.bsayli.licensing.common.i18n.locale.CurrentLocaleProvider;
+import io.github.bsayli.licensing.sdk.common.i18n.locale.CurrentLocaleProvider;
 import java.util.Locale;
 import org.springframework.stereotype.Component;
 

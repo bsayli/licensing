@@ -17,24 +17,18 @@ public class LicenseTokenManager {
     this.cache = cache;
   }
 
-  public String issueAndCache(
-      String clientId,
-      LicenseValidationResult result,
-      String serviceId,
-      String serviceVersion,
-      String instanceId,
-      String checksum,
-      String signature) {
-
-    String token = jwtService.generateToken(clientId, result.licenseTier(), result.licenseStatus());
+  public String issueAndCache(LicenseTokenIssueRequest req) {
+    LicenseValidationResult result = req.result();
+    String token =
+        jwtService.generateToken(req.clientId(), result.licenseTier(), result.licenseStatus());
 
     ClientInfo clientInfo =
         new ClientInfo.Builder()
-            .serviceId(serviceId)
-            .serviceVersion(serviceVersion)
-            .instanceId(instanceId)
-            .checksum(checksum)
-            .signature(signature)
+            .serviceId(req.serviceId())
+            .serviceVersion(req.serviceVersion())
+            .instanceId(req.instanceId())
+            .checksum(req.checksum())
+            .signature(req.signature())
             .encUserId(result.userId())
             .licenseToken(token)
             .build();

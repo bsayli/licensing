@@ -1,9 +1,9 @@
 package io.github.bsayli.licensing.sdk.service;
 
-import io.github.bsayli.licensing.sdk.model.LicenseValidationRequest;
-import io.github.bsayli.licensing.sdk.model.LicenseValidationResponse;
+import io.github.bsayli.licensing.sdk.api.dto.LicenseAccessRequest;
+import io.github.bsayli.licensing.sdk.api.dto.LicenseToken;
 
 public interface LicenseOrchestrationService {
 
-  LicenseValidationResponse getLicenseDetails(LicenseValidationRequest request);
+  LicenseToken getLicenseToken(LicenseAccessRequest request);
 }

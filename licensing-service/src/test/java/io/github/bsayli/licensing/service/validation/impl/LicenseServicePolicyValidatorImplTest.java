@@ -21,11 +21,8 @@ import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 @Tag("unit")
-@ExtendWith(MockitoExtension.class)
 @DisplayName("Unit Test: LicenseServicePolicyValidatorImpl")
 class LicenseServicePolicyValidatorImplTest {
 
@@ -38,7 +35,7 @@ class LicenseServicePolicyValidatorImplTest {
         .licenseTier("PRO")
         .licenseStatus(LicenseStatus.ACTIVE)
         .expirationDate(LocalDateTime.now().plusDays(7))
-        .instanceIds(List.of("inst-1"))
+        .instanceIds(List.of("instance-abcdefgh"))
         .maxCount(5)
         .remainingUsageCount(5)
         .allowedServices(services)
@@ -47,18 +44,24 @@ class LicenseServicePolicyValidatorImplTest {
         .build();
   }
 
-  private static IssueAccessRequest issue(String id, String version, String checksum) {
-    String instanceId = "instance-abcdefgh";
-    String signature = "s".repeat(40);
-    String licenseKey = "l".repeat(220);
-    boolean force = false;
-    return new IssueAccessRequest(id, version, instanceId, signature, checksum, licenseKey, force);
+  // NEW order: licenseKey, instanceId, checksum, serviceId, serviceVersion, signature,
+  // forceTokenRefresh
+  private static IssueAccessRequest issue(String serviceId, String version, String checksum) {
+    String licenseKey = "L".repeat(120); // >=100
+    String instanceId = "instance-abcdefgh"; // >=10
+    String signature = "S".repeat(80); // >=60
+    String chk = checksum == null ? null : checksum; // >=40 if not null
+    return new IssueAccessRequest(
+        licenseKey, instanceId, chk, serviceId, version, signature, false);
   }
 
-  private static ValidateAccessRequest validateReq(String id, String version, String checksum) {
-    String instanceId = "instance-abcdefgh";
-    String signature = "s".repeat(40);
-    return new ValidateAccessRequest(id, version, instanceId, signature, checksum);
+  // NEW order: instanceId, checksum, serviceId, serviceVersion, signature
+  private static ValidateAccessRequest validateReq(
+      String serviceId, String version, String checksum) {
+    String instanceId = "instance-abcdefgh"; // >=10
+    String signature = "S".repeat(80); // >=60
+    String chk = checksum == null ? null : checksum; // >=40 if not null
+    return new ValidateAccessRequest(instanceId, chk, serviceId, version, signature);
   }
 
   private static LicenseServicePolicyValidatorImpl svc(
@@ -68,11 +71,11 @@ class LicenseServicePolicyValidatorImplTest {
   }
 
   @Test
-  @DisplayName("happy path: known+licensed service, checksum matches, version <= max")
+  @DisplayName("happy path: known + licensed service, checksum matches, version <= max")
   void ok_all_good_issue() {
     String svcId = "svcA";
     String ver = "1.2.3";
-    String sum = "c".repeat(32);
+    String sum = "c".repeat(40); // checksum must be >= 40
 
     var license =
         lic(
@@ -115,16 +118,17 @@ class LicenseServicePolicyValidatorImplTest {
   @DisplayName("checksum required but mismatched -> LicenseInvalidChecksumException")
   void checksum_required_mismatch_validate() {
     String svcId = "svcA";
-    String good = "good-sum";
+    String goodChecksum = "g".repeat(40);
 
     var license =
         lic(
             Set.of(svcId),
             List.of(),
-            Map.of(svcId, List.of(new LicenseChecksumVersionInfo(good, "1.0.0"))));
+            Map.of(svcId, List.of(new LicenseChecksumVersionInfo("1.0.0", goodChecksum))));
 
     var validator = svc(Set.of(svcId), Set.of(svcId), new ChecksumLookupImpl());
-    var req = validateReq(svcId, "1.0.0", "bad-sum");
+    var req =
+        validateReq(svcId, "1.0.0", "bad-sum".repeat(4)); // >=40, but not equal to goodChecksum
 
     assertThrows(LicenseInvalidChecksumException.class, () -> validator.assertValid(license, req));
   }
@@ -163,7 +167,7 @@ class LicenseServicePolicyValidatorImplTest {
   @DisplayName("checksum-version mismatch -> LicenseServiceVersionNotSupportedException")
   void checksum_version_mismatch_validate() {
     String svcId = "svcA";
-    String sum = "c".repeat(32);
+    String sum = "c".repeat(40);
     String checksumBoundVersion = "1.0.0";
     String requestedVersion = "2.0.0";
 
@@ -179,5 +183,14 @@ class LicenseServicePolicyValidatorImplTest {
     assertThrows(
         LicenseServiceVersionNotSupportedException.class,
         () -> validator.assertValid(license, req));
+  }
+
+  /** Minimal in-test implementation so we don't rely on other test helpers. */
+  private static final class ChecksumLookupImpl implements ChecksumLookup {
+    @Override
+    public List<LicenseChecksumVersionInfo> checksumsFor(LicenseInfo info, String serviceId) {
+      Map<String, List<LicenseChecksumVersionInfo>> map = info.serviceChecksums();
+      return map == null ? List.of() : map.getOrDefault(serviceId, List.of());
+    }
   }
 }

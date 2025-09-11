@@ -1,6 +1,8 @@
 # Licensing Service Client
 
-A Java **client library** generated from the `licensing-service` OpenAPI definition using custom **generics-aware templates**. This module provides a typed SDK for issuing and validating license tokens against the `licensing-service` REST API.
+A Java **client library** generated from the `licensing-service` OpenAPI definition using custom **generics-aware
+templates**. This module provides a typed SDK for issuing and validating license tokens against the `licensing-service`
+REST API.
 
 ---
 
@@ -22,10 +24,11 @@ A Java **client library** generated from the `licensing-service` OpenAPI definit
 Add to your service's `pom.xml`:
 
 ```xml
+
 <dependency>
-  <groupId>io.github.bsayli</groupId>
-  <artifactId>licensing-service-client</artifactId>
-  <version>0.1.0</version>
+    <groupId>io.github.bsayli</groupId>
+    <artifactId>licensing-service-client</artifactId>
+    <version>0.1.0</version>
 </dependency>
 ```
 
@@ -59,11 +62,11 @@ licensing-service-api:
 
 ```java
 IssueAccessRequest req = new IssueAccessRequest()
-    .serviceId("crm")
-    .serviceVersion("1.5.0")
-    .instanceId("crm~host~mac")
-    .licenseKey("BSAYLI~RND~ENC")
-    .signature("BASE64SIG");
+        .serviceId("crm")
+        .serviceVersion("1.5.0")
+        .instanceId("crm~host~mac")
+        .licenseKey("BSAYLI~RND~ENC")
+        .signature("BASE64SIG");
 
 ApiClientResponse<LicenseAccessResponse> resp = adapter.issueAccess(req);
 ```
@@ -72,10 +75,10 @@ ApiClientResponse<LicenseAccessResponse> resp = adapter.issueAccess(req);
 
 ```java
 ValidateAccessRequest req = new ValidateAccessRequest()
-    .serviceId("crm")
-    .serviceVersion("1.5.0")
-    .instanceId("crm~host~mac")
-    .signature("BASE64SIG");
+        .serviceId("crm")
+        .serviceVersion("1.5.0")
+        .instanceId("crm~host~mac")
+        .signature("BASE64SIG");
 
 String jwt = "jwt-123";
 ApiClientResponse<LicenseAccessResponse> resp = adapter.validateAccess(jwt, req);

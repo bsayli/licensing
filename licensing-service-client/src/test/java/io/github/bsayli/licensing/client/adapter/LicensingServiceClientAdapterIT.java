@@ -21,11 +21,11 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.client.RestClient;
 
 @SpringJUnitConfig(
-        classes = {
-                LicensingServiceApiClientConfig.class,
-                LicensingServiceClientAdapterImpl.class,
-                LicensingServiceClientAdapterIT.TestBeans.class
-        })
+    classes = {
+      LicensingServiceApiClientConfig.class,
+      LicensingServiceClientAdapterImpl.class,
+      LicensingServiceClientAdapterIT.TestBeans.class
+    })
 class LicensingServiceClientAdapterIT {
 
   static MockWebServer server;
@@ -37,7 +37,7 @@ class LicensingServiceClientAdapterIT {
     server = new MockWebServer();
     server.start();
     System.setProperty(
-            "licensing-service-api.base-url", server.url("/licensing-service").toString());
+        "licensing-service-api.base-url", server.url("/licensing-service").toString());
   }
 
   @AfterAll
@@ -50,7 +50,7 @@ class LicensingServiceClientAdapterIT {
   @DisplayName("POST /v1/licenses/access -> 200 OK + LicenseAccessResponse")
   void issueAccess_shouldReturn200_andMappedBody() throws Exception {
     String body =
-            """
+        """
             {
               "status": 200,
               "message": "License is valid",
@@ -63,18 +63,18 @@ class LicensingServiceClientAdapterIT {
             """;
 
     server.enqueue(
-            new MockResponse()
-                    .setResponseCode(200)
-                    .addHeader("Content-Type", "application/json")
-                    .setBody(body));
+        new MockResponse()
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json")
+            .setBody(body));
 
     IssueAccessRequest req =
-            new IssueAccessRequest()
-                    .serviceId("crm")
-                    .serviceVersion("1.5.0")
-                    .instanceId("crm~host~mac")
-                    .licenseKey("BSAYLI~RND~ENC")
-                    .signature("BASE64SIG");
+        new IssueAccessRequest()
+            .serviceId("crm")
+            .serviceVersion("1.5.0")
+            .instanceId("crm~host~mac")
+            .licenseKey("BSAYLI~RND~ENC")
+            .signature("BASE64SIG");
 
     ApiClientResponse<LicenseAccessResponse> resp = adapter.issueAccess(req);
 
@@ -94,7 +94,7 @@ class LicensingServiceClientAdapterIT {
   @DisplayName("POST /v1/licenses/access/validate -> 200 OK + LicenseAccessResponse (+header)")
   void validateAccess_shouldReturn200_andMappedBody_andSendHeader() throws Exception {
     String body =
-            """
+        """
             {
               "status": 200,
               "message": "License is valid",
@@ -107,17 +107,17 @@ class LicensingServiceClientAdapterIT {
             """;
 
     server.enqueue(
-            new MockResponse()
-                    .setResponseCode(200)
-                    .addHeader("Content-Type", "application/json")
-                    .setBody(body));
+        new MockResponse()
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json")
+            .setBody(body));
 
     ValidateAccessRequest req =
-            new ValidateAccessRequest()
-                    .serviceId("crm")
-                    .serviceVersion("1.5.0")
-                    .instanceId("crm~host~mac")
-                    .signature("BASE64SIG");
+        new ValidateAccessRequest()
+            .serviceId("crm")
+            .serviceVersion("1.5.0")
+            .instanceId("crm~host~mac")
+            .signature("BASE64SIG");
 
     String jwt = "jwt-123";
     ApiClientResponse<LicenseAccessResponse> resp = adapter.validateAccess(jwt, req);

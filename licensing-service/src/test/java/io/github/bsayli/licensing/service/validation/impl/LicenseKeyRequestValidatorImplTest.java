@@ -33,7 +33,14 @@ class LicenseKeyRequestValidatorImplTest {
   @InjectMocks private LicenseKeyRequestValidatorImpl validator;
 
   private IssueAccessRequest req(String checksum) {
-    return new IssueAccessRequest("crm", "1.2.3", "inst-1", "sig", checksum, "LK", false);
+    String licenseKey = "L".repeat(100) + "~rnd~" + "A".repeat(64); // >=100 and 3 segments
+    String instanceId = "inst-1"; // >=10 not required here
+    String safeChecksum = checksum != null ? checksum : "c".repeat(40);
+    String serviceId = "crm";
+    String serviceVersion = "1.2.3";
+    String signature = "S".repeat(60); // >=60
+    return new IssueAccessRequest(
+        licenseKey, instanceId, safeChecksum, serviceId, serviceVersion, signature, false);
   }
 
   private ClientCachedLicenseData cached(

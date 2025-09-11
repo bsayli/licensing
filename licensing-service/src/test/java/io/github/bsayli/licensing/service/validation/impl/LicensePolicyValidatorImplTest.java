@@ -50,14 +50,28 @@ class LicensePolicyValidatorImplTest {
         .build();
   }
 
+  /** Build IssueAccessRequest with the NEW parameter order. */
   private static IssueAccessRequest issueReq(String instanceId) {
-
     return new IssueAccessRequest(
-        "svcA", "1.0.0", instanceId, "s".repeat(40), null, "l".repeat(220), false);
+        "L".repeat(120), // licenseKey (100..200) — dummy
+        instanceId, // instanceId (>=10)
+        "C".repeat(40), // checksum (>=40)
+        "svcA", // serviceId
+        "1.0.0", // serviceVersion
+        "S".repeat(80), // signature (>=60)
+        false // forceTokenRefresh
+        );
   }
 
+  /** Build ValidateAccessRequest with the NEW parameter order. */
   private static ValidateAccessRequest validateReq(String instanceId) {
-    return new ValidateAccessRequest("svcA", "1.0.0", instanceId, "s".repeat(40), null);
+    return new ValidateAccessRequest(
+        instanceId, // instanceId (>=10)
+        "C".repeat(40), // checksum (>=40)
+        "svcA", // serviceId
+        "1.0.0", // serviceVersion
+        "S".repeat(80) // signature (>=60)
+        );
   }
 
   @BeforeEach
@@ -74,8 +88,8 @@ class LicensePolicyValidatorImplTest {
             LocalDateTime.now().plusDays(1),
             5,
             5,
-            List.of("inst-1", "inst-2"));
-    var req = issueReq("inst-1");
+            List.of("instance-1", "instance-2"));
+    var req = issueReq("instance-1");
 
     assertDoesNotThrow(() -> validator.assertValid(license, req));
     verify(detailValidator, times(1)).assertValid(license, req);
@@ -86,8 +100,8 @@ class LicensePolicyValidatorImplTest {
   @DisplayName("assertValid(Validate): happy path -> delegates to detail validator")
   void validate_happyPath_delegates() {
     var license =
-        lic(LicenseStatus.ACTIVE, LocalDateTime.now().plusDays(1), 3, 1, List.of("inst-x"));
-    var req = validateReq("inst-x");
+        lic(LicenseStatus.ACTIVE, LocalDateTime.now().plusDays(1), 3, 1, List.of("instance-x"));
+    var req = validateReq("instance-x");
 
     assertDoesNotThrow(() -> validator.assertValid(license, req));
     verify(detailValidator, times(1)).assertValid(license, req);
@@ -98,8 +112,8 @@ class LicensePolicyValidatorImplTest {
   @DisplayName("expired license -> LicenseExpiredException (before detail validation)")
   void expired_throws() {
     var license =
-        lic(LicenseStatus.ACTIVE, LocalDateTime.now().minusMinutes(1), 5, 5, List.of("inst-1"));
-    var req = issueReq("inst-1");
+        lic(LicenseStatus.ACTIVE, LocalDateTime.now().minusMinutes(1), 5, 5, List.of("instance-1"));
+    var req = issueReq("instance-1");
 
     assertThrows(LicenseExpiredException.class, () -> validator.assertValid(license, req));
     verifyNoInteractions(detailValidator);
@@ -109,8 +123,8 @@ class LicensePolicyValidatorImplTest {
   @DisplayName("inactive license -> LicenseInactiveException (before detail validation)")
   void inactive_throws() {
     var license =
-        lic(LicenseStatus.INACTIVE, LocalDateTime.now().plusDays(1), 5, 5, List.of("inst-1"));
-    var req = validateReq("inst-1");
+        lic(LicenseStatus.INACTIVE, LocalDateTime.now().plusDays(1), 5, 5, List.of("instance-1"));
+    var req = validateReq("instance-1");
 
     assertThrows(LicenseInactiveException.class, () -> validator.assertValid(license, req));
     verifyNoInteractions(detailValidator);
@@ -125,8 +139,8 @@ class LicensePolicyValidatorImplTest {
             LocalDateTime.now().plusDays(1),
             2,
             0, // no remaining
-            List.of("inst-1")); // existing instances don't include the new one
-    var req = issueReq("inst-NEW");
+            List.of("instance-1")); // does not include the new one
+    var req = issueReq("instance-NEW");
 
     assertThrows(
         LicenseUsageLimitExceededException.class, () -> validator.assertValid(license, req));
@@ -141,9 +155,9 @@ class LicensePolicyValidatorImplTest {
             LicenseStatus.ACTIVE,
             LocalDateTime.now().plusDays(1),
             2,
-            0,
-            List.of("inst-1", "inst-2"));
-    var req = validateReq("inst-2");
+            0, // exhausted quota
+            List.of("instance-1", "instance-2")); // existing includes requested
+    var req = validateReq("instance-2");
 
     assertDoesNotThrow(() -> validator.assertValid(license, req));
     verify(detailValidator, times(1)).assertValid(license, req);

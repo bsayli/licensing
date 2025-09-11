@@ -1,6 +1,6 @@
 package io.github.bsayli.licensing.service.token;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 import io.github.bsayli.licensing.common.exception.ServiceErrorCode;
@@ -24,11 +24,11 @@ class LicenseTokenManagerTest {
   @Test
   @DisplayName("issueAndCache should generate token, cache ClientInfo, and return token")
   void issueAndCache_writesAndReturnsToken() {
-    var jwt = mock(JwtService.class);
-    var cache = mock(ClientSessionCache.class);
-    var mgr = new LicenseTokenManager(jwt, cache);
+    JwtService jwt = mock(JwtService.class);
+    ClientSessionCache cache = mock(ClientSessionCache.class);
+    LicenseTokenManager mgr = new LicenseTokenManager(jwt, cache);
 
-    var result =
+    LicenseValidationResult result =
         new LicenseValidationResult.Builder()
             .valid(true)
             .userId("enc-user-1")
@@ -39,10 +39,20 @@ class LicenseTokenManagerTest {
             .message("ok")
             .build();
 
+    LicenseTokenIssueRequest req =
+        new LicenseTokenIssueRequest.Builder()
+            .clientId("client-1")
+            .result(result)
+            .serviceId("crm")
+            .serviceVersion("1.0.0")
+            .instanceId("inst-9999")
+            .checksum("chk-aaa")
+            .signature("sig-xxx")
+            .build();
+
     when(jwt.generateToken("client-1", "ENTERPRISE", LicenseStatus.ACTIVE)).thenReturn("jwt-new");
 
-    String token =
-        mgr.issueAndCache("client-1", result, "crm", "1.0.0", "inst-9999", "chk-aaa", "sig-xxx");
+    String token = mgr.issueAndCache(req);
 
     assertEquals("jwt-new", token);
 

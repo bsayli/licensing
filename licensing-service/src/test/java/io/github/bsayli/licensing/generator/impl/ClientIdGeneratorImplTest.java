@@ -31,12 +31,12 @@ class ClientIdGeneratorImplTest {
 
   @Test
   @DisplayName(
-      "getClientId(IssueTokenRequest) should produce deterministic value with/without checksum")
+      "getClientId(IssueAccessRequest) should produce deterministic value with/without checksum")
   void issueTokenRequest_idStable() throws Exception {
     var reqWithChecksum =
-        new IssueAccessRequest("crm", "1.2.3", "inst-12345678", "sig", "chk", "LK", false);
+        new IssueAccessRequest("LK", "inst-12345678", "chk", "crm", "1.2.3", "sig", false);
     var reqNoChecksum =
-        new IssueAccessRequest("crm", "1.2.3", "inst-12345678", "sig", null, "LK", false);
+        new IssueAccessRequest("LK", "inst-12345678", null, "crm", "1.2.3", "sig", false);
 
     String id1 = generator.getClientId(reqWithChecksum);
     String id2 = generator.getClientId(reqNoChecksum);
@@ -47,11 +47,11 @@ class ClientIdGeneratorImplTest {
   }
 
   @Test
-  @DisplayName("getClientId(ValidateTokenRequest) should match IssueTokenRequest for same inputs")
+  @DisplayName("getClientId(ValidateAccessRequest) should match IssueAccessRequest for same inputs")
   void validate_vs_issue_sameResult() throws Exception {
     var issue =
-        new IssueAccessRequest("billing", "2.0.0", "inst-ABCD1234", "sig", "cs", "LK", false);
-    var valid = new ValidateAccessRequest("billing", "2.0.0", "inst-ABCD1234", "sig", "cs");
+        new IssueAccessRequest("LK", "inst-ABCD1234", "cs", "billing", "2.0.0", "sig", false);
+    var valid = new ValidateAccessRequest("inst-ABCD1234", "cs", "billing", "2.0.0", "sig");
 
     String idIssue = generator.getClientId(issue);
     String idValid = generator.getClientId(valid);

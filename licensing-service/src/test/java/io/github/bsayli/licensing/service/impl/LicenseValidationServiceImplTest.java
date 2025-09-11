@@ -47,11 +47,11 @@ class LicenseValidationServiceImplTest {
 
   @Test
   @DisplayName(
-      "validateLicense(IssueTokenRequest): imza doğrula → licenseKey'den userId çıkar → cache kontrol → evaluate → ENCRYPTED user dön")
-  void issueTokenFlow_shouldValidateAndReturnEncryptedUser() {
+      "validateLicense(IssueAccessRequest): validate signature → extract userId from licenseKey → cache check → evaluate → return ENCRYPTED user")
+  void issueAccessFlow_shouldValidateAndReturnEncryptedUser() {
     var req =
         new IssueAccessRequest(
-            "crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx", "LICENSE_KEY", false);
+            "LICENSE_KEY", "instance-12345678", "chk-xxxxx", "crm", "1.2.3", "sig-xxxxx", false);
 
     when(userIdEncryptor.extractAndDecryptUserId("LICENSE_KEY")).thenReturn("user-123");
     var info = licenseInfo("user-123", "PRO", LicenseStatus.ACTIVE);
@@ -82,11 +82,11 @@ class LicenseValidationServiceImplTest {
 
   @Test
   @DisplayName(
-      "validateLicense(IssueTokenRequest): forceTokenRefresh=true olduğunda cache çatışma kontrolü atlanır")
-  void issueTokenFlow_forceRefresh_skipsConflictCheck() {
+      "validateLicense(IssueAccessRequest): when forceTokenRefresh=true skip cache conflict check")
+  void issueAccessFlow_forceRefresh_skipsConflictCheck() {
     var req =
         new IssueAccessRequest(
-            "crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx", "LICENSE_KEY", true);
+            "LICENSE_KEY", "instance-12345678", "chk-xxxxx", "crm", "1.2.3", "sig-xxxxx", true);
 
     when(userIdEncryptor.extractAndDecryptUserId("LICENSE_KEY")).thenReturn("user-999");
     var info = licenseInfo("user-999", "PRO", LicenseStatus.ACTIVE);
@@ -105,10 +105,10 @@ class LicenseValidationServiceImplTest {
 
   @Test
   @DisplayName(
-      "validateLicense(ValidateTokenRequest): geçerli token → tekrar evaluate yapılmaz, TOKEN_VALID döner")
+      "validateLicense(ValidateAccessRequest): when token is valid → do not re-evaluate, return TOKEN_VALID")
   void validateTokenFlow_valid_noRefresh() {
     var req =
-        new ValidateAccessRequest("billing", "2.0.0", "instance-abcdef12", "sig-yyyy", "chk-zzzz");
+        new ValidateAccessRequest("instance-abcdef12", "chk-zzzz", "billing", "2.0.0", "sig-yyyy");
     String token = "jwt-current";
 
     doNothing().when(tokenValidationService).assertValid(req, token);
@@ -129,10 +129,11 @@ class LicenseValidationServiceImplTest {
 
   @Test
   @DisplayName(
-      "validateLicense(ValidateTokenRequest): süresi dolmuş token → eski encUserId ile evaluate ve TOKEN_REFRESHED")
+      "validateLicense(ValidateAccessRequest): when token is expired → evaluate with decrypted user and return TOKEN_REFRESHED")
   void validateTokenFlow_expired_triggersRefresh() {
+    // NEW ORDER: instanceId, checksum, serviceId, serviceVersion, signature
     var req =
-        new ValidateAccessRequest("crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx");
+        new ValidateAccessRequest("instance-12345678", "chk-xxxxx", "crm", "1.2.3", "sig-xxxxx");
     String token = "jwt-expired";
     String encUserFromException = "enc-U-42";
 

@@ -45,9 +45,9 @@ class LicenseEvaluationServiceImplTest {
   }
 
   @Test
-  @DisplayName("evaluateLicense(IssueTokenRequest): records usage when instance is missing")
+  @DisplayName("evaluateLicense(IssueAccessRequest): records usage when instance is missing")
   void issueToken_recordsUsage_whenMissing() {
-    var request = new IssueAccessRequest("crm", "1.2.3", "inst-001", "sig", "chk", "LK", false);
+    var request = new IssueAccessRequest("LK", "inst-001", "chk", "crm", "1.2.3", "sig", false);
     var info = licenseInfoWithInstances("user-1", "PRO", LicenseStatus.ACTIVE, List.of("inst-XYZ"));
 
     when(userService.getLicenseInfo("user-1")).thenReturn(Optional.of(info));
@@ -65,9 +65,9 @@ class LicenseEvaluationServiceImplTest {
   }
 
   @Test
-  @DisplayName("evaluateLicense(IssueTokenRequest): does not record usage when instance exists")
+  @DisplayName("evaluateLicense(IssueAccessRequest): does not record usage when instance exists")
   void issueToken_doesNotRecord_whenExists() {
-    var request = new IssueAccessRequest("crm", "1.2.3", "inst-XYZ", "sig", "chk", "LK", false);
+    var request = new IssueAccessRequest("LK", "inst-XYZ", "chk", "crm", "1.2.3", "sig", false);
     var info =
         licenseInfoWithInstances("user-2", "BASIC", LicenseStatus.ACTIVE, List.of("inst-XYZ"));
 
@@ -86,9 +86,9 @@ class LicenseEvaluationServiceImplTest {
   }
 
   @Test
-  @DisplayName("evaluateLicense(ValidateTokenRequest): records usage when instance is missing")
+  @DisplayName("evaluateLicense(ValidateAccessRequest): records usage when instance is missing")
   void validateToken_recordsUsage_whenMissing() {
-    var request = new ValidateAccessRequest("billing", "2.0.0", "inst-ABC", "sig", "chk");
+    var request = new ValidateAccessRequest("inst-ABC", "chk", "billing", "2.0.0", "sig");
     var info = licenseInfoWithInstances("user-3", "ENTERPRISE", LicenseStatus.ACTIVE, List.of());
 
     when(userService.getLicenseInfo("user-3")).thenReturn(Optional.of(info));
@@ -108,7 +108,7 @@ class LicenseEvaluationServiceImplTest {
   @Test
   @DisplayName("evaluateLicense: throws LicenseNotFoundException when repository returns empty")
   void evaluate_throws_whenUserMissing() {
-    var request = new IssueAccessRequest("crm", "1.2.3", "inst-001", "sig", "chk", "LK", false);
+    var request = new IssueAccessRequest("LK", "inst-001", "chk", "crm", "1.2.3", "sig", false);
     when(userService.getLicenseInfo("missing-user")).thenReturn(Optional.empty());
 
     assertThrows(
