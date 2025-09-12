@@ -4,7 +4,6 @@ import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.service.LicenseEvaluationService;
-import io.github.bsayli.licensing.service.exception.license.LicenseNotFoundException;
 import io.github.bsayli.licensing.service.user.orchestration.UserOrchestrationService;
 import io.github.bsayli.licensing.service.validation.LicensePolicyValidator;
 import java.util.function.Consumer;
@@ -36,14 +35,15 @@ public class LicenseEvaluationServiceImpl implements LicenseEvaluationService {
 
   private LicenseInfo fetchEvaluateAndMaybeRecordUsage(
       String userId, String instanceId, Consumer<LicenseInfo> validator) {
-    LicenseInfo licenseInfo =
-        userService.getLicenseInfo(userId).orElseThrow(() -> new LicenseNotFoundException(userId));
+
+    LicenseInfo licenseInfo = userService.getLicenseInfo(userId);
 
     validator.accept(licenseInfo);
 
     if (licenseValidationService.isInstanceIdMissing(instanceId, licenseInfo.instanceIds())) {
       userService.recordUsage(userId, instanceId);
     }
+
     return licenseInfo;
   }
 }

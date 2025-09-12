@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.sdk.common.exception;
 
-import org.springframework.http.HttpStatus;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 
 public class LicensingSdkRemoteServiceException extends LicensingSdkException {
 
@@ -11,10 +11,7 @@ public class LicensingSdkRemoteServiceException extends LicensingSdkException {
   private final transient List<String> details;
 
   public LicensingSdkRemoteServiceException(
-          HttpStatus httpStatus,
-          String errorCode,
-          String topMessage,
-          List<String> details) {
+      HttpStatus httpStatus, String errorCode, String topMessage, List<String> details) {
     super(topMessage);
     this.httpStatus = httpStatus;
     this.errorCode = errorCode;
@@ -22,8 +19,19 @@ public class LicensingSdkRemoteServiceException extends LicensingSdkException {
     this.details = details;
   }
 
-  public HttpStatus getHttpStatus() { return httpStatus; }
-  public String getErrorCode() { return errorCode; }
-  public String getTopMessage() { return topMessage; }
-  public List<String> getDetails() { return details; }
+  public HttpStatus getHttpStatus() {
+    return httpStatus;
+  }
+
+  public String getErrorCode() {
+    return errorCode;
+  }
+
+  public String getTopMessage() {
+    return topMessage;
+  }
+
+  public List<String> getDetails() {
+    return details;
+  }
 }

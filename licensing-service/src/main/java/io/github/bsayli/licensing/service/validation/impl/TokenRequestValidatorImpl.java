@@ -16,7 +16,6 @@ import io.github.bsayli.licensing.service.validation.TokenRequestValidator;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import java.util.Objects;
-import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -73,12 +72,11 @@ public class TokenRequestValidatorImpl implements TokenRequestValidator {
 
   private void assertRequestMatchesCache(ValidateAccessRequest request, String token) {
     String clientId = clientIdGenerator.getClientId(request);
-    Optional<ClientSessionSnapshot> cachedOpt = cacheService.find(clientId);
-    if (cachedOpt.isEmpty()) {
+    ClientSessionSnapshot cached = cacheService.find(clientId);
+
+    if (cached == null) {
       return;
     }
-
-    ClientSessionSnapshot cached = cachedOpt.get();
 
     boolean tokenMatches = Objects.equals(cached.licenseToken(), token);
     if (!tokenMatches) {
@@ -96,13 +94,12 @@ public class TokenRequestValidatorImpl implements TokenRequestValidator {
 
   private void throwTokenExceptionBasedOnCache(ValidateAccessRequest request, String token) {
     String clientId = clientIdGenerator.getClientId(request);
-    Optional<ClientSessionSnapshot> cachedOpt = cacheService.find(clientId);
+    ClientSessionSnapshot cached = cacheService.find(clientId);
 
-    if (cachedOpt.isEmpty()) {
+    if (cached == null) {
       throw new TokenIsTooOldForRefreshException();
     }
 
-    ClientSessionSnapshot cached = cachedOpt.get();
     if (Objects.equals(cached.licenseToken(), token)) {
       throw new TokenExpiredException(cached.encUserId());
     } else {

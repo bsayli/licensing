@@ -52,13 +52,11 @@ class UserRepositoryImplTest {
     m.put("remainingUsageCount", List.of("5"));
     m.put("instanceIds", new ArrayList<>(List.of("inst-A", "inst-B")));
     m.put("allowedServices", new ArrayList<>(List.of("crm", "billing")));
-
     m.put(
         "allowedServiceVersions",
         List.of(
             json(Map.of("serviceId", "crm", "licensedMaxVersion", "1.2")),
             json(Map.of("serviceId", "billing", "licensedMaxVersion", "2.0"))));
-
     m.put("checksumCrm", List.of(json(Map.of("version", "1.2", "checksum", "chk-crm"))));
     m.put("checksumBilling", List.of(json(Map.of("version", "2.0", "checksum", "chk-b"))));
     return m;
@@ -79,7 +77,7 @@ class UserRepositoryImplTest {
   }
 
   @Test
-  @DisplayName("getUser should map Keycloak attributes to LicenseInfo")
+  @DisplayName("getUser maps Keycloak attributes to LicenseInfo")
   void getUser_happyPath() {
     wireRealm();
     UserRepresentation rep = new UserRepresentation();
@@ -89,10 +87,8 @@ class UserRepositoryImplTest {
     when(usersResource.get("user-1")).thenReturn(userResource);
     when(userResource.toRepresentation()).thenReturn(rep);
 
-    Optional<LicenseInfo> out = repo.getUser("user-1");
+    LicenseInfo info = repo.getUser("user-1");
 
-    assertTrue(out.isPresent());
-    LicenseInfo info = out.get();
     assertEquals("user-1", info.userId());
     assertEquals("PRO", info.licenseTier());
     assertEquals(LicenseStatus.ACTIVE, info.licenseStatus());
@@ -104,7 +100,7 @@ class UserRepositoryImplTest {
   }
 
   @Test
-  @DisplayName("getUser should throw UserNotFoundException when Keycloak returns 404")
+  @DisplayName("getUser throws UserNotFoundException when Keycloak returns 404")
   void getUser_notFound() {
     wireRealm();
     when(usersResource.get("missing")).thenThrow(new NotFoundException("404"));
@@ -113,7 +109,7 @@ class UserRepositoryImplTest {
   }
 
   @Test
-  @DisplayName("getUser should throw UserAttributeInvalidFormatException for invalid expiration")
+  @DisplayName("getUser throws UserAttributeInvalidFormatException for invalid expiration")
   void getUser_invalidExpiration() {
     wireRealm();
     UserRepresentation rep = new UserRepresentation();
@@ -129,8 +125,7 @@ class UserRepositoryImplTest {
   }
 
   @Test
-  @DisplayName(
-      "getUser should throw UserAttributeMissingException when a required attribute is missing")
+  @DisplayName("getUser throws UserAttributeMissingException when a required attribute is missing")
   void getUser_missingAttribute() {
     wireRealm();
     UserRepresentation rep = new UserRepresentation();
@@ -146,7 +141,7 @@ class UserRepositoryImplTest {
   }
 
   @Test
-  @DisplayName("getUser should throw UserAttributeInvalidFormatException for invalid checksum JSON")
+  @DisplayName("getUser throws UserAttributeInvalidFormatException for invalid checksum JSON")
   void getUser_invalidChecksumJson() {
     wireRealm();
     UserRepresentation rep = new UserRepresentation();
@@ -162,8 +157,7 @@ class UserRepositoryImplTest {
   }
 
   @Test
-  @DisplayName(
-      "updateLicenseUsage should decrement remainingUsageCount, add instance, and update user")
+  @DisplayName("updateLicenseUsage decrements remaining, adds instance, and updates user")
   void updateLicenseUsage_updatesAndReturns() {
     wireRealm();
     UserRepresentation rep = new UserRepresentation();
@@ -176,10 +170,8 @@ class UserRepositoryImplTest {
     when(usersResource.get("user-5")).thenReturn(userResource);
     when(userResource.toRepresentation()).thenReturn(rep);
 
-    Optional<LicenseInfo> out = repo.updateLicenseUsage("user-5", "inst-NEW");
+    LicenseInfo info = repo.updateLicenseUsage("user-5", "inst-NEW");
 
-    assertTrue(out.isPresent());
-    LicenseInfo info = out.get();
     assertEquals(1, info.remainingUsageCount());
     assertTrue(info.instanceIds().contains("inst-NEW"));
 
@@ -192,7 +184,7 @@ class UserRepositoryImplTest {
 
   @Test
   @DisplayName(
-      "updateLicenseUsage should throw LicenseUsageLimitExceededException when no remaining usage")
+      "updateLicenseUsage throws LicenseUsageLimitExceededException when no remaining usage")
   void updateLicenseUsage_limitExceeded() {
     wireRealm();
     UserRepresentation rep = new UserRepresentation();
@@ -212,7 +204,7 @@ class UserRepositoryImplTest {
   }
 
   @Test
-  @DisplayName("updateLicenseUsage should return info unchanged when instance already present")
+  @DisplayName("updateLicenseUsage returns info unchanged when instance already present")
   void updateLicenseUsage_instanceAlreadyExists() {
     wireRealm();
     UserRepresentation rep = new UserRepresentation();
@@ -225,17 +217,15 @@ class UserRepositoryImplTest {
     when(usersResource.get("user-7")).thenReturn(userResource);
     when(userResource.toRepresentation()).thenReturn(rep);
 
-    Optional<LicenseInfo> out = repo.updateLicenseUsage("user-7", "inst-EXIST");
+    LicenseInfo info = repo.updateLicenseUsage("user-7", "inst-EXIST");
 
-    assertTrue(out.isPresent());
-    LicenseInfo info = out.get();
     assertEquals(3, info.remainingUsageCount());
     assertTrue(info.instanceIds().contains("inst-EXIST"));
     verify(userResource, never()).update(any());
   }
 
   @Test
-  @DisplayName("updateLicenseUsage should throw UserNotFoundException on 404")
+  @DisplayName("updateLicenseUsage throws UserNotFoundException on 404")
   void updateLicenseUsage_notFound() {
     wireRealm();
     when(usersResource.get("missing")).thenThrow(new NotFoundException("404"));

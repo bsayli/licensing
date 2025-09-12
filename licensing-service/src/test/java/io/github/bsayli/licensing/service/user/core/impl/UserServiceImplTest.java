@@ -4,13 +4,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
+import io.github.bsayli.licensing.domain.model.LicenseStatus;
 import io.github.bsayli.licensing.repository.exception.UserNotFoundException;
 import io.github.bsayli.licensing.repository.user.UserRepository;
 import io.github.bsayli.licensing.service.exception.license.LicenseNotFoundException;
 import io.github.bsayli.licensing.service.user.core.UserRecoveryService;
 import jakarta.ws.rs.ProcessingException;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ class UserServiceImplTest {
     return new LicenseInfo.Builder()
         .userId(userId)
         .licenseTier("PRO")
-        .licenseStatus(io.github.bsayli.licensing.domain.model.LicenseStatus.ACTIVE)
+        .licenseStatus(LicenseStatus.ACTIVE)
         .expirationDate(LocalDateTime.now().plusDays(3))
         .maxCount(5)
         .remainingUsageCount(5)
@@ -41,26 +41,24 @@ class UserServiceImplTest {
   }
 
   @Test
-  @DisplayName("getUser returns Optional with value when repository finds user")
+  @DisplayName("getUser returns LicenseInfo when repository finds user")
   void getUser_present() {
-    when(userRepository.getUser("u1")).thenReturn(Optional.of(sample("u1")));
+    when(userRepository.getUser("u1")).thenReturn(sample("u1"));
 
-    Optional<LicenseInfo> out = service.getUser("u1");
+    LicenseInfo out = service.getUser("u1");
 
-    assertTrue(out.isPresent());
-    assertEquals("u1", out.get().userId());
+    assertEquals("u1", out.userId());
     verify(userRepository).getUser("u1");
     verifyNoMoreInteractions(userRepository, userRecoveryService);
   }
 
   @Test
-  @DisplayName("getUser returns Optional.empty when repository returns empty")
-  void getUser_empty() {
-    when(userRepository.getUser("missing")).thenReturn(Optional.empty());
+  @DisplayName("getUser propagates UserNotFoundException when repo throws 404")
+  void getUser_notFound() {
+    when(userRepository.getUser("missing"))
+        .thenThrow(new UserNotFoundException(new RuntimeException()));
 
-    Optional<LicenseInfo> out = service.getUser("missing");
-
-    assertTrue(out.isEmpty());
+    assertThrows(UserNotFoundException.class, () -> service.getUser("missing"));
     verify(userRepository).getUser("missing");
     verifyNoMoreInteractions(userRepository, userRecoveryService);
   }
@@ -68,10 +66,10 @@ class UserServiceImplTest {
   @Test
   @DisplayName("updateLicenseUsage returns updated LicenseInfo")
   void updateLicenseUsage_ok() {
-    var updated = Optional.of(sample("u2"));
+    var updated = sample("u2");
     when(userRepository.updateLicenseUsage("u2", "inst-1")).thenReturn(updated);
 
-    Optional<LicenseInfo> out = service.updateLicenseUsage("u2", "inst-1");
+    LicenseInfo out = service.updateLicenseUsage("u2", "inst-1");
 
     assertEquals(updated, out);
     verify(userRepository).updateLicenseUsage("u2", "inst-1");
@@ -79,8 +77,7 @@ class UserServiceImplTest {
   }
 
   @Test
-  @DisplayName(
-      "updateLicenseUsage throws LicenseNotFoundException when repository throws UserNotFoundException")
+  @DisplayName("updateLicenseUsage maps UserNotFoundException to LicenseNotFoundException")
   void updateLicenseUsage_userNotFound() {
     when(userRepository.updateLicenseUsage("u3", "inst-2"))
         .thenThrow(new UserNotFoundException(new RuntimeException()));
@@ -91,15 +88,15 @@ class UserServiceImplTest {
   }
 
   @Test
-  @DisplayName("@Recover recoverUser delegates to UserRecoveryService")
+  @DisplayName("@Recover recoverUser delegates to UserRecoveryService and returns LicenseInfo")
   void recoverUser_delegates() {
     ProcessingException pe =
         new ProcessingException(new java.net.SocketTimeoutException("read timed out"));
 
-    Optional<LicenseInfo> expected = Optional.of(sample("u4"));
+    LicenseInfo expected = sample("u4");
     when(userRecoveryService.recoverUser("u4", pe)).thenReturn(expected);
 
-    Optional<LicenseInfo> out = service.recoverUser(pe, "u4");
+    LicenseInfo out = service.recoverUser(pe, "u4");
 
     assertEquals(expected, out);
     verify(userRecoveryService).recoverUser("u4", pe);

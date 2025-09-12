@@ -1,13 +1,12 @@
 package io.github.bsayli.licensing.service.user.orchestration;
 
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
-import java.util.Optional;
 
 public interface UserCacheManagementService {
 
   void refreshAsync(String userId);
 
-  Optional<LicenseInfo> getOffline(String userId);
+  LicenseInfo getOffline(String userId);
 
   boolean isOnlineMissing(String userId);
 

@@ -26,7 +26,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class UserRepositoryImpl implements UserRepository {
 
-  // Attribute keys in Keycloak
   private static final String ATTR_LICENSE_TIER = "licenseTier";
   private static final String ATTR_LICENSE_STATUS = "licenseStatus";
   private static final String ATTR_LICENSE_EXPIRATION = "licenseExpiration";
@@ -53,7 +52,7 @@ public class UserRepositoryImpl implements UserRepository {
   }
 
   @Override
-  public Optional<LicenseInfo> getUser(String userId) {
+  public LicenseInfo getUser(String userId) {
     UsersResource users = getUsersResource();
     try {
       UserResource userRes = users.get(userId);
@@ -65,7 +64,7 @@ public class UserRepositoryImpl implements UserRepository {
   }
 
   @Override
-  public Optional<LicenseInfo> updateLicenseUsage(String userId, String appInstanceId) {
+  public LicenseInfo updateLicenseUsage(String userId, String appInstanceId) {
     UsersResource users = getUsersResource();
     try {
       UserResource ur = users.get(userId);
@@ -87,43 +86,46 @@ public class UserRepositoryImpl implements UserRepository {
         attrs.put(ATTR_INSTANCE_IDS, instanceIds);
         rep.setAttributes(attrs);
         ur.update(rep);
-        return toLicenseInfo(rep);
       }
 
       return toLicenseInfo(rep);
+
     } catch (NotFoundException e) {
       throw new UserNotFoundException(e);
     }
   }
 
-  private Optional<LicenseInfo> toLicenseInfo(UserRepresentation rep) {
-    if (rep == null) return Optional.empty();
+  private LicenseInfo toLicenseInfo(UserRepresentation rep) {
+    if (rep == null) {
+      throw new UserNotFoundException();
+    }
+
     Map<String, List<String>> attrs = rep.getAttributes();
     Map<String, List<LicenseChecksumVersionInfo>> checksums = new HashMap<>();
+
     List<LicenseChecksumVersionInfo> crm = getChecksumVersionInfo(attrs, ATTR_CHECKSUM_CRM);
     if (!crm.isEmpty()) checksums.put(SERVICE_CRM, crm);
+
     List<LicenseChecksumVersionInfo> billing = getChecksumVersionInfo(attrs, ATTR_CHECKSUM_BILLING);
     if (!billing.isEmpty()) checksums.put(SERVICE_BILLING, billing);
+
     List<LicenseChecksumVersionInfo> reporting =
         getChecksumVersionInfo(attrs, ATTR_CHECKSUM_REPORTING);
     if (!reporting.isEmpty()) checksums.put(SERVICE_REPORTING, reporting);
 
-    LicenseInfo info =
-        new LicenseInfo.Builder()
-            .userId(rep.getId())
-            .licenseTier(getSingleAttribute(attrs, ATTR_LICENSE_TIER))
-            .licenseStatus(LicenseStatus.from(getSingleAttribute(attrs, ATTR_LICENSE_STATUS)))
-            .expirationDate(parseLocalDateTime(getSingleAttribute(attrs, ATTR_LICENSE_EXPIRATION)))
-            .maxCount(Integer.parseInt(getSingleAttribute(attrs, ATTR_MAX_COUNT)))
-            .remainingUsageCount(
-                Integer.parseInt(getSingleAttribute(attrs, ATTR_REMAINING_USAGE_COUNT)))
-            .instanceIds(getAttribute(attrs, ATTR_INSTANCE_IDS))
-            .allowedServices(getAttribute(attrs, ATTR_ALLOWED_SERVICES))
-            .allowedServiceVersions(getServiceIdVersionInfo(attrs, ATTR_ALLOWED_SERVICE_VERSIONS))
-            .serviceChecksums(checksums)
-            .build();
-
-    return Optional.of(info);
+    return new LicenseInfo.Builder()
+        .userId(rep.getId())
+        .licenseTier(getSingleAttribute(attrs, ATTR_LICENSE_TIER))
+        .licenseStatus(LicenseStatus.from(getSingleAttribute(attrs, ATTR_LICENSE_STATUS)))
+        .expirationDate(parseLocalDateTime(getSingleAttribute(attrs, ATTR_LICENSE_EXPIRATION)))
+        .maxCount(Integer.parseInt(getSingleAttribute(attrs, ATTR_MAX_COUNT)))
+        .remainingUsageCount(
+            Integer.parseInt(getSingleAttribute(attrs, ATTR_REMAINING_USAGE_COUNT)))
+        .instanceIds(getAttribute(attrs, ATTR_INSTANCE_IDS))
+        .allowedServices(getAttribute(attrs, ATTR_ALLOWED_SERVICES))
+        .allowedServiceVersions(getServiceIdVersionInfo(attrs, ATTR_ALLOWED_SERVICE_VERSIONS))
+        .serviceChecksums(checksums)
+        .build();
   }
 
   private UsersResource getUsersResource() {

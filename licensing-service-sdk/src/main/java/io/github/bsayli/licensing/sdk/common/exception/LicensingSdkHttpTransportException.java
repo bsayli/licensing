@@ -8,14 +8,26 @@ public class LicensingSdkHttpTransportException extends LicensingSdkException {
   private final transient String rawBody;
 
   public LicensingSdkHttpTransportException(
-          String message, HttpStatusCode statusCode, String messageKey, String rawBody, Throwable cause) {
+      String message,
+      HttpStatusCode statusCode,
+      String messageKey,
+      String rawBody,
+      Throwable cause) {
     super(message, cause);
     this.statusCode = statusCode;
     this.messageKey = messageKey;
     this.rawBody = rawBody;
   }
 
-  public HttpStatusCode getStatusCode() { return statusCode; }
-  public String getMessageKey() { return messageKey; }
-  public String getRawBody() { return rawBody; }
+  public HttpStatusCode getStatusCode() {
+    return statusCode;
+  }
+
+  public String getMessageKey() {
+    return messageKey;
+  }
+
+  public String getRawBody() {
+    return rawBody;
+  }
 }

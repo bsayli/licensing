@@ -1,5 +1,10 @@
 package io.github.bsayli.licensing.cache;
 
+import static io.github.bsayli.licensing.cache.CacheNames.CACHE_ACTIVE_CLIENTS;
+import static io.github.bsayli.licensing.cache.CacheNames.CACHE_BLACKLISTED_TOKENS;
+import static io.github.bsayli.licensing.cache.CacheNames.CACHE_USER_INFO;
+import static io.github.bsayli.licensing.cache.CacheNames.CACHE_USER_OFFLINE_INFO;
+
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -8,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.interceptor.SimpleCacheErrorHandler;
 import org.springframework.context.annotation.Bean;
@@ -108,5 +115,25 @@ public class CacheConfig {
   @Bean
   public SimpleCacheErrorHandler cacheErrorHandler() {
     return new SimpleCacheErrorHandler();
+  }
+
+  @Bean(name = CACHE_USER_INFO)
+  public Cache userInfoCache(CacheManager cm) {
+    return cm.getCache(CACHE_USER_INFO);
+  }
+
+  @Bean(name = CACHE_USER_OFFLINE_INFO)
+  public Cache userOfflineInfoCache(CacheManager cm) {
+    return cm.getCache(CACHE_USER_OFFLINE_INFO);
+  }
+
+  @Bean(name = CACHE_ACTIVE_CLIENTS)
+  public Cache activeClients(CacheManager cm) {
+    return cm.getCache(CACHE_ACTIVE_CLIENTS);
+  }
+
+  @Bean(name = CACHE_BLACKLISTED_TOKENS)
+  public Cache blacklistedTokens(CacheManager cm) {
+    return cm.getCache(CACHE_BLACKLISTED_TOKENS);
   }
 }

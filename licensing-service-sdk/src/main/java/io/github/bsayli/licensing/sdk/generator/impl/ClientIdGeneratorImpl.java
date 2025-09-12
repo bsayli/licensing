@@ -24,8 +24,8 @@ public class ClientIdGeneratorImpl implements ClientIdGenerator {
     String raw = instanceId + SEP + serviceId + SEP + serviceVersion + SEP + checksum;
 
     try {
-      byte[] hashed = MessageDigest.getInstance(ALGORITHM)
-              .digest(raw.getBytes(StandardCharsets.UTF_8));
+      byte[] hashed =
+          MessageDigest.getInstance(ALGORITHM).digest(raw.getBytes(StandardCharsets.UTF_8));
       return B64URL_NOPAD_ENC.encodeToString(hashed);
     } catch (NoSuchAlgorithmException e) {
       throw new IllegalStateException("Hash algorithm not found: " + ALGORITHM, e);

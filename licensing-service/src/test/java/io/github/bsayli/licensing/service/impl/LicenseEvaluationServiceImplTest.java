@@ -12,7 +12,6 @@ import io.github.bsayli.licensing.service.user.orchestration.UserOrchestrationSe
 import io.github.bsayli.licensing.service.validation.LicensePolicyValidator;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -50,7 +49,7 @@ class LicenseEvaluationServiceImplTest {
     var request = new IssueAccessRequest("LK", "inst-001", "chk", "crm", "1.2.3", "sig", false);
     var info = licenseInfoWithInstances("user-1", "PRO", LicenseStatus.ACTIVE, List.of("inst-XYZ"));
 
-    when(userService.getLicenseInfo("user-1")).thenReturn(Optional.of(info));
+    when(userService.getLicenseInfo("user-1")).thenReturn(info);
     doNothing().when(policyValidator).assertValid(info, request);
     when(policyValidator.isInstanceIdMissing("inst-001", info.instanceIds())).thenReturn(true);
 
@@ -71,7 +70,7 @@ class LicenseEvaluationServiceImplTest {
     var info =
         licenseInfoWithInstances("user-2", "BASIC", LicenseStatus.ACTIVE, List.of("inst-XYZ"));
 
-    when(userService.getLicenseInfo("user-2")).thenReturn(Optional.of(info));
+    when(userService.getLicenseInfo("user-2")).thenReturn(info);
     doNothing().when(policyValidator).assertValid(info, request);
     when(policyValidator.isInstanceIdMissing("inst-XYZ", info.instanceIds())).thenReturn(false);
 
@@ -91,7 +90,7 @@ class LicenseEvaluationServiceImplTest {
     var request = new ValidateAccessRequest("inst-ABC", "chk", "billing", "2.0.0", "sig");
     var info = licenseInfoWithInstances("user-3", "ENTERPRISE", LicenseStatus.ACTIVE, List.of());
 
-    when(userService.getLicenseInfo("user-3")).thenReturn(Optional.of(info));
+    when(userService.getLicenseInfo("user-3")).thenReturn(info);
     doNothing().when(policyValidator).assertValid(info, request);
     when(policyValidator.isInstanceIdMissing("inst-ABC", info.instanceIds())).thenReturn(true);
 
@@ -106,10 +105,11 @@ class LicenseEvaluationServiceImplTest {
   }
 
   @Test
-  @DisplayName("evaluateLicense: throws LicenseNotFoundException when repository returns empty")
+  @DisplayName("evaluateLicense: throws LicenseNotFoundException when user is missing")
   void evaluate_throws_whenUserMissing() {
     var request = new IssueAccessRequest("LK", "inst-001", "chk", "crm", "1.2.3", "sig", false);
-    when(userService.getLicenseInfo("missing-user")).thenReturn(Optional.empty());
+    when(userService.getLicenseInfo("missing-user"))
+        .thenThrow(new LicenseNotFoundException("missing-user"));
 
     assertThrows(
         LicenseNotFoundException.class, () -> service.evaluateLicense(request, "missing-user"));

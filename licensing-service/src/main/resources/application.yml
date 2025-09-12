@@ -37,10 +37,10 @@ cache:
   default-spec:
     ttl-minutes: 10
   caches:
-    userInfoCache:
+    userInfo:
       ttl-minutes: 60
       type: io.github.bsayli.licensing.domain.model.LicenseInfo
-    userOfflineInfoCache:
+    userOfflineInfo:
       ttl-minutes: 1440
       type: io.github.bsayli.licensing.domain.model.LicenseInfo
     activeClients:

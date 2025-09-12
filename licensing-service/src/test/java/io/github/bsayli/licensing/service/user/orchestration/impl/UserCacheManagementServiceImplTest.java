@@ -11,7 +11,6 @@ import io.github.bsayli.licensing.service.user.core.UserAsyncService;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,8 +51,7 @@ class UserCacheManagementServiceImplTest {
   @DisplayName("refreshAsync: success + present -> both caches put")
   void refreshAsync_success_present() {
     LicenseInfo li = info();
-    when(userAsyncService.getUser("user-1"))
-        .thenReturn(CompletableFuture.completedFuture(Optional.of(li)));
+    when(userAsyncService.getUser("user-1")).thenReturn(CompletableFuture.completedFuture(li));
 
     service.refreshAsync("user-1");
 
@@ -68,10 +66,9 @@ class UserCacheManagementServiceImplTest {
   }
 
   @Test
-  @DisplayName("refreshAsync: success + empty -> both caches evict")
-  void refreshAsync_success_empty() {
-    when(userAsyncService.getUser("user-2"))
-        .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+  @DisplayName("refreshAsync: success + null -> both caches evict")
+  void refreshAsync_success_null() {
+    when(userAsyncService.getUser("user-2")).thenReturn(CompletableFuture.completedFuture(null));
 
     service.refreshAsync("user-2");
 
@@ -103,12 +100,12 @@ class UserCacheManagementServiceImplTest {
   }
 
   @Test
-  @DisplayName("getOffline delegates to offline cache")
+  @DisplayName("getOffline delegates to offline cache (nullable)")
   void getOffline() {
-    Optional<LicenseInfo> expected = Optional.of(info());
+    LicenseInfo expected = info();
     when(offlineCache.get("u")).thenReturn(expected);
 
-    Optional<LicenseInfo> out = service.getOffline("u");
+    LicenseInfo out = service.getOffline("u");
 
     assertEquals(expected, out);
     verify(offlineCache, times(1)).get("u");

@@ -17,7 +17,8 @@ import io.github.bsayli.licensing.service.jwt.JwtBlacklistService;
 import io.github.bsayli.licensing.service.jwt.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -55,7 +56,7 @@ class TokenRequestValidatorImplTest {
   }
 
   private static Claims claims(String subject, long expMillis) {
-    java.util.Map<String, Object> map = new java.util.HashMap<>();
+    Map<String, Object> map = new HashMap<>();
     map.put("sub", subject);
     map.put("exp", new java.util.Date(expMillis));
     return new io.jsonwebtoken.impl.DefaultClaims(map);
@@ -63,7 +64,7 @@ class TokenRequestValidatorImplTest {
 
   @Test
   @DisplayName(
-      "assertValid should pass for valid signature, format, cache match, subject match, not expired")
+      "assertValid passes for valid signature, format, cache match, subject match, not expired")
   void assertValid_happyPath() {
     String token = "a.b.c";
     ValidateAccessRequest request = req();
@@ -71,8 +72,7 @@ class TokenRequestValidatorImplTest {
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
     when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
-    when(cache.find("client-1"))
-        .thenReturn(Optional.of(cached(token, "crm", "1.2.3", "chk", "encU")));
+    when(cache.find("client-1")).thenReturn(cached(token, "crm", "1.2.3", "chk", "encU"));
     when(jwtService.verifyAndExtractJwtClaims(token))
         .thenReturn(claims("client-1", System.currentTimeMillis() + 60_000));
 
@@ -81,7 +81,7 @@ class TokenRequestValidatorImplTest {
   }
 
   @Test
-  @DisplayName("assertValid should throw TokenInvalidException when format is invalid")
+  @DisplayName("assertValid throws TokenInvalidException when format is invalid")
   void assertValid_invalidFormat() {
     String token = "bad";
     ValidateAccessRequest request = req();
@@ -89,10 +89,11 @@ class TokenRequestValidatorImplTest {
     when(jwtService.validateTokenFormat(token)).thenReturn(false);
 
     assertThrows(TokenInvalidException.class, () -> validator.assertValid(request, token));
+    verify(signatureValidator).validate(request, token);
   }
 
   @Test
-  @DisplayName("assertValid should throw TokenInvalidException when token is blacklisted")
+  @DisplayName("assertValid throws TokenInvalidException when token is blacklisted")
   void assertValid_blacklisted() {
     String token = "a.b.c";
     ValidateAccessRequest request = req();
@@ -101,10 +102,11 @@ class TokenRequestValidatorImplTest {
     when(blacklist.isBlacklisted(token)).thenReturn(true);
 
     assertThrows(TokenInvalidException.class, () -> validator.assertValid(request, token));
+    verify(signatureValidator).validate(request, token);
   }
 
   @Test
-  @DisplayName("assertValid should throw TokenInvalidException when cache has different token")
+  @DisplayName("assertValid throws TokenInvalidException when cache has different token")
   void assertValid_cacheTokenMismatch() {
     String token = "a.b.c";
     ValidateAccessRequest request = req();
@@ -112,15 +114,14 @@ class TokenRequestValidatorImplTest {
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
     when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
-    when(cache.find("client-1"))
-        .thenReturn(Optional.of(cached("x.y.z", "crm", "1.2.3", "chk", "encU")));
+    when(cache.find("client-1")).thenReturn(cached("x.y.z", "crm", "1.2.3", "chk", "encU"));
 
     assertThrows(TokenInvalidException.class, () -> validator.assertValid(request, token));
+    verify(signatureValidator).validate(request, token);
   }
 
   @Test
-  @DisplayName(
-      "assertValid should throw InvalidRequestException when service context mismatches cache")
+  @DisplayName("assertValid throws InvalidRequestException when service context mismatches cache")
   void assertValid_contextMismatch() {
     String token = "a.b.c";
     ValidateAccessRequest request =
@@ -129,15 +130,14 @@ class TokenRequestValidatorImplTest {
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
     when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
-    when(cache.find("client-1"))
-        .thenReturn(Optional.of(cached(token, "crm", "1.2.3", "chk", "encU")));
+    when(cache.find("client-1")).thenReturn(cached(token, "crm", "1.2.3", "chk", "encU"));
 
     assertThrows(InvalidRequestException.class, () -> validator.assertValid(request, token));
+    verify(signatureValidator).validate(request, token);
   }
 
   @Test
-  @DisplayName(
-      "assertValid should throw TokenAccessDeniedException when JWT subject does not match clientId")
+  @DisplayName("assertValid throws TokenAccessDeniedException when JWT subject != clientId")
   void assertValid_subjectMismatch() {
     String token = "a.b.c";
     ValidateAccessRequest request = req();
@@ -145,17 +145,16 @@ class TokenRequestValidatorImplTest {
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
     when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
-    when(cache.find("client-1"))
-        .thenReturn(Optional.of(cached(token, "crm", "1.2.3", "chk", "encU")));
+    when(cache.find("client-1")).thenReturn(cached(token, "crm", "1.2.3", "chk", "encU"));
     when(jwtService.verifyAndExtractJwtClaims(token))
         .thenReturn(claims("other-client", System.currentTimeMillis() + 60_000));
 
     assertThrows(TokenAccessDeniedException.class, () -> validator.assertValid(request, token));
+    verify(signatureValidator).validate(request, token);
   }
 
   @Test
-  @DisplayName(
-      "assertValid should throw TokenExpiredException when expired and cache has same token")
+  @DisplayName("assertValid throws TokenExpiredException when expired and cache has same token")
   void assertValid_expired_sameToken() {
     String token = "a.b.c";
     ValidateAccessRequest request = req();
@@ -163,17 +162,17 @@ class TokenRequestValidatorImplTest {
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
     when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
-    when(cache.find("client-1"))
-        .thenReturn(Optional.of(cached(token, "crm", "1.2.3", "chk", "encU")));
+    when(cache.find("client-1")).thenReturn(cached(token, "crm", "1.2.3", "chk", "encU"));
     when(jwtService.verifyAndExtractJwtClaims(token))
         .thenReturn(claims("client-1", System.currentTimeMillis() - 1));
 
     assertThrows(TokenExpiredException.class, () -> validator.assertValid(request, token));
+    verify(signatureValidator).validate(request, token);
   }
 
   @Test
   @DisplayName(
-      "assertValid should throw TokenIsTooOldForRefreshException when expired and cache is empty")
+      "assertValid throws TokenIsTooOldForRefreshException when expired and cache is empty")
   void assertValid_expired_noCache() {
     String token = "a.b.c";
     ValidateAccessRequest request = req();
@@ -181,17 +180,18 @@ class TokenRequestValidatorImplTest {
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
     when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
-    when(cache.find("client-1")).thenReturn(Optional.empty());
+    when(cache.find("client-1")).thenReturn(null); // cache miss
     when(jwtService.verifyAndExtractJwtClaims(token))
         .thenReturn(claims("client-1", System.currentTimeMillis() - 1));
 
     assertThrows(
         TokenIsTooOldForRefreshException.class, () -> validator.assertValid(request, token));
+    verify(signatureValidator).validate(request, token);
   }
 
   @Test
   @DisplayName(
-      "assertValid should handle ExpiredJwtException by consulting cache and throwing TokenExpiredException")
+      "assertValid handles ExpiredJwtException by consulting cache and throwing TokenExpiredException")
   void assertValid_expiredJwtException_path() {
     String token = "a.b.c";
     ValidateAccessRequest request = req();
@@ -199,10 +199,10 @@ class TokenRequestValidatorImplTest {
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
     when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
-    when(cache.find("client-1"))
-        .thenReturn(Optional.of(cached(token, "crm", "1.2.3", "chk", "encU")));
+    when(cache.find("client-1")).thenReturn(cached(token, "crm", "1.2.3", "chk", "encU"));
     when(jwtService.verifyAndExtractJwtClaims(token)).thenThrow(mock(ExpiredJwtException.class));
 
     assertThrows(TokenExpiredException.class, () -> validator.assertValid(request, token));
+    verify(signatureValidator).validate(request, token);
   }
 }

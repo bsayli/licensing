@@ -4,7 +4,6 @@ import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.service.user.core.UserService;
 import io.github.bsayli.licensing.service.user.orchestration.UserCacheManagementService;
 import io.github.bsayli.licensing.service.user.orchestration.UserOrchestrationService;
-import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -20,23 +19,23 @@ public class UserOrchestrationServiceImpl implements UserOrchestrationService {
   }
 
   @Override
-  public Optional<LicenseInfo> getLicenseInfo(String userId) {
-    Optional<LicenseInfo> offline = userCacheManagementService.getOffline(userId);
-    if (offline.isPresent()) {
+  public LicenseInfo getLicenseInfo(String userId) {
+    LicenseInfo offline = userCacheManagementService.getOffline(userId);
+    if (offline != null) {
       if (userCacheManagementService.isOnlineMissing(userId)) {
         userCacheManagementService.refreshAsync(userId);
       }
       return offline;
     }
 
-    Optional<LicenseInfo> online = userService.getUser(userId);
-    userCacheManagementService.putOffline(userId, online.orElse(null));
+    LicenseInfo online = userService.getUser(userId);
+    userCacheManagementService.putOffline(userId, online);
     return online;
   }
 
   @Override
   public void recordUsage(String userId, String instanceId) {
-    Optional<LicenseInfo> updated = userService.updateLicenseUsage(userId, instanceId);
-    userCacheManagementService.putBoth(userId, updated.orElse(null));
+    LicenseInfo updated = userService.updateLicenseUsage(userId, instanceId);
+    userCacheManagementService.putBoth(userId, updated);
   }
 }

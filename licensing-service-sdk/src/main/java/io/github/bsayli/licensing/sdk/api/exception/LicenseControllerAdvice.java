@@ -31,7 +31,8 @@ public class LicenseControllerAdvice {
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ApiResponse<Void>> handleMethodArgNotValid(MethodArgumentNotValidException ex) {
+  public ResponseEntity<ApiResponse<Void>> handleMethodArgNotValid(
+      MethodArgumentNotValidException ex) {
     List<ApiError> errors = new ArrayList<>();
     for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
       String keyOrText = fe.getDefaultMessage();
@@ -40,11 +41,12 @@ public class LicenseControllerAdvice {
     }
     String topMsg = messages.getMessage("request.validation.failed");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(ApiResponse.error(HttpStatus.BAD_REQUEST, topMsg, errors));
+        .body(ApiResponse.error(HttpStatus.BAD_REQUEST, topMsg, errors));
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
-  public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
+  public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(
+      ConstraintViolationException ex) {
     List<ApiError> errors = new ArrayList<>();
     for (ConstraintViolation<?> v : ex.getConstraintViolations()) {
       String template = v.getMessageTemplate();
@@ -54,25 +56,27 @@ public class LicenseControllerAdvice {
     }
     String topMsg = messages.getMessage("request.validation.failed");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(ApiResponse.error(HttpStatus.BAD_REQUEST, topMsg, errors));
+        .body(ApiResponse.error(HttpStatus.BAD_REQUEST, topMsg, errors));
   }
 
   @ExceptionHandler(LicensingSdkRemoteServiceException.class)
-  public ResponseEntity<ApiResponse<Void>> handleRemoteError(LicensingSdkRemoteServiceException ex) {
-    HttpStatus http = Objects.requireNonNullElse(ex.getHttpStatus(), HttpStatus.INTERNAL_SERVER_ERROR);
+  public ResponseEntity<ApiResponse<Void>> handleRemoteError(
+      LicensingSdkRemoteServiceException ex) {
+    HttpStatus http =
+        Objects.requireNonNullElse(ex.getHttpStatus(), HttpStatus.INTERNAL_SERVER_ERROR);
 
-    String top = (ex.getTopMessage() != null && !ex.getTopMessage().isBlank())
+    String top =
+        (ex.getTopMessage() != null && !ex.getTopMessage().isBlank())
             ? ex.getTopMessage()
             : messages.getMessage("license.validation.failed");
 
     List<ApiError> errs;
     if (ex.getDetails() != null && !ex.getDetails().isEmpty()) {
-      String code = (ex.getErrorCode() != null && !ex.getErrorCode().isBlank())
+      String code =
+          (ex.getErrorCode() != null && !ex.getErrorCode().isBlank())
               ? ex.getErrorCode()
               : "REMOTE_ERROR";
-      errs = ex.getDetails().stream()
-              .map(d -> new ApiError(code, d))
-              .collect(Collectors.toList());
+      errs = ex.getDetails().stream().map(d -> new ApiError(code, d)).collect(Collectors.toList());
     } else if (ex.getErrorCode() != null && !ex.getErrorCode().isBlank()) {
       errs = List.of(new ApiError(ex.getErrorCode(), top));
     } else {
@@ -83,7 +87,8 @@ public class LicenseControllerAdvice {
   }
 
   @ExceptionHandler(LicensingSdkHttpTransportException.class)
-  public ResponseEntity<ApiResponse<Void>> handleTransportError(LicensingSdkHttpTransportException ex) {
+  public ResponseEntity<ApiResponse<Void>> handleTransportError(
+      LicensingSdkHttpTransportException ex) {
     log.error("Transport/parse error when calling licensing-service", ex);
     HttpStatus http = HttpStatus.BAD_GATEWAY;
     String top = messages.getMessage("license.validation.error");
@@ -106,8 +111,8 @@ public class LicenseControllerAdvice {
     if (s.startsWith("{") && s.endsWith("}")) {
       String key = s.substring(1, s.length() - 1);
       return (args == null || args.length == 0)
-              ? messages.getMessage(key)
-              : messages.getMessage(key, args);
+          ? messages.getMessage(key)
+          : messages.getMessage(key, args);
     }
     return keyOrText;
   }
