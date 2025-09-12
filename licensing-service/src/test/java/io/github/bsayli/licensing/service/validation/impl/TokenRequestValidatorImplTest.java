@@ -13,7 +13,6 @@ import io.github.bsayli.licensing.service.exception.token.TokenAccessDeniedExcep
 import io.github.bsayli.licensing.service.exception.token.TokenExpiredException;
 import io.github.bsayli.licensing.service.exception.token.TokenInvalidException;
 import io.github.bsayli.licensing.service.exception.token.TokenIsTooOldForRefreshException;
-import io.github.bsayli.licensing.service.jwt.JwtBlacklistService;
 import io.github.bsayli.licensing.service.jwt.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -34,7 +33,6 @@ class TokenRequestValidatorImplTest {
 
   @Mock private JwtService jwtService;
   @Mock private ClientSessionCacheService cache;
-  @Mock private JwtBlacklistService blacklist;
   @Mock private ClientIdGenerator clientIdGenerator;
   @Mock private SignatureValidator signatureValidator;
 
@@ -70,7 +68,6 @@ class TokenRequestValidatorImplTest {
     ValidateAccessRequest request = req();
 
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
-    when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
     when(cache.find("client-1")).thenReturn(cached(token, "crm", "1.2.3", "chk", "encU"));
     when(jwtService.verifyAndExtractJwtClaims(token))
@@ -93,26 +90,12 @@ class TokenRequestValidatorImplTest {
   }
 
   @Test
-  @DisplayName("assertValid throws TokenInvalidException when token is blacklisted")
-  void assertValid_blacklisted() {
-    String token = "a.b.c";
-    ValidateAccessRequest request = req();
-
-    when(jwtService.validateTokenFormat(token)).thenReturn(true);
-    when(blacklist.isBlacklisted(token)).thenReturn(true);
-
-    assertThrows(TokenInvalidException.class, () -> validator.assertValid(request, token));
-    verify(signatureValidator).validate(request, token);
-  }
-
-  @Test
   @DisplayName("assertValid throws TokenInvalidException when cache has different token")
   void assertValid_cacheTokenMismatch() {
     String token = "a.b.c";
     ValidateAccessRequest request = req();
 
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
-    when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
     when(cache.find("client-1")).thenReturn(cached("x.y.z", "crm", "1.2.3", "chk", "encU"));
 
@@ -128,7 +111,6 @@ class TokenRequestValidatorImplTest {
         new ValidateAccessRequest("inst-1", "chk", "crm", "9.9.9", "sig");
 
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
-    when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
     when(cache.find("client-1")).thenReturn(cached(token, "crm", "1.2.3", "chk", "encU"));
 
@@ -143,7 +125,6 @@ class TokenRequestValidatorImplTest {
     ValidateAccessRequest request = req();
 
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
-    when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
     when(cache.find("client-1")).thenReturn(cached(token, "crm", "1.2.3", "chk", "encU"));
     when(jwtService.verifyAndExtractJwtClaims(token))
@@ -160,7 +141,6 @@ class TokenRequestValidatorImplTest {
     ValidateAccessRequest request = req();
 
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
-    when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
     when(cache.find("client-1")).thenReturn(cached(token, "crm", "1.2.3", "chk", "encU"));
     when(jwtService.verifyAndExtractJwtClaims(token))
@@ -178,7 +158,6 @@ class TokenRequestValidatorImplTest {
     ValidateAccessRequest request = req();
 
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
-    when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
     when(cache.find("client-1")).thenReturn(null); // cache miss
     when(jwtService.verifyAndExtractJwtClaims(token))
@@ -197,7 +176,6 @@ class TokenRequestValidatorImplTest {
     ValidateAccessRequest request = req();
 
     when(jwtService.validateTokenFormat(token)).thenReturn(true);
-    when(blacklist.isBlacklisted(token)).thenReturn(false);
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
     when(cache.find("client-1")).thenReturn(cached(token, "crm", "1.2.3", "chk", "encU"));
     when(jwtService.verifyAndExtractJwtClaims(token)).thenThrow(mock(ExpiredJwtException.class));

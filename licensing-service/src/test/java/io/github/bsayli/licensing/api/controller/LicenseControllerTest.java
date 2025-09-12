@@ -34,13 +34,7 @@ class LicenseControllerTest {
   void createAccess() {
     var req =
         new IssueAccessRequest(
-            "crm",
-            "1.2.3",
-            "instance-12345678",
-            "sig-xxxxx",
-            "chk-xxxxx",
-            "LK_...base64...",
-            false);
+            "crm", "1.2.3", "instance-12345678", "sig-xxxxx", "chk-xxxxx", "LK_...base64...");
 
     when(service.issueAccess(req)).thenReturn(LicenseAccessResponse.created("jwt-token"));
     when(messageResolver.getMessage("license.validation.success")).thenReturn("License is valid");

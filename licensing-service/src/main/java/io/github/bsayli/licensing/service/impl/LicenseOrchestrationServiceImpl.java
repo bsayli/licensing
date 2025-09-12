@@ -8,7 +8,6 @@ import io.github.bsayli.licensing.domain.result.LicenseValidationResult;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.service.LicenseOrchestrationService;
 import io.github.bsayli.licensing.service.LicenseValidationService;
-import io.github.bsayli.licensing.service.jwt.JwtBlacklistService;
 import io.github.bsayli.licensing.service.token.LicenseTokenIssueRequest;
 import io.github.bsayli.licensing.service.token.LicenseTokenManager;
 import org.springframework.stereotype.Service;
@@ -18,17 +17,14 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 
   private final LicenseValidationService licenseValidationService;
   private final ClientIdGenerator clientIdGenerator;
-  private final JwtBlacklistService jwtBlacklistService;
   private final LicenseTokenManager tokenManager;
 
   public LicenseOrchestrationServiceImpl(
       LicenseValidationService licenseValidationService,
       ClientIdGenerator clientIdGenerator,
-      JwtBlacklistService jwtBlacklistService,
       LicenseTokenManager tokenManager) {
     this.licenseValidationService = licenseValidationService;
     this.clientIdGenerator = clientIdGenerator;
-    this.jwtBlacklistService = jwtBlacklistService;
     this.tokenManager = tokenManager;
   }
 
@@ -36,8 +32,9 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
   public LicenseAccessResponse issueAccess(IssueAccessRequest request) {
     LicenseValidationResult result = licenseValidationService.validateLicense(request);
     String clientId = clientIdGenerator.getClientId(request);
-    if (request.forceTokenRefresh()) {
-      jwtBlacklistService.addCurrentTokenToBlacklist(clientId);
+    String existing = tokenManager.peekActive(clientId);
+    if (existing != null) {
+      return LicenseAccessResponse.active(existing);
     }
 
     String token =

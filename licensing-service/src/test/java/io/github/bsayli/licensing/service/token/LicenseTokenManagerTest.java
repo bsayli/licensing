@@ -1,14 +1,18 @@
 package io.github.bsayli.licensing.service.token;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
 import io.github.bsayli.licensing.common.exception.ServiceErrorCode;
 import io.github.bsayli.licensing.domain.model.ClientInfo;
+import io.github.bsayli.licensing.domain.model.ClientSessionSnapshot;
 import io.github.bsayli.licensing.domain.model.LicenseStatus;
 import io.github.bsayli.licensing.domain.result.LicenseValidationResult;
 import io.github.bsayli.licensing.service.ClientSessionCacheService;
 import io.github.bsayli.licensing.service.jwt.JwtService;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -70,5 +74,87 @@ class LicenseTokenManagerTest {
 
     verify(jwt).generateToken("client-1", "ENTERPRISE", LicenseStatus.ACTIVE);
     verifyNoMoreInteractions(jwt, cache);
+  }
+
+  @Test
+  @DisplayName("peekActive: cache hit + token valid -> returns token, no eviction")
+  void peekActive_validToken_returnsToken() {
+    JwtService jwt = mock(JwtService.class);
+    ClientSessionCacheService cache = mock(ClientSessionCacheService.class);
+    LicenseTokenManager mgr = new LicenseTokenManager(jwt, cache);
+
+    String clientId = "client-1";
+    String token = "jwt-valid";
+
+    ClientSessionSnapshot snap =
+        ClientSessionSnapshot.builder()
+            .licenseToken(token)
+            .encUserId("encU")
+            .serviceId("svc")
+            .serviceVersion("1.0.0")
+            .checksum("chk")
+            .build();
+
+    when(cache.find(clientId)).thenReturn(snap);
+    Claims claims = mock(Claims.class);
+    when(jwt.verifyAndExtractJwtClaims(token)).thenReturn(claims);
+
+    String out = mgr.peekActive(clientId);
+
+    assertEquals(token, out);
+    verify(cache).find(clientId);
+    verify(jwt).verifyAndExtractJwtClaims(token);
+    verify(cache, never()).evict(anyString());
+    verifyNoMoreInteractions(jwt, cache);
+  }
+
+  @Test
+  @DisplayName("peekActive: cache hit + token expired -> returns null and evicts client")
+  void peekActive_expiredToken_evictsAndReturnsNull() {
+    JwtService jwt = mock(JwtService.class);
+    ClientSessionCacheService cache = mock(ClientSessionCacheService.class);
+    LicenseTokenManager mgr = new LicenseTokenManager(jwt, cache);
+
+    String clientId = "client-2";
+    String token = "jwt-expired";
+
+    ClientSessionSnapshot snap =
+        ClientSessionSnapshot.builder()
+            .licenseToken(token)
+            .encUserId("encU")
+            .serviceId("svc")
+            .serviceVersion("1.0.0")
+            .checksum("chk")
+            .build();
+
+    when(cache.find(clientId)).thenReturn(snap);
+    when(jwt.verifyAndExtractJwtClaims(token)).thenThrow(mock(ExpiredJwtException.class));
+
+    String out = mgr.peekActive(clientId);
+
+    assertNull(out);
+    verify(cache).find(clientId);
+    verify(jwt).verifyAndExtractJwtClaims(token);
+    verify(cache).evict(clientId);
+    verifyNoMoreInteractions(jwt, cache);
+  }
+
+  @Test
+  @DisplayName("peekActive: cache miss -> returns null, does not call JWT verify")
+  void peekActive_cacheMiss_returnsNull() {
+    JwtService jwt = mock(JwtService.class);
+    ClientSessionCacheService cache = mock(ClientSessionCacheService.class);
+    LicenseTokenManager mgr = new LicenseTokenManager(jwt, cache);
+
+    String clientId = "client-miss";
+    when(cache.find(clientId)).thenReturn(null);
+
+    String out = mgr.peekActive(clientId);
+
+    assertNull(out);
+    verify(cache).find(clientId);
+    verifyNoInteractions(jwt);
+    verify(cache, never()).evict(anyString());
+    verifyNoMoreInteractions(cache);
   }
 }

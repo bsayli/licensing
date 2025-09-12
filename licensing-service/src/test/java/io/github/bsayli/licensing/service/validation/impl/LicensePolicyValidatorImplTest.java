@@ -58,8 +58,7 @@ class LicensePolicyValidatorImplTest {
         "C".repeat(40), // checksum (>=40)
         "svcA", // serviceId
         "1.0.0", // serviceVersion
-        "S".repeat(80), // signature (>=60)
-        false // forceTokenRefresh
+        "S".repeat(80) // signature (>=60)
         );
   }
 

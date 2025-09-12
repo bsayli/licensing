@@ -51,7 +51,7 @@ class LicenseValidationServiceImplTest {
   void issueAccessFlow_shouldValidateAndReturnEncryptedUser() {
     var req =
         new IssueAccessRequest(
-            "LICENSE_KEY", "instance-12345678", "chk-xxxxx", "crm", "1.2.3", "sig-xxxxx", false);
+            "LICENSE_KEY", "instance-12345678", "chk-xxxxx", "crm", "1.2.3", "sig-xxxxx");
 
     when(userIdEncryptor.extractAndDecryptUserId("LICENSE_KEY")).thenReturn("user-123");
     var info = licenseInfo("user-123", "PRO", LicenseStatus.ACTIVE);
@@ -78,29 +78,6 @@ class LicenseValidationServiceImplTest {
         userIdEncryptor,
         licenseEvaluationService,
         tokenValidationService);
-  }
-
-  @Test
-  @DisplayName(
-      "validateLicense(IssueAccessRequest): when forceTokenRefresh=true skip cache conflict check")
-  void issueAccessFlow_forceRefresh_skipsConflictCheck() {
-    var req =
-        new IssueAccessRequest(
-            "LICENSE_KEY", "instance-12345678", "chk-xxxxx", "crm", "1.2.3", "sig-xxxxx", true);
-
-    when(userIdEncryptor.extractAndDecryptUserId("LICENSE_KEY")).thenReturn("user-999");
-    var info = licenseInfo("user-999", "PRO", LicenseStatus.ACTIVE);
-    when(licenseEvaluationService.evaluateLicense(req, "user-999")).thenReturn(info);
-    when(userIdEncryptor.encrypt("user-999")).thenReturn("enc-user-999");
-
-    LicenseValidationResult res = service.validateLicense(req);
-
-    assertTrue(res.valid());
-    assertEquals("enc-user-999", res.userId());
-
-    verify(licenseKeyValidationService).assertSignatureValid(req);
-    verify(userIdEncryptor).extractAndDecryptUserId("LICENSE_KEY");
-    verify(licenseKeyValidationService, never()).assertNoConflictingCachedContext(any(), any());
   }
 
   @Test

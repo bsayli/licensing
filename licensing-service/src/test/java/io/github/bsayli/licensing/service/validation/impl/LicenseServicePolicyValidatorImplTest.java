@@ -50,9 +50,7 @@ class LicenseServicePolicyValidatorImplTest {
     String licenseKey = "L".repeat(120); // >=100
     String instanceId = "instance-abcdefgh"; // >=10
     String signature = "S".repeat(80); // >=60
-    String chk = checksum == null ? null : checksum; // >=40 if not null
-    return new IssueAccessRequest(
-        licenseKey, instanceId, chk, serviceId, version, signature, false);
+    return new IssueAccessRequest(licenseKey, instanceId, checksum, serviceId, version, signature);
   }
 
   // NEW order: instanceId, checksum, serviceId, serviceVersion, signature
@@ -60,8 +58,7 @@ class LicenseServicePolicyValidatorImplTest {
       String serviceId, String version, String checksum) {
     String instanceId = "instance-abcdefgh"; // >=10
     String signature = "S".repeat(80); // >=60
-    String chk = checksum == null ? null : checksum; // >=40 if not null
-    return new ValidateAccessRequest(instanceId, chk, serviceId, version, signature);
+    return new ValidateAccessRequest(instanceId, checksum, serviceId, version, signature);
   }
 
   private static LicenseServicePolicyValidatorImpl svc(

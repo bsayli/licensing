@@ -41,14 +41,10 @@ cache:
       ttl-minutes: 60
       type: io.github.bsayli.licensing.domain.model.LicenseInfo
     userOfflineInfo:
-      ttl-minutes: 1440
-      type: io.github.bsayli.licensing.domain.model.LicenseInfo
+      ttl-minutes: 1440    # 24h (offline fallback)
     activeClients:
-      ttl-minutes: 180
+      ttl-minutes: 93      # = 90 (exp) + 2 (jitter) + 1 (grace)
       type: io.github.bsayli.licensing.domain.model.ClientSessionSnapshot
-    blacklistedTokens:
-      ttl-minutes: 180
-      type: java.lang.Boolean
 
 logging:
   level:
@@ -110,14 +106,9 @@ retry:
 
 jwt:
   token:
-    expiration: 60m         # 60 minutes for demo
+    expiration: 90m
     max:
-      jitter: 2m            # renewal tolerance (maximum)
-
-caching:
-  spring:
-    clientLicenseInfoTTL: 1h                  # online cache
-    clientLicenseInfoOffLineSupportTTL: 24h   # offline cache (long-lived)
+      jitter: 2m
 
 async:
   pool:

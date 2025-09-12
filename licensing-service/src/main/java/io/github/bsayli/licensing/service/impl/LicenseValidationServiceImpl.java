@@ -42,9 +42,8 @@ public class LicenseValidationServiceImpl implements LicenseValidationService {
 
     String userId = userIdEncryptor.extractAndDecryptUserId(request.licenseKey());
 
-    if (!request.forceTokenRefresh()) {
-      licenseKeyValidationService.assertNoConflictingCachedContext(request, userId);
-    }
+    licenseKeyValidationService.assertNoConflictingCachedContext(request, userId);
+
     LicenseInfo info = licenseEvaluationService.evaluateLicense(request, userId);
 
     return new LicenseValidationResult.Builder()
