@@ -13,7 +13,6 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -51,14 +50,13 @@ class UserAsyncServiceImplTest {
   void success() {
     var svc = service();
     var info = sample();
-    when(userRepository.getUser("u")).thenReturn(Optional.of(info));
+    when(userRepository.getUser("u")).thenReturn(info);
 
-    CompletableFuture<Optional<LicenseInfo>> f = svc.getUser("u");
+    CompletableFuture<LicenseInfo> f = svc.getUser("u");
 
     assertTrue(f.isDone());
     assertFalse(f.isCompletedExceptionally());
-    assertTrue(f.join().isPresent());
-    assertEquals(info, f.join().get());
+    assertEquals(info, f.join());
     verify(userRepository, times(1)).getUser("u");
   }
 
@@ -77,45 +75,46 @@ class UserAsyncServiceImplTest {
             inv -> {
               started.countDown(); // first call has entered repository
               assertTrue(release.await(2, TimeUnit.SECONDS));
-              return Optional.of(info);
+              return info;
             });
 
     try (ExecutorService exec = Executors.newSingleThreadExecutor()) {
-      Future<CompletableFuture<Optional<LicenseInfo>>> first = exec.submit(() -> svc.getUser("u"));
+      Future<CompletableFuture<LicenseInfo>> first = exec.submit(() -> svc.getUser("u"));
 
       assertTrue(started.await(1, TimeUnit.SECONDS), "first call did not reach repo in time");
 
       // second concurrent call for the same userId -> AlreadyProcessingException as failed future
-      CompletableFuture<Optional<LicenseInfo>> second = svc.getUser("u");
+      CompletableFuture<LicenseInfo> second = svc.getUser("u");
       assertTrue(second.isCompletedExceptionally());
       ExecutionException ex2 = assertThrows(ExecutionException.class, second::get);
       assertInstanceOf(AlreadyProcessingException.class, ex2.getCause());
 
       // now let the first call complete
       release.countDown();
-      assertTrue(first.get(2, TimeUnit.SECONDS).join().isPresent());
+      assertEquals(info, first.get(2, TimeUnit.SECONDS).join());
 
       // after slot is released, a new call should succeed
-      when(userRepository.getUser("u")).thenReturn(Optional.of(info));
-      CompletableFuture<Optional<LicenseInfo>> third = svc.getUser("u");
+      when(userRepository.getUser("u")).thenReturn(info);
+      CompletableFuture<LicenseInfo> third = svc.getUser("u");
       assertTrue(third.isDone());
-      assertTrue(third.join().isPresent());
+      assertEquals(info, third.join());
     }
   }
 
   @Test
   @DisplayName(
-      "ProcessingException with connection-based cause -> method throws; recover -> MaxRetryAttemptsExceededException")
+      "ProcessingException with connection-based cause -> method rethrows; recover -> MaxRetryAttemptsExceededException")
   void processingException_connectionBased_then_recoverToMaxRetryExceeded() {
     var svc = service();
-
     ProcessingException pe = new ProcessingException(new SocketTimeoutException("read timed out"));
     when(userRepository.getUser("u")).thenThrow(pe);
 
+    // method rethrows for connection-based errors (retry mekanizması için)
     ProcessingException thrown = assertThrows(ProcessingException.class, () -> svc.getUser("u"));
     assertSame(pe, thrown);
 
-    CompletableFuture<Optional<LicenseInfo>> recovered = svc.recoverUser(pe, "u");
+    // recover -> MaxRetryAttemptsExceededException
+    CompletableFuture<LicenseInfo> recovered = svc.recoverUser(pe, "u");
     ExecutionException ex = assertThrows(ExecutionException.class, recovered::get);
     assertInstanceOf(MaxRetryAttemptsExceededException.class, ex.getCause());
   }
@@ -129,12 +128,12 @@ class UserAsyncServiceImplTest {
     ProcessingException pe = new ProcessingException(new IllegalStateException("oops"));
     when(userRepository.getUser("u")).thenThrow(pe);
 
-    CompletableFuture<Optional<LicenseInfo>> f = svc.getUser("u");
+    CompletableFuture<LicenseInfo> f = svc.getUser("u");
     assertTrue(f.isCompletedExceptionally());
     ExecutionException ex0 = assertThrows(ExecutionException.class, f::get);
     assertSame(pe, ex0.getCause());
 
-    CompletableFuture<Optional<LicenseInfo>> recovered = svc.recoverUser(pe, "u");
+    CompletableFuture<LicenseInfo> recovered = svc.recoverUser(pe, "u");
     ExecutionException ex = assertThrows(ExecutionException.class, recovered::get);
     assertSame(pe, ex.getCause());
   }
@@ -146,7 +145,7 @@ class UserAsyncServiceImplTest {
     RuntimeException boom = new RuntimeException("boom");
     when(userRepository.getUser("u")).thenThrow(boom);
 
-    CompletableFuture<Optional<LicenseInfo>> f = svc.getUser("u");
+    CompletableFuture<LicenseInfo> f = svc.getUser("u");
     ExecutionException ex = assertThrows(ExecutionException.class, f::get);
     assertSame(boom, ex.getCause());
   }
@@ -157,7 +156,7 @@ class UserAsyncServiceImplTest {
     var svc = service();
     Throwable t = new Throwable("low-level error");
 
-    CompletableFuture<Optional<LicenseInfo>> recovered = svc.recoverUser(t, "u");
+    CompletableFuture<LicenseInfo> recovered = svc.recoverUser(t, "u");
     ExecutionException ex = assertThrows(ExecutionException.class, recovered::get);
     assertEquals(
         "io.github.bsayli.licensing.service.exception.internal.LicenseServiceInternalException",
@@ -166,7 +165,7 @@ class UserAsyncServiceImplTest {
 
   @Test
   @DisplayName(
-      "ProcessingException with UnknownHostException cause (connection-based) -> method throws; recover -> MaxRetryAttemptsExceededException")
+      "ProcessingException with UnknownHostException cause (connection-based) -> method rethrows; recover -> MaxRetryAttemptsExceededException")
   void processingException_unknownHost_then_recoverToMaxRetryExceeded() {
     var svc = service();
 
@@ -176,7 +175,7 @@ class UserAsyncServiceImplTest {
     ProcessingException thrown = assertThrows(ProcessingException.class, () -> svc.getUser("u"));
     assertSame(pe, thrown);
 
-    CompletableFuture<Optional<LicenseInfo>> recovered = svc.recoverUser(pe, "u");
+    CompletableFuture<LicenseInfo> recovered = svc.recoverUser(pe, "u");
     ExecutionException ex = assertThrows(ExecutionException.class, recovered::get);
     assertInstanceOf(MaxRetryAttemptsExceededException.class, ex.getCause());
   }

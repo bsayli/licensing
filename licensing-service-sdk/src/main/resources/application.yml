@@ -25,6 +25,10 @@ logging:
     org.springframework.security: INFO
     io.github.bsayli.licensing.sdk: DEBUG
 
+caching:
+  spring:
+    licenseTokenTTL: 65m   # örnek; dilersen jwt süresine göre ayarlarsın
+
 licensing:
   sdk:
     api:

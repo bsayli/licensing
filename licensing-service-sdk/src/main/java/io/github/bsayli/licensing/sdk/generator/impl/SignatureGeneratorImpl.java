@@ -5,7 +5,6 @@ import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.sdk.domain.model.SignatureData;
 import io.github.bsayli.licensing.sdk.generator.SignatureGenerator;
-
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -32,7 +31,8 @@ public class SignatureGeneratorImpl implements SignatureGenerator {
   @Override
   public String generateForIssue(IssueAccessRequest request) {
     String keyHash = base64Sha256(request.getLicenseKey());
-    SignatureData payload = SignatureData.builder()
+    SignatureData payload =
+        SignatureData.builder()
             .serviceId(request.getServiceId())
             .serviceVersion(request.getServiceVersion())
             .instanceId(request.getInstanceId())
@@ -45,7 +45,8 @@ public class SignatureGeneratorImpl implements SignatureGenerator {
   public String generateForValidate(String licenseToken, ValidateAccessRequest request) {
     Objects.requireNonNull(licenseToken, "licenseToken");
     String tokenHash = base64Sha256(licenseToken);
-    SignatureData payload = SignatureData.builder()
+    SignatureData payload =
+        SignatureData.builder()
             .serviceId(request.getServiceId())
             .serviceVersion(request.getServiceVersion())
             .instanceId(request.getInstanceId())

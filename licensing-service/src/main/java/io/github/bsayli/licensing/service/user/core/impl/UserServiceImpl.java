@@ -11,7 +11,6 @@ import io.github.bsayli.licensing.service.user.core.UserService;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.Optional;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.HttpHostConnectException;
 import org.springframework.cache.annotation.CacheEvict;
@@ -49,13 +48,13 @@ public class UserServiceImpl implements UserService {
               delayExpression = "#{@retryProperties.userService.initialDelay}",
               maxDelayExpression = "#{@retryProperties.userService.maxDelay}",
               multiplierExpression = "#{@retryProperties.userService.multiplier}"))
-  public Optional<LicenseInfo> getUser(String userId) {
+  public LicenseInfo getUser(String userId) {
     return userRepository.getUser(userId);
   }
 
   @Override
   @CacheEvict(value = "userInfoCache", key = "#userId")
-  public Optional<LicenseInfo> updateLicenseUsage(String userId, String instanceId) {
+  public LicenseInfo updateLicenseUsage(String userId, String instanceId) {
     try {
       return userRepository.updateLicenseUsage(userId, instanceId);
     } catch (UserNotFoundException e) {
@@ -64,7 +63,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Recover
-  public Optional<LicenseInfo> recoverUser(Throwable cause, String userId) {
+  public LicenseInfo recoverUser(Throwable cause, String userId) {
     if (cause instanceof jakarta.ws.rs.ProcessingException pe
         && ConnectionExceptionPredicate.isConnectionBasedException.test(pe)) {
       return userRecoveryService.recoverUser(userId, pe);

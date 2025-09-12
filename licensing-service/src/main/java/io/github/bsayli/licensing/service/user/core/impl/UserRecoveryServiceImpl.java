@@ -6,7 +6,6 @@ import io.github.bsayli.licensing.service.exception.internal.LicenseServiceInter
 import io.github.bsayli.licensing.service.user.core.UserRecoveryService;
 import io.github.bsayli.licensing.service.user.orchestration.UserCacheManagementService;
 import jakarta.ws.rs.ProcessingException;
-import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,12 +18,13 @@ public class UserRecoveryServiceImpl implements UserRecoveryService {
   }
 
   @Override
-  public Optional<LicenseInfo> recoverUser(String userId, ProcessingException cause) {
+  public LicenseInfo recoverUser(String userId, ProcessingException cause) {
     if (ConnectionExceptionPredicate.isConnectionBasedException.test(cause)) {
-      Optional<LicenseInfo> cached = cache.getOffline(userId);
-      if (cached.isPresent()) {
+      LicenseInfo cached = cache.getOffline(userId);
+      if (cached != null) {
         return cached;
       }
+      throw new LicenseServiceInternalException("Offline cache miss for user " + userId, cause);
     }
     throw new LicenseServiceInternalException(cause);
   }

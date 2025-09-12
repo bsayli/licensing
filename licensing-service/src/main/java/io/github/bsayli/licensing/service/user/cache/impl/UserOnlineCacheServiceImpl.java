@@ -1,11 +1,11 @@
 package io.github.bsayli.licensing.service.user.cache.impl;
 
-import io.github.bsayli.licensing.cache.CacheNames;
+import static io.github.bsayli.licensing.cache.CacheNames.CACHE_USER_INFO;
+
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.service.user.cache.UserCacheService;
-import java.util.Optional;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 @Service("userOnlineCacheService")
@@ -13,19 +13,13 @@ public class UserOnlineCacheServiceImpl implements UserCacheService {
 
   private final Cache cache;
 
-  public UserOnlineCacheServiceImpl(CacheManager cacheManager) {
-    this.cache = requireCache(cacheManager, CacheNames.USER_INFO);
-  }
-
-  private static Cache requireCache(CacheManager mgr, String name) {
-    Cache c = mgr.getCache(name);
-    if (c == null) throw new IllegalStateException("Cache not configured: " + name);
-    return c;
+  public UserOnlineCacheServiceImpl(@Qualifier(CACHE_USER_INFO) Cache cache) {
+    this.cache = cache;
   }
 
   @Override
-  public Optional<LicenseInfo> get(String userId) {
-    return Optional.ofNullable(cache.get(userId, LicenseInfo.class));
+  public LicenseInfo get(String userId) {
+    return cache.get(userId, LicenseInfo.class);
   }
 
   @Override

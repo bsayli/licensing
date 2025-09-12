@@ -4,7 +4,6 @@ import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.service.user.cache.UserCacheService;
 import io.github.bsayli.licensing.service.user.core.UserAsyncService;
 import io.github.bsayli.licensing.service.user.orchestration.UserCacheManagementService;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +29,9 @@ public class UserCacheManagementServiceImpl implements UserCacheManagementServic
 
   @Override
   public void refreshAsync(String userId) {
-    CompletableFuture<Optional<LicenseInfo>> future = userAsyncService.getUser(userId);
+    CompletableFuture<LicenseInfo> future = userAsyncService.getUser(userId);
     future.whenComplete(
-        (opt, ex) -> {
+        (info, ex) -> {
           if (ex != null) {
             log.warn(
                 "Async refresh failed for userId={} ({}: {})",
@@ -41,8 +40,7 @@ public class UserCacheManagementServiceImpl implements UserCacheManagementServic
                 ex.getMessage());
             return;
           }
-          if (opt.isPresent()) {
-            LicenseInfo info = opt.get();
+          if (info != null) {
             onlineCache.put(userId, info);
             offlineCache.put(userId, info);
           } else {
@@ -54,8 +52,8 @@ public class UserCacheManagementServiceImpl implements UserCacheManagementServic
   }
 
   @Override
-  public Optional<LicenseInfo> getOffline(String userId) {
-    return offlineCache.get(userId);
+  public LicenseInfo getOffline(String userId) {
+    return offlineCache.get(userId); // null if not cached
   }
 
   @Override

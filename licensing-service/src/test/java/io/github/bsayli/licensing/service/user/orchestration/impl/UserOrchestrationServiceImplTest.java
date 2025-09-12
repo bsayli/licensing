@@ -9,7 +9,6 @@ import io.github.bsayli.licensing.service.user.core.UserService;
 import io.github.bsayli.licensing.service.user.orchestration.UserCacheManagementService;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -48,13 +47,13 @@ class UserOrchestrationServiceImplTest {
       "getLicenseInfo: offline present & online missing -> returns offline and refreshes async")
   void getLicense_offline_present_triggers_refresh() {
     var info = li();
-    when(cache.getOffline("u")).thenReturn(Optional.of(info));
+    when(cache.getOffline("u")).thenReturn(info);
     when(cache.isOnlineMissing("u")).thenReturn(true);
 
-    Optional<LicenseInfo> out = svc().getLicenseInfo("u");
+    LicenseInfo out = svc().getLicenseInfo("u");
 
-    assertTrue(out.isPresent());
-    assertEquals(info, out.get());
+    assertNotNull(out);
+    assertEquals(info, out);
     InOrder in = inOrder(cache);
     in.verify(cache).getOffline("u");
     in.verify(cache).isOnlineMissing("u");
@@ -67,13 +66,13 @@ class UserOrchestrationServiceImplTest {
   @DisplayName("getLicenseInfo: offline present & online exists -> returns offline, no refresh")
   void getLicense_offline_present_no_refresh() {
     var info = li();
-    when(cache.getOffline("u")).thenReturn(Optional.of(info));
+    when(cache.getOffline("u")).thenReturn(info);
     when(cache.isOnlineMissing("u")).thenReturn(false);
 
-    Optional<LicenseInfo> out = svc().getLicenseInfo("u");
+    LicenseInfo out = svc().getLicenseInfo("u");
 
-    assertTrue(out.isPresent());
-    assertEquals(info, out.get());
+    assertNotNull(out);
+    assertEquals(info, out);
     verify(cache).getOffline("u");
     verify(cache).isOnlineMissing("u");
     verify(cache, never()).refreshAsync(anyString());
@@ -82,16 +81,16 @@ class UserOrchestrationServiceImplTest {
   }
 
   @Test
-  @DisplayName("getLicenseInfo: offline empty -> fetch online, putOffline(value), return value")
-  void getLicense_offline_empty_online_present() {
+  @DisplayName("getLicenseInfo: offline null -> fetch online, putOffline(value), return value")
+  void getLicense_offline_null_online_present() {
     var info = li();
-    when(cache.getOffline("u")).thenReturn(Optional.empty());
-    when(userService.getUser("u")).thenReturn(Optional.of(info));
+    when(cache.getOffline("u")).thenReturn(null);
+    when(userService.getUser("u")).thenReturn(info);
 
-    Optional<LicenseInfo> out = svc().getLicenseInfo("u");
+    LicenseInfo out = svc().getLicenseInfo("u");
 
-    assertTrue(out.isPresent());
-    assertEquals(info, out.get());
+    assertNotNull(out);
+    assertEquals(info, out);
     InOrder in = inOrder(cache, userService);
     in.verify(cache).getOffline("u");
     in.verify(userService).getUser("u");
@@ -100,14 +99,14 @@ class UserOrchestrationServiceImplTest {
   }
 
   @Test
-  @DisplayName("getLicenseInfo: offline empty & online empty -> putOffline(null), return empty")
-  void getLicense_offline_empty_online_empty() {
-    when(cache.getOffline("u")).thenReturn(Optional.empty());
-    when(userService.getUser("u")).thenReturn(Optional.empty());
+  @DisplayName("getLicenseInfo: offline null & online null -> putOffline(null), return null")
+  void getLicense_offline_null_online_null() {
+    when(cache.getOffline("u")).thenReturn(null);
+    when(userService.getUser("u")).thenReturn(null);
 
-    Optional<LicenseInfo> out = svc().getLicenseInfo("u");
+    LicenseInfo out = svc().getLicenseInfo("u");
 
-    assertTrue(out.isEmpty());
+    assertNull(out);
     InOrder in = inOrder(cache, userService);
     in.verify(cache).getOffline("u");
     in.verify(userService).getUser("u");
@@ -119,7 +118,7 @@ class UserOrchestrationServiceImplTest {
   @DisplayName("recordUsage: update present -> putBoth(value)")
   void recordUsage_present() {
     var info = li();
-    when(userService.updateLicenseUsage("u", "inst")).thenReturn(Optional.of(info));
+    when(userService.updateLicenseUsage("u", "inst")).thenReturn(info);
 
     svc().recordUsage("u", "inst");
 
@@ -130,9 +129,9 @@ class UserOrchestrationServiceImplTest {
   }
 
   @Test
-  @DisplayName("recordUsage: update empty -> putBoth(null)")
-  void recordUsage_empty() {
-    when(userService.updateLicenseUsage("u", "inst")).thenReturn(Optional.empty());
+  @DisplayName("recordUsage: update null -> putBoth(null)")
+  void recordUsage_null() {
+    when(userService.updateLicenseUsage("u", "inst")).thenReturn(null);
 
     svc().recordUsage("u", "inst");
 

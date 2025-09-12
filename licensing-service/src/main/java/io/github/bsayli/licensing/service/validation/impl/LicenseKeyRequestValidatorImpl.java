@@ -10,7 +10,6 @@ import io.github.bsayli.licensing.service.exception.request.InvalidRequestExcept
 import io.github.bsayli.licensing.service.exception.token.TokenAlreadyExistsException;
 import io.github.bsayli.licensing.service.validation.LicenseKeyRequestValidator;
 import java.util.Objects;
-import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -40,13 +39,11 @@ public class LicenseKeyRequestValidatorImpl implements LicenseKeyRequestValidato
   @Override
   public void assertNoConflictingCachedContext(IssueAccessRequest request, String userId) {
     String clientId = clientIdGenerator.getClientId(request);
-    Optional<ClientSessionSnapshot> cachedOpt = cacheService.find(clientId);
-
-    if (cachedOpt.isEmpty()) {
+    ClientSessionSnapshot cached = cacheService.find(clientId);
+    if (cached == null) {
       return;
     }
 
-    ClientSessionSnapshot cached = cachedOpt.get();
     String cachedUserId = userIdEncryptor.decrypt(cached.encUserId());
 
     boolean sameServiceId = Objects.equals(cached.serviceId(), request.serviceId());

@@ -1,11 +1,9 @@
 package io.github.bsayli.licensing.service.user.core;
 
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
-import java.util.Optional;
 
 public interface UserService {
+  LicenseInfo getUser(String userId);
 
-  Optional<LicenseInfo> updateLicenseUsage(String userId, String instanceId);
-
-  Optional<LicenseInfo> getUser(String userId);
+  LicenseInfo updateLicenseUsage(String userId, String instanceId);
 }

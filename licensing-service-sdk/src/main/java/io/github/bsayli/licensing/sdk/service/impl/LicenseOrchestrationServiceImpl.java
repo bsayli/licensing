@@ -11,7 +11,7 @@ import io.github.bsayli.licensing.sdk.common.exception.LicensingSdkHttpTransport
 import io.github.bsayli.licensing.sdk.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.sdk.generator.SignatureGenerator;
 import io.github.bsayli.licensing.sdk.service.LicenseOrchestrationService;
-import io.github.bsayli.licensing.sdk.service.LicenseTokenService;
+import io.github.bsayli.licensing.sdk.service.LicenseTokenCacheService;
 import io.github.bsayli.licensing.sdk.service.client.LicenseServiceClient;
 import io.github.bsayli.licensing.sdk.service.handler.LicenseResponseHandler;
 import org.springframework.http.HttpStatusCode;
@@ -21,19 +21,19 @@ import org.springframework.stereotype.Service;
 public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationService {
 
   private final LicenseServiceClient licenseServiceClient;
-  private final LicenseTokenService licenseTokenService;
+  private final LicenseTokenCacheService licenseTokenCacheService;
   private final ClientIdGenerator clientIdGenerator;
   private final SignatureGenerator signatureGenerator;
   private final LicenseResponseHandler responseHandler;
 
   public LicenseOrchestrationServiceImpl(
-          LicenseServiceClient licenseServiceClient,
-          LicenseTokenService licenseTokenService,
-          ClientIdGenerator clientIdGenerator,
-          SignatureGenerator signatureGenerator,
-          LicenseResponseHandler responseHandler) {
+      LicenseServiceClient licenseServiceClient,
+      LicenseTokenCacheService licenseTokenCacheService,
+      ClientIdGenerator clientIdGenerator,
+      SignatureGenerator signatureGenerator,
+      LicenseResponseHandler responseHandler) {
     this.licenseServiceClient = licenseServiceClient;
-    this.licenseTokenService = licenseTokenService;
+    this.licenseTokenCacheService = licenseTokenCacheService;
     this.clientIdGenerator = clientIdGenerator;
     this.signatureGenerator = signatureGenerator;
     this.responseHandler = responseHandler;
@@ -42,43 +42,43 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
   @Override
   public LicenseToken getLicenseToken(LicenseAccessRequest request) {
     final String clientId = clientIdGenerator.getClientId(request);
-    final String cached = licenseTokenService.getLicenseToken(clientId);
+    final String cached = licenseTokenCacheService.get(clientId);
 
     try {
       if (cached == null) {
         IssueAccessRequest issueReq =
-                new IssueAccessRequest()
-                        .serviceId(request.serviceId())
-                        .serviceVersion(request.serviceVersion())
-                        .instanceId(request.instanceId())
-                        .checksum(request.checksum())
-                        .licenseKey(request.licenseKey())
-                        .forceTokenRefresh(Boolean.FALSE);
+            new IssueAccessRequest()
+                .serviceId(request.serviceId())
+                .serviceVersion(request.serviceVersion())
+                .instanceId(request.instanceId())
+                .checksum(request.checksum())
+                .licenseKey(request.licenseKey())
+                .forceTokenRefresh(Boolean.FALSE);
 
         issueReq.setSignature(signatureGenerator.generateForIssue(issueReq));
 
         ApiClientResponse<LicenseAccessResponse> resp = licenseServiceClient.issueAccess(issueReq);
         String token = responseHandler.extractTokenOrThrow(resp);
 
-        licenseTokenService.storeLicenseToken(clientId, token);
+        licenseTokenCacheService.put(clientId, token);
         return new LicenseToken(token);
       }
 
       ValidateAccessRequest validateReq =
-              new ValidateAccessRequest()
-                      .serviceId(request.serviceId())
-                      .serviceVersion(request.serviceVersion())
-                      .instanceId(request.instanceId())
-                      .checksum(request.checksum());
+          new ValidateAccessRequest()
+              .serviceId(request.serviceId())
+              .serviceVersion(request.serviceVersion())
+              .instanceId(request.instanceId())
+              .checksum(request.checksum());
 
       validateReq.setSignature(signatureGenerator.generateForValidate(cached, validateReq));
 
       ApiClientResponse<LicenseAccessResponse> vResp =
-              licenseServiceClient.validateAccess(cached, validateReq);
+          licenseServiceClient.validateAccess(cached, validateReq);
 
       String maybeRefreshed = responseHandler.extractTokenOrThrow(vResp);
       if (maybeRefreshed != null && !maybeRefreshed.isBlank()) {
-        licenseTokenService.storeLicenseToken(clientId, maybeRefreshed);
+        licenseTokenCacheService.put(clientId, maybeRefreshed);
         return new LicenseToken(maybeRefreshed);
       }
       return new LicenseToken(cached);
@@ -88,7 +88,7 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
       String msgKey = e.getMessageKey();
       String raw = e.getResponseBody();
       throw new LicensingSdkHttpTransportException(
-              "[SDK] transport/parse error when calling licensing-service", status, msgKey, raw, e);
+          "[SDK] transport/parse error when calling licensing-service", status, msgKey, raw, e);
     }
   }
 }

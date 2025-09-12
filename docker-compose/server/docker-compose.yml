@@ -41,7 +41,7 @@ services:
       --requirepass ${REDIS_PASSWORD:-RedBar9182_}
       --appendonly no
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-RedBar9182_} ping | grep PONG"]
+      test: [ "CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-RedBar9182_} ping | grep PONG" ]
       interval: 10s
       timeout: 3s
       retries: 5

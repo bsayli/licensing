@@ -11,7 +11,6 @@ import jakarta.ws.rs.ProcessingException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,7 +53,7 @@ public class UserAsyncServiceImpl implements UserAsyncService {
               delayExpression = "#{@retryProperties.userServiceAsync.initialDelay}",
               maxDelayExpression = "#{@retryProperties.userServiceAsync.maxDelay}",
               multiplierExpression = "#{@retryProperties.userServiceAsync.multiplier}"))
-  public CompletableFuture<Optional<LicenseInfo>> getUser(String userId) {
+  public CompletableFuture<LicenseInfo> getUser(String userId) {
     if (!ongoingUsers.add(userId)) {
       return CompletableFuture.failedFuture(new AlreadyProcessingException(userId));
     }
@@ -62,7 +61,7 @@ public class UserAsyncServiceImpl implements UserAsyncService {
     boolean releaseSlot = true;
     try {
       log.debug("Async fetch start userId={} thread={}", userId, Thread.currentThread().getName());
-      Optional<LicenseInfo> result = userRepository.getUser(userId);
+      LicenseInfo result = userRepository.getUser(userId);
       return CompletableFuture.completedFuture(result);
 
     } catch (ProcessingException pe) {
@@ -85,7 +84,7 @@ public class UserAsyncServiceImpl implements UserAsyncService {
   }
 
   @Recover
-  public CompletableFuture<Optional<LicenseInfo>> recoverUser(Throwable cause, String userId) {
+  public CompletableFuture<LicenseInfo> recoverUser(Throwable cause, String userId) {
     ongoingUsers.remove(userId);
     if (cause instanceof jakarta.ws.rs.ProcessingException pe
         && ConnectionExceptionPredicate.isConnectionBasedException.test(pe)) {
