@@ -52,8 +52,7 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
                 .serviceVersion(request.serviceVersion())
                 .instanceId(request.instanceId())
                 .checksum(request.checksum())
-                .licenseKey(request.licenseKey())
-                .forceTokenRefresh(Boolean.FALSE);
+                .licenseKey(request.licenseKey());
 
         issueReq.setSignature(signatureGenerator.generateForIssue(issueReq));
 
@@ -76,11 +75,12 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
       ApiClientResponse<LicenseAccessResponse> vResp =
           licenseServiceClient.validateAccess(cached, validateReq);
 
-      String maybeRefreshed = responseHandler.extractTokenOrThrow(vResp);
+      String maybeRefreshed = responseHandler.tokenIfOkOrNullOrThrow(vResp);
       if (maybeRefreshed != null && !maybeRefreshed.isBlank()) {
         licenseTokenCacheService.put(clientId, maybeRefreshed);
         return new LicenseToken(maybeRefreshed);
       }
+
       return new LicenseToken(cached);
 
     } catch (ApiClientException e) {

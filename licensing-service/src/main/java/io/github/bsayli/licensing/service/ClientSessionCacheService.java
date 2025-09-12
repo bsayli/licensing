@@ -8,4 +8,6 @@ public interface ClientSessionCacheService {
   void put(ClientInfo clientInfo);
 
   ClientSessionSnapshot find(String clientId);
+
+  void evict(String clientId);
 }

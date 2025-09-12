@@ -40,4 +40,9 @@ public class ClientSessionCacheServiceImpl implements ClientSessionCacheService 
   public ClientSessionSnapshot find(String clientId) {
     return cache.get(clientId, ClientSessionSnapshot.class);
   }
+
+  @Override
+  public void evict(String clientId) {
+    cache.evict(clientId);
+  }
 }

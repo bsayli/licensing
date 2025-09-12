@@ -1,7 +1,6 @@
 package io.github.bsayli.licensing.cache;
 
 import static io.github.bsayli.licensing.cache.CacheNames.CACHE_ACTIVE_CLIENTS;
-import static io.github.bsayli.licensing.cache.CacheNames.CACHE_BLACKLISTED_TOKENS;
 import static io.github.bsayli.licensing.cache.CacheNames.CACHE_USER_INFO;
 import static io.github.bsayli.licensing.cache.CacheNames.CACHE_USER_OFFLINE_INFO;
 
@@ -62,6 +61,7 @@ public class CacheConfig {
     return RedisCacheManager.builder(connectionFactory)
         .cacheDefaults(defaultConfig)
         .withInitialCacheConfigurations(cacheConfigs)
+        .disableCreateOnMissingCache()
         .build();
   }
 
@@ -117,23 +117,26 @@ public class CacheConfig {
     return new SimpleCacheErrorHandler();
   }
 
+  private Cache requireCache(CacheManager cm, String name) {
+    Cache c = cm.getCache(name);
+    if (c == null) {
+      throw new IllegalStateException("Cache not configured: " + name);
+    }
+    return c;
+  }
+
   @Bean(name = CACHE_USER_INFO)
   public Cache userInfoCache(CacheManager cm) {
-    return cm.getCache(CACHE_USER_INFO);
+    return requireCache(cm, CACHE_USER_INFO);
   }
 
   @Bean(name = CACHE_USER_OFFLINE_INFO)
   public Cache userOfflineInfoCache(CacheManager cm) {
-    return cm.getCache(CACHE_USER_OFFLINE_INFO);
+    return requireCache(cm, CACHE_USER_OFFLINE_INFO);
   }
 
   @Bean(name = CACHE_ACTIVE_CLIENTS)
   public Cache activeClients(CacheManager cm) {
-    return cm.getCache(CACHE_ACTIVE_CLIENTS);
-  }
-
-  @Bean(name = CACHE_BLACKLISTED_TOKENS)
-  public Cache blacklistedTokens(CacheManager cm) {
-    return cm.getCache(CACHE_BLACKLISTED_TOKENS);
+    return requireCache(cm, CACHE_ACTIVE_CLIENTS);
   }
 }

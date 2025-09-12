@@ -10,7 +10,6 @@ import io.github.bsayli.licensing.service.exception.token.TokenAccessDeniedExcep
 import io.github.bsayli.licensing.service.exception.token.TokenExpiredException;
 import io.github.bsayli.licensing.service.exception.token.TokenInvalidException;
 import io.github.bsayli.licensing.service.exception.token.TokenIsTooOldForRefreshException;
-import io.github.bsayli.licensing.service.jwt.JwtBlacklistService;
 import io.github.bsayli.licensing.service.jwt.JwtService;
 import io.github.bsayli.licensing.service.validation.TokenRequestValidator;
 import io.jsonwebtoken.Claims;
@@ -23,7 +22,6 @@ public class TokenRequestValidatorImpl implements TokenRequestValidator {
 
   private final JwtService jwtService;
   private final ClientSessionCacheService cacheService;
-  private final JwtBlacklistService jwtBlacklistService;
   private final ClientIdGenerator clientIdGenerator;
   private final SignatureValidator signatureValidator;
 
@@ -31,11 +29,9 @@ public class TokenRequestValidatorImpl implements TokenRequestValidator {
       JwtService jwtService,
       ClientSessionCacheService cacheService,
       ClientIdGenerator clientIdGenerator,
-      JwtBlacklistService jwtBlacklistService,
       SignatureValidator signatureValidator) {
     this.jwtService = jwtService;
     this.cacheService = cacheService;
-    this.jwtBlacklistService = jwtBlacklistService;
     this.clientIdGenerator = clientIdGenerator;
     this.signatureValidator = signatureValidator;
   }
@@ -45,9 +41,6 @@ public class TokenRequestValidatorImpl implements TokenRequestValidator {
     signatureValidator.validate(request, token);
 
     if (!jwtService.validateTokenFormat(token)) {
-      throw new TokenInvalidException();
-    }
-    if (jwtBlacklistService.isBlacklisted(token)) {
       throw new TokenInvalidException();
     }
 

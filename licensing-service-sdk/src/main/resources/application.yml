@@ -27,7 +27,7 @@ logging:
 
 caching:
   spring:
-    licenseTokenTTL: 65m   # örnek; dilersen jwt süresine göre ayarlarsın
+    licenseTokenTTL: 90m
 
 licensing:
   sdk:

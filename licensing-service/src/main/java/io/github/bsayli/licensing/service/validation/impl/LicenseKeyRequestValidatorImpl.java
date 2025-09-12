@@ -7,7 +7,6 @@ import io.github.bsayli.licensing.security.SignatureValidator;
 import io.github.bsayli.licensing.security.UserIdEncryptor;
 import io.github.bsayli.licensing.service.ClientSessionCacheService;
 import io.github.bsayli.licensing.service.exception.request.InvalidRequestException;
-import io.github.bsayli.licensing.service.exception.token.TokenAlreadyExistsException;
 import io.github.bsayli.licensing.service.validation.LicenseKeyRequestValidator;
 import java.util.Objects;
 import org.springframework.stereotype.Service;
@@ -38,24 +37,24 @@ public class LicenseKeyRequestValidatorImpl implements LicenseKeyRequestValidato
 
   @Override
   public void assertNoConflictingCachedContext(IssueAccessRequest request, String userId) {
-    String clientId = clientIdGenerator.getClientId(request);
-    ClientSessionSnapshot cached = cacheService.find(clientId);
+    final String clientId = clientIdGenerator.getClientId(request);
+    final ClientSessionSnapshot cached = cacheService.find(clientId);
     if (cached == null) {
       return;
     }
 
-    String cachedUserId = userIdEncryptor.decrypt(cached.encUserId());
+    final String cachedUserId = userIdEncryptor.decrypt(cached.encUserId());
 
-    boolean sameServiceId = Objects.equals(cached.serviceId(), request.serviceId());
-    boolean sameServiceVersion = Objects.equals(cached.serviceVersion(), request.serviceVersion());
-    boolean sameChecksum = Objects.equals(cached.checksum(), request.checksum());
-    boolean sameUser = Objects.equals(cachedUserId, userId);
-
-    boolean sameContext = sameServiceId && sameServiceVersion && sameChecksum && sameUser;
+    final boolean sameContext =
+        Objects.equals(cached.serviceId(), request.serviceId())
+            && Objects.equals(cached.serviceVersion(), request.serviceVersion())
+            && Objects.equals(cached.checksum(), request.checksum())
+            && Objects.equals(cachedUserId, userId);
 
     if (sameContext) {
-      throw new TokenAlreadyExistsException();
+      return;
     }
+
     throw new InvalidRequestException();
   }
 }

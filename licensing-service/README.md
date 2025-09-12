@@ -2,7 +2,7 @@
 
 A Spring Boot 3 application that issues and validates license **access tokens (JWT/EdDSA)** for client applications. It
 integrates with **Keycloak** to read per‑user license metadata, provides **detached signature** verification for request
-integrity, and uses **Caffeine** caches for performance and token/session handling. This document describes only the *
+integrity, and uses **Redis** caches for performance and token/session handling. This document describes only the *
 *licensing-service** subproject.
 
 ---
@@ -37,8 +37,8 @@ integrity, and uses **Caffeine** caches for performance and token/session handli
 * **Detached signature** validation on requests
 * **Keycloak** as user/license source
 * **Usage accounting** (tracks unique instanceIds)
-* **Token refresh orchestration** (blacklist & re-issue)
-* **Caffeine** caches (online/offline user info, sessions, blacklist)
+* **Token refresh orchestration** (re-issue)
+* **Redis** caches (online/offline user info, sessions)
 * **Internationalized** error messages (messages.properties)
 * **OpenAPI** with schema wrappers (generic ApiResponse<T>)
 
@@ -51,7 +51,7 @@ integrity, and uses **Caffeine** caches for performance and token/session handli
 3. Service **evaluates license** (Keycloak + policy checks).
 4. Service **issues JWT** and **caches** client session context.
 5. Client later calls `POST /v1/licenses/access/validate` with the JWT + detached signature.
-6. Service verifies signature, JWT validity/blacklist, and **matches request to cached context**.
+6. Service verifies signature, JWT validity and **matches request to cached context**.
 
 * If expired *and* cache matches → returns **TOKEN\_REFRESHED** and a new JWT.
 
@@ -80,8 +80,7 @@ Controller: `LicenseController`
   "instanceId": "crm~host123~00:AA:BB:CC:DD:EE",
   "signature": "<Base64 detached signature>",
   "checksum": "<optional checksum>",
-  "licenseKey": "<BSAYLI~RANDOM_BASE64URL~ENCRYPTED_USER_ID>",
-  "forceTokenRefresh": false
+  "licenseKey": "<BSAYLI~RANDOM_BASE64URL~ENCRYPTED_USER_ID>"
 }
 ```
 
@@ -110,8 +109,7 @@ curl -u licensingUser:licensingPass \
         "instanceId":"crm~host123~00:AA:BB:CC:DD:EE",
         "signature":"<BASE64>",
         "checksum":"<OPTIONAL>",
-        "licenseKey":"<LICENSE_KEY>",
-        "forceTokenRefresh":false
+        "licenseKey":"<LICENSE_KEY>"
       }' \
   http://localhost:8081/licensing-service/v1/licenses/access
 ```
@@ -253,12 +251,11 @@ All keys can be overridden by environment variables using Spring’s relaxed bin
 
 ## Caching
 
-Defined in `CacheConfig` (Caffeine):
+Defined in `CacheConfig` (Redis):
 
 * `userInfoCache` — online license data (TTL = `caching.spring.clientLicenseInfoTTL`)
 * `userOfflineInfoCache` — offline fallback (TTL = `caching.spring.clientLicenseInfoOffLineSupportTTL`)
 * `activeClients` — session snapshots (`ClientSessionCache`) with bounded TTL (≤ 3h)
-* `blacklistedTokens` — JWTs revoked on force refresh
 
 ---
 
@@ -333,7 +330,7 @@ licensing-service/
 │  ├─ security/(impls: UserIdEncryptorImpl, SignatureValidatorImpl)
 │  ├─ service/
 │  │  ├─ impl/(LicenseOrchestrationServiceImpl, LicenseValidationServiceImpl, ...)
-│  │  ├─ jwt/(impl/JwtServiceImpl, JwtBlacklistServiceImpl)
+│  │  ├─ jwt/(impl/JwtServiceImpl)
 │  │  ├─ token/LicenseTokenManager.java
 │  │  ├─ user/(cache, core, orchestration)
 │  │  └─ validation/(impl/*)

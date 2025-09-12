@@ -27,18 +27,34 @@ public class LicenseResponseHandler {
     this.messages = messages;
   }
 
+  /** Issue akışı için: HTTP 200 ama token boşsa hata fırlatır. */
   public String extractTokenOrThrow(ApiClientResponse<LicenseAccessResponse> resp) {
-    String token = tokenOrNull(resp);
-    if (token != null) return token;
-    throw buildRemoteException(resp);
+    if (!isOk(resp)) {
+      throw buildRemoteException(resp);
+    }
+    var data = resp.getData();
+    if (data == null || data.getLicenseToken() == null || data.getLicenseToken().isBlank()) {
+      throw new LicensingSdkRemoteServiceException(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          CODE_EMPTY_TOKEN,
+          messages.getMessage(KEY_TOP_EMPTY_TOKEN),
+          List.of(messages.getMessage(KEY_DETAIL_EMPTY_TOKEN)));
+    }
+    return data.getLicenseToken();
   }
 
-  private String tokenOrNull(ApiClientResponse<LicenseAccessResponse> resp) {
-    if (!isOk(resp)) return null;
+  /**
+   * Validate akışı için: HTTP 200 ise token null olabilir (ACTIVE case). Token varsa döner, yoksa
+   * null. 200 değilse exception fırlatır.
+   */
+  public String tokenIfOkOrNullOrThrow(ApiClientResponse<LicenseAccessResponse> resp) {
+    if (!isOk(resp)) {
+      throw buildRemoteException(resp);
+    }
     var data = resp.getData();
     if (data == null) return null;
-    String t = data.getLicenseToken();
-    return (t == null || t.isBlank()) ? null : t;
+    String token = data.getLicenseToken();
+    return (token == null || token.isBlank()) ? null : token;
   }
 
   private boolean isOk(ApiClientResponse<?> resp) {
@@ -47,14 +63,6 @@ public class LicenseResponseHandler {
 
   private LicensingSdkRemoteServiceException buildRemoteException(
       ApiClientResponse<LicenseAccessResponse> resp) {
-
-    if (isOk(resp)) {
-      return new LicensingSdkRemoteServiceException(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          CODE_EMPTY_TOKEN,
-          messages.getMessage(KEY_TOP_EMPTY_TOKEN),
-          List.of(messages.getMessage(KEY_DETAIL_EMPTY_TOKEN)));
-    }
 
     HttpStatus status = resolveStatus(resp);
     String top = resolveTopMessage(resp);

@@ -59,6 +59,18 @@ components:
     IssueAccessRequest:
       type: object
       properties:
+        licenseKey:
+          type: string
+          maxLength: 200
+          minLength: 100
+        instanceId:
+          type: string
+          maxLength: 100
+          minLength: 10
+        checksum:
+          type: string
+          maxLength: 200
+          minLength: 40
         serviceId:
           type: string
           maxLength: 50
@@ -67,24 +79,10 @@ components:
           type: string
           maxLength: 20
           minLength: 3
-        instanceId:
-          type: string
-          maxLength: 200
-          minLength: 8
         signature:
           type: string
-          maxLength: 500
-          minLength: 20
-        checksum:
-          type: string
-          maxLength: 500
-          minLength: 20
-        licenseKey:
-          type: string
           maxLength: 200
-          minLength: 100
-        forceTokenRefresh:
-          type: boolean
+          minLength: 60
       required:
         - instanceId
         - licenseKey
@@ -121,6 +119,14 @@ components:
     ValidateAccessRequest:
       type: object
       properties:
+        instanceId:
+          type: string
+          maxLength: 100
+          minLength: 10
+        checksum:
+          type: string
+          maxLength: 200
+          minLength: 40
         serviceId:
           type: string
           maxLength: 50
@@ -129,18 +135,10 @@ components:
           type: string
           maxLength: 20
           minLength: 3
-        instanceId:
-          type: string
-          maxLength: 200
-          minLength: 8
         signature:
           type: string
-          maxLength: 500
-          minLength: 20
-        checksum:
-          type: string
-          maxLength: 500
-          minLength: 20
+          maxLength: 200
+          minLength: 60
       required:
         - instanceId
         - serviceId

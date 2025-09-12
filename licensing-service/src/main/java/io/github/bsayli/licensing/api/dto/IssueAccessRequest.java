@@ -19,5 +19,4 @@ public record IssueAccessRequest(
         String serviceVersion,
     @NotBlank(message = "{signature.required}")
         @Size(min = 60, max = 200, message = "{signature.size}")
-        String signature,
-    boolean forceTokenRefresh) {}
+        String signature) {}

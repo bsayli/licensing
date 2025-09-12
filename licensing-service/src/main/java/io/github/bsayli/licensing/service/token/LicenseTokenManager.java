@@ -1,6 +1,7 @@
 package io.github.bsayli.licensing.service.token;
 
 import io.github.bsayli.licensing.domain.model.ClientInfo;
+import io.github.bsayli.licensing.domain.model.ClientSessionSnapshot;
 import io.github.bsayli.licensing.domain.result.LicenseValidationResult;
 import io.github.bsayli.licensing.service.ClientSessionCacheService;
 import io.github.bsayli.licensing.service.jwt.JwtService;
@@ -35,5 +36,17 @@ public class LicenseTokenManager {
 
     cache.put(clientInfo);
     return token;
+  }
+
+  public String peekActive(String clientId) {
+    ClientSessionSnapshot snap = cache.find(clientId);
+    if (snap == null) return null;
+    try {
+      jwtService.verifyAndExtractJwtClaims(snap.licenseToken());
+      return snap.licenseToken();
+    } catch (io.jsonwebtoken.ExpiredJwtException e) {
+      cache.evict(clientId);
+      return null;
+    }
   }
 }

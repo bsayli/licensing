@@ -24,7 +24,7 @@ public class UserRecoveryServiceImpl implements UserRecoveryService {
       if (cached != null) {
         return cached;
       }
-      throw new LicenseServiceInternalException("Offline cache miss for user " + userId, cause);
+      throw new LicenseServiceInternalException(cause, "Offline cache miss for user " + userId);
     }
     throw new LicenseServiceInternalException(cause);
   }

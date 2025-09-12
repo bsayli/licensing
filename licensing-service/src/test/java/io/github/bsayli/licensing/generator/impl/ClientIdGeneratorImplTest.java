@@ -45,9 +45,8 @@ class ClientIdGeneratorImplTest {
       "getClientId(IssueAccessRequest) deterministic ve checksum var/yok farklı sonuç üretir")
   void issueTokenRequest_idStable() throws Exception {
     var reqWithChecksum =
-        new IssueAccessRequest("LK", "inst-12345678", "chk", "crm", "1.2.3", "sig", false);
-    var reqNoChecksum =
-        new IssueAccessRequest("LK", "inst-12345678", null, "crm", "1.2.3", "sig", false);
+        new IssueAccessRequest("LK", "inst-12345678", "chk", "crm", "1.2.3", "sig");
+    var reqNoChecksum = new IssueAccessRequest("LK", "inst-12345678", null, "crm", "1.2.3", "sig");
 
     String id1 = generator.getClientId(reqWithChecksum);
     String id2 = generator.getClientId(reqNoChecksum);
@@ -60,8 +59,7 @@ class ClientIdGeneratorImplTest {
   @Test
   @DisplayName("ValidateAccessRequest ile IssueAccessRequest aynı girdilerde aynı ID’yi verir")
   void validate_vs_issue_sameResult() throws Exception {
-    var issue =
-        new IssueAccessRequest("LK", "inst-ABCD1234", "cs", "billing", "2.0.0", "sig", false);
+    var issue = new IssueAccessRequest("LK", "inst-ABCD1234", "cs", "billing", "2.0.0", "sig");
     var valid = new ValidateAccessRequest("inst-ABCD1234", "cs", "billing", "2.0.0", "sig");
 
     String idIssue = generator.getClientId(issue);

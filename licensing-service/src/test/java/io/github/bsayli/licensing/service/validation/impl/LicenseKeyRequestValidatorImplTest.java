@@ -10,7 +10,6 @@ import io.github.bsayli.licensing.security.SignatureValidator;
 import io.github.bsayli.licensing.security.UserIdEncryptor;
 import io.github.bsayli.licensing.service.ClientSessionCacheService;
 import io.github.bsayli.licensing.service.exception.request.InvalidRequestException;
-import io.github.bsayli.licensing.service.exception.token.TokenAlreadyExistsException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -31,25 +30,26 @@ class LicenseKeyRequestValidatorImplTest {
 
   @InjectMocks private LicenseKeyRequestValidatorImpl validator;
 
-  private IssueAccessRequest req(String checksum) {
-    String licenseKey = "L".repeat(100) + "~rnd~" + "A".repeat(64); // >=100 and 3 segments
+  private static IssueAccessRequest req(String checksum) {
+    String licenseKey = "L".repeat(100) + "~rnd~" + "A".repeat(64);
     String instanceId = "inst-1";
-    String safeChecksum = checksum != null ? checksum : "c".repeat(40);
+    String safeChecksum = (checksum != null) ? checksum : "c".repeat(40);
     String serviceId = "crm";
     String serviceVersion = "1.2.3";
-    String signature = "S".repeat(60); // >=60
+    String signature = "S".repeat(60);
     return new IssueAccessRequest(
-        licenseKey, instanceId, safeChecksum, serviceId, serviceVersion, signature, false);
+        licenseKey, instanceId, safeChecksum, serviceId, serviceVersion, signature);
   }
 
-  private ClientSessionSnapshot cached(
+  private static ClientSessionSnapshot cached(
       String serviceId, String version, String checksum, String encUserId) {
-    ClientSessionSnapshot c = mock(ClientSessionSnapshot.class);
-    when(c.serviceId()).thenReturn(serviceId);
-    when(c.serviceVersion()).thenReturn(version);
-    when(c.checksum()).thenReturn(checksum);
-    when(c.encUserId()).thenReturn(encUserId);
-    return c;
+    return ClientSessionSnapshot.builder()
+        .serviceId(serviceId)
+        .serviceVersion(version)
+        .checksum(checksum)
+        .encUserId(encUserId)
+        .licenseToken("ignored")
+        .build();
   }
 
   @Test
@@ -58,6 +58,7 @@ class LicenseKeyRequestValidatorImplTest {
     IssueAccessRequest request = req("chk");
     assertDoesNotThrow(() -> validator.assertSignatureValid(request));
     verify(signatureValidator).validate(request);
+    verifyNoMoreInteractions(signatureValidator);
   }
 
   @Test
@@ -68,12 +69,16 @@ class LicenseKeyRequestValidatorImplTest {
     when(cache.find("client-1")).thenReturn(null); // cache miss
 
     assertDoesNotThrow(() -> validator.assertNoConflictingCachedContext(request, "user-1"));
+
+    verify(clientIdGenerator).getClientId(request);
+    verify(cache).find("client-1");
+    verifyNoMoreInteractions(clientIdGenerator, cache);
+    verifyNoInteractions(userIdEncryptor);
   }
 
   @Test
-  @DisplayName(
-      "assertNoConflictingCachedContext throws TokenAlreadyExistsException for same context")
-  void assertNoConflictingCachedContext_sameContext() {
+  @DisplayName("assertNoConflictingCachedContext returns when context matches cached session")
+  void assertNoConflictingCachedContext_sameContext_returns() {
     IssueAccessRequest request = req("chk");
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
 
@@ -81,9 +86,12 @@ class LicenseKeyRequestValidatorImplTest {
     when(cache.find("client-1")).thenReturn(c);
     when(userIdEncryptor.decrypt("encU")).thenReturn("user-1");
 
-    assertThrows(
-        TokenAlreadyExistsException.class,
-        () -> validator.assertNoConflictingCachedContext(request, "user-1"));
+    assertDoesNotThrow(() -> validator.assertNoConflictingCachedContext(request, "user-1"));
+
+    verify(clientIdGenerator).getClientId(request);
+    verify(cache).find("client-1");
+    verify(userIdEncryptor).decrypt("encU");
+    verifyNoMoreInteractions(clientIdGenerator, cache, userIdEncryptor);
   }
 
   @Test
@@ -93,7 +101,6 @@ class LicenseKeyRequestValidatorImplTest {
     IssueAccessRequest request = req("chk");
     when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
 
-    // Different version and different user -> invalid request (not same context)
     ClientSessionSnapshot c = cached("crm", "9.9.9", "chk", "encU");
     when(cache.find("client-1")).thenReturn(c);
     when(userIdEncryptor.decrypt("encU")).thenReturn("user-2");
@@ -101,5 +108,10 @@ class LicenseKeyRequestValidatorImplTest {
     assertThrows(
         InvalidRequestException.class,
         () -> validator.assertNoConflictingCachedContext(request, "user-1"));
+
+    verify(clientIdGenerator).getClientId(request);
+    verify(cache).find("client-1");
+    verify(userIdEncryptor).decrypt("encU");
+    verifyNoMoreInteractions(clientIdGenerator, cache, userIdEncryptor);
   }
 }

@@ -59,16 +59,14 @@ class SignatureValidatorImplTest {
                 + "A".repeat(64)); // just in case a caller passes a short key
 
     String sig = (sigB64 != null && sigB64.length() >= 60) ? sigB64 : "Q".repeat(60);
-    String chk = checksum;
 
     return new IssueAccessRequest(
         lk, // licenseKey
         instanceId, // instanceId
-        chk, // checksum (>= 40 if not null)
+        checksum, // checksum (>= 40 if not null)
         svcId, // serviceId
         ver, // serviceVersion
-        sig, // signature
-        false // forceTokenRefresh
+        sig // signature
         );
   }
 
