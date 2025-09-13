@@ -25,7 +25,7 @@ LABEL org.opencontainers.image.title="licensing-service" \
       org.opencontainers.image.description="Licensing Service (Spring Boot, EdDSA, Caffeine, Keycloak)" \
       org.opencontainers.image.version="1.0.1" \
       org.opencontainers.image.source="https://github.com/bsayli/licensing" \
-      org.opencontainers.image.licenses="Apache-2.0"
+      org.opencontainers.image.licenses="MIT"
 
 COPY --from=builder --chown=appuser:appuser /app/dependencies/ ./
 COPY --from=builder --chown=appuser:appuser /app/snapshot-dependencies/ ./
@@ -38,8 +38,5 @@ ENV SPRING_PROFILES_ACTIVE=default \
     JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -Dfile.encoding=UTF-8"
 
 EXPOSE 8081
-
-HEALTHCHECK --interval=30s --timeout=3s --retries=5 \
-  CMD curl -fsS http://127.0.0.1:8081/licensing-service/actuator/health || exit 1
 
 ENTRYPOINT ["sh","-c","java $JAVA_OPTS -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} -cp /app org.springframework.boot.loader.launch.JarLauncher"]

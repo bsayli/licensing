@@ -1,6 +1,5 @@
 networks:
-  licensing:
-    name: license_network
+  license_network:
     external: true
 
 services:
@@ -9,7 +8,7 @@ services:
     image: licensing-service-sdk-cli:1.0.1
     container_name: licensing-service-sdk-cli
     networks:
-      - licensing
+      - license_network
     environment:
       LICENSE_SERVICE_SDK_URL: "http://licensing-service-sdk:8082/licensing-service-sdk"
       INSTANCE_ID: "licensing-service~demo~00:11:22:33:44:55"
