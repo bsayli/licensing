@@ -1,5 +1,9 @@
 # Licensing Service
 
+[![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
+[![JDK](https://img.shields.io/badge/JDK-21%2B-blue)](https://openjdk.org/projects/jdk/21/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 A Spring Boot 3 application that issues and validates license **access tokens (JWT/EdDSA)** for client applications. It
 integrates with **Keycloak** to read per‑user license metadata, provides **detached signature** verification for request
 integrity, and uses **Redis** caches for performance and token/session handling. This document describes only the *

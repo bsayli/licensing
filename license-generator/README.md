@@ -1,5 +1,9 @@
 # License Management Project — **license-generator**
 
+[![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
+[![JDK](https://img.shields.io/badge/JDK-21%2B-blue)](https://openjdk.org/projects/jdk/21/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 > Tools and libraries for generating keys, license strings, detached signatures, and validating JWT-based license
 > tokens. This README is aimed at **devs/ops** who provision keys and run CLI flows.
 
@@ -180,15 +184,33 @@ mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
 Create or verify **detached** Ed25519 signatures over a JSON payload.
 
 ```bash
-# sign
+# sign (license key flow) – CLI computes Base64(SHA-256(full licenseKey))
 mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
   -Dexec.mainClass=io.github.bsayli.license.cli.SignatureCli \
-  -Dexec.args='--mode sign --dataJson <json> --privateKey <BASE64_PKCS8_PRIV>'
+  -Dexec.args="--mode sign \
+               --serviceId <id> \
+               --serviceVersion <version> \
+               --instanceId <instance> \
+               --licenseKey <FULL_LICENSE_KEY> \
+               --privateKey <BASE64_PKCS8_PRIV>"
 
-# verify
+# sign (token validation flow) – CLI computes Base64(SHA-256(token))
 mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
   -Dexec.mainClass=io.github.bsayli.license.cli.SignatureCli \
-  -Dexec.args='--mode verify --dataJson <json> --signatureB64 <BASE64_SIG> --publicKey <BASE64_SPKI_PUB>'
+  -Dexec.args="--mode sign \
+               --serviceId <id> \
+               --serviceVersion <version> \
+               --instanceId <instance> \
+               --token <JWT> \
+               --privateKey <BASE64_PKCS8_PRIV>"
+
+# verify (detached signature over the exact JSON shown by the signer)
+mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
+  -Dexec.mainClass=io.github.bsayli.license.cli.SignatureCli \
+  -Dexec.args="--mode verify \
+               --dataJson '<exact JSON>' \
+               --signatureB64 <BASE64_SIG> \
+               --publicKey <BASE64_SPKI_PUB>"
 ```
 
 ### LicenseTokenCli
@@ -197,5 +219,6 @@ Offline JWT validation (EdDSA) and claim extraction.
 
 ```bash
 mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
-  -Dexec.mainClass=io.github.bsayli.license.cli.Licen
+  -Dexec.mainClass=io.github.bsayli.license.cli.LicenseTokenCli \
+  -Dexec.args="--publicKey <BASE64_SPKI_ED25519> --token <JWT>"
 ```

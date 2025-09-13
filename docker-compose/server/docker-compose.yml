@@ -65,6 +65,11 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-RedBar9182_}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8081/licensing-service/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
 
   licensing-service-sdk:
@@ -74,10 +79,15 @@ services:
     networks: [ license_network ]
     depends_on:
       licensing-service:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "8082:8082"
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      LICENSE_SERVICE_URL: http://licensing-service:8081
+      LICENSE_SERVICE_URL: http://licensing-service:8081/licensing-service
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8082/licensing-service-sdk/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
