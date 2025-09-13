@@ -25,33 +25,37 @@ public class LicenseSdkClientServiceImpl implements LicenseSdkClientService {
 
   private static final Logger log = LoggerFactory.getLogger(LicenseSdkClientServiceImpl.class);
 
-  private static final Timeout CONNECT_TIMEOUT = Timeout.of(40, TimeUnit.SECONDS);
-  private static final Timeout RESPONSE_TIMEOUT = Timeout.of(40, TimeUnit.SECONDS);
-  private static final int RETRIES = 3;
-
-  private final LicenseSdkClientProperties clientProperties;
+  private final LicenseSdkClientProperties props;
   private final ObjectMapper mapper = new ObjectMapper();
 
   public LicenseSdkClientServiceImpl(LicenseSdkClientProperties clientProperties) {
-    this.clientProperties = clientProperties;
+    this.props = clientProperties;
   }
 
   @Override
   public Integer validateLicense(
       String instanceId, String licenseKey, String serviceId, String serviceVersion) {
-    final String url = normalizeBaseUrl(clientProperties.baseUrl()) + "/v1/licenses/access";
+
+    final String url = joinUrl(props.baseUrl(), props.apiPath());
+
     final LicenseAccessRequest body =
         new LicenseAccessRequest(licenseKey, instanceId, null, serviceId, serviceVersion);
 
-    try (CloseableHttpClient http = buildHttpClient()) {
+    final Timeout connectTimeout =
+        Timeout.of(Math.max(1, props.connectTimeoutSeconds()), TimeUnit.SECONDS);
+    final Timeout responseTimeout =
+        Timeout.of(Math.max(1, props.responseTimeoutSeconds()), TimeUnit.SECONDS);
+
+    try (CloseableHttpClient http =
+        buildHttpClient(props.retries(), props.retryIntervalSeconds())) {
+
       final String jsonBody = mapper.writeValueAsString(body);
+
       final String response =
           Request.post(url)
-              .connectTimeout(CONNECT_TIMEOUT)
-              .responseTimeout(RESPONSE_TIMEOUT)
-              .setHeader(
-                  HttpHeaders.AUTHORIZATION,
-                  basicAuth(clientProperties.appUser(), clientProperties.appPass()))
+              .connectTimeout(connectTimeout)
+              .responseTimeout(responseTimeout)
+              .setHeader(HttpHeaders.AUTHORIZATION, basicAuth(props.appUser(), props.appPass()))
               .setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.toString())
               .bodyString(jsonBody, ContentType.APPLICATION_JSON)
               .execute(http)
@@ -81,9 +85,12 @@ public class LicenseSdkClientServiceImpl implements LicenseSdkClientService {
     }
   }
 
-  private CloseableHttpClient buildHttpClient() {
+  private CloseableHttpClient buildHttpClient(int retries, int retryIntervalSeconds) {
+    int safeRetries = Math.max(0, retries);
+    int safeInterval = Math.max(1, retryIntervalSeconds);
     return HttpClients.custom()
-        .setRetryStrategy(new DefaultHttpRequestRetryStrategy(RETRIES, TimeValue.ofSeconds(3)))
+        .setRetryStrategy(
+            new DefaultHttpRequestRetryStrategy(safeRetries, TimeValue.ofSeconds(safeInterval)))
         .build();
   }
 
@@ -93,9 +100,13 @@ public class LicenseSdkClientServiceImpl implements LicenseSdkClientService {
     return "Basic " + b64;
   }
 
-  private String normalizeBaseUrl(String url) {
-    if (url == null || url.isBlank()) return "";
-    return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+  private String joinUrl(String baseUrl, String path) {
+    if (baseUrl == null || baseUrl.isBlank()) return path == null ? "" : path;
+    if (path == null || path.isBlank()) return baseUrl;
+
+    String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+    String p = path.startsWith("/") ? path : "/" + path;
+    return base + p;
   }
 
   private ApiResponse<LicenseToken> parseApiResponseLicenseToken(String json) {
@@ -133,7 +144,7 @@ public class LicenseSdkClientServiceImpl implements LicenseSdkClientService {
     try {
       byte[] bytes = e.getContentBytes();
       ContentType ct = e.getContentType();
-      if (bytes == null || ct == null || !ContentType.APPLICATION_JSON.isSameMimeType(ct)) {
+      if (bytes == null || !ContentType.APPLICATION_JSON.isSameMimeType(ct)) {
         log.error("No JSON error body available.");
         return;
       }

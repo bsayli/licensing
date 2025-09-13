@@ -1,8 +1,11 @@
 # Licensing Service SDK
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
-[![JDK](https://img.shields.io/badge/JDK-21%2B-blue)](https://openjdk.org/projects/jdk/21/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.x-blue?logo=openapiinitiative)](https://www.openapis.org/)
+[![JWT](https://img.shields.io/badge/JWT-EdDSA-lightgrey?logo=jsonwebtokens)](https://jwt.io/)
+[![Maven](https://img.shields.io/badge/Maven-3.9-blue?logo=apachemaven)](https://maven.apache.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
 
 A Spring Boot 3 client SDK for integrating with the **Licensing Service**. The SDK handles issuing and validating
 license **access tokens (JWT/EdDSA)**, manages client‑side caching, signs requests with detached signatures, and

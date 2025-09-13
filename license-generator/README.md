@@ -1,8 +1,11 @@
 # License Generator
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
-[![JDK](https://img.shields.io/badge/JDK-21%2B-blue)](https://openjdk.org/projects/jdk/21/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
+[![JJWT](https://img.shields.io/badge/JJWT-0.12.x-orange)](https://github.com/jwtk/jjwt)
+[![BouncyCastle](https://img.shields.io/badge/BouncyCastle-1.81-blue)](https://www.bouncycastle.org/)
+[![Jackson](https://img.shields.io/badge/Jackson-2.19.x-lightgrey)](https://github.com/FasterXML/jackson)
+[![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
 
 > Tools and libraries for generating keys, license strings, detached signatures, and validating JWT-based license
 > tokens. This README is aimed at **devs/ops** who provision keys and run CLI flows.

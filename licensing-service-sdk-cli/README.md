@@ -1,8 +1,10 @@
 # Licensing Service SDK CLI
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
-[![JDK](https://img.shields.io/badge/JDK-21%2B-blue)](https://openjdk.org/projects/jdk/21/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![JDK](https://img.shields.io/badge/JDK-21%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
+[![Picocli](https://img.shields.io/badge/Picocli-4.7.x-purple)](https://picocli.info/)
+[![HttpClient5](https://img.shields.io/badge/Apache%20HttpClient-5.x-black?logo=apache)](https://hc.apache.org/httpcomponents-client-5.0.x/)
+[![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
 
 Command-line client for interacting with the **Licensing Service** using the official SDK.
 

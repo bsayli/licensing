@@ -1,8 +1,13 @@
 # Licensing Service
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
-[![JDK](https://img.shields.io/badge/JDK-21%2B-blue)](https://openjdk.org/projects/jdk/21/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
+[![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
+[![Keycloak](https://img.shields.io/badge/Keycloak-26.x-8A2BE2?logo=keycloak)](https://www.keycloak.org/)
+[![Redis](https://img.shields.io/badge/Redis-8.x-red?logo=redis)](https://redis.io/)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.x-blue?logo=openapiinitiative)](https://www.openapis.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
 
 A Spring Boot 3 application that issues and validates license **access tokens (JWT/EdDSA)** for client applications. It
 integrates with **Keycloak** to read per‑user license metadata, provides **detached signature** verification for request

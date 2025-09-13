@@ -1,30 +1,23 @@
-# ---------- BUILD ----------
 FROM maven:3.9.11-eclipse-temurin-21-noble AS builder
 WORKDIR /build
 
-# Sadece POM'ları kopyala
 COPY licensing-service-client/pom.xml licensing-service-client/pom.xml
 COPY licensing-service-sdk/pom.xml     licensing-service-sdk/pom.xml
 
-# Önce sadece CLIENT için bağımlılıkları indir
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -q -DskipTests -f licensing-service-client/pom.xml dependency:go-offline
 
-# Client kaynaklarını kopyala ve local repo'ya install et
 COPY licensing-service-client/ licensing-service-client/
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -q -DskipTests -f licensing-service-client/pom.xml install
 
-# Şimdi SDK kaynaklarını kopyala
 COPY licensing-service-sdk/ licensing-service-sdk/
 
-# SDK için bağımlılıkları indir (artık client local repo'da var) ve paketle
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -q -DskipTests -f licensing-service-sdk/pom.xml dependency:go-offline && \
     mvn -q -T 2C --no-transfer-progress -DskipTests -f licensing-service-sdk/pom.xml clean package && \
     java -Djarmode=layertools -jar licensing-service-sdk/target/*.jar extract
 
-# ---------- RUNTIME ----------
 FROM eclipse-temurin:21.0.8_9-jre-noble
 WORKDIR /app
 
