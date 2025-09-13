@@ -167,3 +167,7 @@ If you notice any issues in this documentation or have suggestions for improveme
 pull request.
 
 For any questions related to the project, please leave a comment in the repository’s discussion or issue tracker.
+
+## ⭐ Support
+
+If you found this project useful, please consider giving it a star ⭐ on GitHub — it helps others discover it too!
