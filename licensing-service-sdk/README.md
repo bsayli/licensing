@@ -257,4 +257,4 @@ licensing-service-sdk/
 
 * **[licensing-service](../licensing-service/README.md)** — server component
 * **[license-generator](../license-generator/README.md)** — key & signature tooling
-* **[sdk-cli](../licensing-service-sdk/sdk-cli/README.md)** — command-line client demo
+* **[licensing-service-sdk-cli](../licensing-service-sdk-cli/README.md)** — command-line client demo
