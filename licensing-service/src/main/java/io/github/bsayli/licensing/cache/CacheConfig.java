@@ -126,12 +126,12 @@ public class CacheConfig {
   }
 
   @Bean(name = CACHE_USER_INFO)
-  public Cache userInfoCache(CacheManager cm) {
+  public Cache userInfo(CacheManager cm) {
     return requireCache(cm, CACHE_USER_INFO);
   }
 
   @Bean(name = CACHE_USER_OFFLINE_INFO)
-  public Cache userOfflineInfoCache(CacheManager cm) {
+  public Cache userOfflineInfo(CacheManager cm) {
     return requireCache(cm, CACHE_USER_OFFLINE_INFO);
   }
 

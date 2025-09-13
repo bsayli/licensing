@@ -1,5 +1,6 @@
 package io.github.bsayli.licensing.service.user.core.impl;
 
+import io.github.bsayli.licensing.cache.CacheNames;
 import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import io.github.bsayli.licensing.repository.exception.UserNotFoundException;
 import io.github.bsayli.licensing.repository.user.UserRepository;
@@ -32,7 +33,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  @Cacheable(value = "userInfoCache", key = "#userId")
+  @Cacheable(value = CacheNames.CACHE_USER_INFO, key = "#userId")
   @Retryable(
       recover = "recoverUser",
       retryFor = {
@@ -53,7 +54,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  @CacheEvict(value = "userInfoCache", key = "#userId")
+  @CacheEvict(value = CacheNames.CACHE_USER_INFO, key = "#userId")
   public LicenseInfo updateLicenseUsage(String userId, String instanceId) {
     try {
       return userRepository.updateLicenseUsage(userId, instanceId);

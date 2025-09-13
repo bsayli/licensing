@@ -19,7 +19,7 @@ public final class SignatureCli {
   private static final String ARG_SERVICE_ID = "--serviceId";
   private static final String ARG_SERVICE_VERSION = "--serviceVersion";
   private static final String ARG_INSTANCE_ID = "--instanceId";
-  private static final String ARG_ENC_KEY = "--encKey"; // raw encrypted license key
+  private static final String ARG_LICENSE_KEY = "--licenseKey"; // FULL licenseKey string
   private static final String ARG_TOKEN = "--token"; // JWT license token
 
   private static final String ARG_PRIVATE_KEY = "--privateKey"; // Base64 PKCS#8 Ed25519 (sign)
@@ -65,28 +65,29 @@ public final class SignatureCli {
     String privateKeyB64 =
         require(ARG_PRIVATE_KEY, argv, "Missing --privateKey (PKCS#8 Base64 Ed25519)");
 
-    Optional<String> encKeyOpt = read(ARG_ENC_KEY, argv);
+    Optional<String> licenseKeyOpt = read(ARG_LICENSE_KEY, argv);
     Optional<String> tokenOpt = read(ARG_TOKEN, argv);
 
-    boolean hasEncKey = encKeyOpt.filter(s -> !s.isBlank()).isPresent();
+    boolean hasLicenseKey = licenseKeyOpt.filter(s -> !s.isBlank()).isPresent();
     boolean hasToken = tokenOpt.filter(s -> !s.isBlank()).isPresent();
 
-    if (hasEncKey == hasToken) {
-      log.error("Provide exactly one of --encKey or --token");
+    if (hasLicenseKey == hasToken) {
+      log.error("Provide exactly one of --licenseKey or --token");
       printUsage(EXIT_USAGE);
     }
 
     try {
       SignatureData payload;
-      if (hasEncKey) {
-        String encKey = encKeyOpt.orElseThrow();
-        String encKeyHashB64 = base64Sha256(encKey);
+      if (hasLicenseKey) {
+        String licenseKey = licenseKeyOpt.orElseThrow();
+        String licenseKeyHashB64 =
+            base64Sha256(licenseKey); // FULL licenseKey hash (server ile aynı)
         payload =
             new SignatureData.Builder()
                 .serviceId(serviceId)
                 .serviceVersion(serviceVersion)
                 .instanceId(instanceId)
-                .encryptedLicenseKeyHash(encKeyHashB64)
+                .encryptedLicenseKeyHash(licenseKeyHashB64)
                 .build();
       } else {
         String token = tokenOpt.orElseThrow();
@@ -168,42 +169,42 @@ public final class SignatureCli {
   private static void printUsage(int exitCode) {
     log.info(
         """
-            Usage:
+                Usage:
 
-              # SIGN (Ed25519, PKCS#8 private key Base64)
-              java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
-                --mode sign \\
-                --serviceId <id> --serviceVersion <ver> --instanceId <inst> \\
-                --encKey <encrypted-license-key> \\
-                --privateKey <base64-pkcs8-ed25519>
+                  # SIGN (Ed25519, PKCS#8 private key Base64)
+                  java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
+                    --mode sign \\
+                    --serviceId <id> --serviceVersion <ver> --instanceId <inst> \\
+                    --licenseKey <FULL-license-key> \\
+                    --privateKey <base64-pkcs8-ed25519>
 
-              # or with token (exactly one of --encKey or --token)
-              java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
-                --mode sign \\
-                --serviceId <id> --serviceVersion <ver> --instanceId <inst> \\
-                --token <jwt> \\
-                --privateKey <base64-pkcs8-ed25519>
+                  # or with token (exactly one of --licenseKey or --token)
+                  java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
+                    --mode sign \\
+                    --serviceId <id> --serviceVersion <ver> --instanceId <inst> \\
+                    --token <jwt> \\
+                    --privateKey <base64-pkcs8-ed25519>
 
-              # VERIFY (Ed25519, SPKI public key Base64)
-              java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
-                --mode verify \\
-                --dataJson '{...}' \\
-                --signatureB64 <base64-signature> \\
-                --publicKey <base64-spki-ed25519>
+                  # VERIFY (Ed25519, SPKI public key Base64)
+                  java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
+                    --mode verify \\
+                    --dataJson '{...}' \\
+                    --signatureB64 <base64-signature> \\
+                    --publicKey <base64-spki-ed25519>
 
-            Options:
-              --mode sign|verify
-              --serviceId <id>
-              --serviceVersion <version>
-              --instanceId <instance>
-              --encKey <encrypted-license-key>
-              --token <jwt>
-              --privateKey <base64-pkcs8-ed25519>  (sign)
-              --publicKey  <base64-spki-ed25519>  (verify)
-              --dataJson <json>                   (verify)
-              --signatureB64 <base64>             (verify)
-              --help, -h
-            """);
+                Options:
+                  --mode sign|verify
+                  --serviceId <id>
+                  --serviceVersion <version>
+                  --instanceId <instance>
+                  --licenseKey <FULL license key>   (sign)
+                  --token <jwt>                     (sign)
+                  --privateKey <base64-pkcs8-ed25519>  (sign)
+                  --publicKey  <base64-spki-ed25519>  (verify)
+                  --dataJson <json>                   (verify)
+                  --signatureB64 <base64>             (verify)
+                  --help, -h
+                """);
     System.exit(exitCode);
   }
 }

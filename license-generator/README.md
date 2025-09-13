@@ -58,15 +58,20 @@ BSAYLI~<RANDOM_URLSAFE_BASE64>~<ENCRYPTED_USER_ID>
 
 ### 3) Create a **detached signature** for the request
 
-The licensing-service expects a detached **Ed25519** signature over the canonical JSON **SignatureData** (
-see [Canonical Signing Contract](#canonical-signing-contract)).
+The licensing-service expects a detached **Ed25519** signature over the canonical JSON **SignatureData**.  
+**Important:** `encryptedLicenseKeyHash` is computed as **Base64(SHA-256 of the FULL `licenseKey` string)**.
+
+You can let the CLI compute the hash for you by passing the entire `licenseKey`:
 
 ```bash
 mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
   -Dexec.mainClass=io.github.bsayli.license.cli.SignatureCli \
-  -Dexec.args='--mode sign \
-               --privateKey <BASE64_PKCS8_PRIV> \
-               --dataJson {"serviceId":"crm","serviceVersion":"1.5.0","instanceId":"crm~host~mac","encryptedLicenseKeyHash":"<Base64(SHA-256 of 3rd licenseKey segment)>"}'
+  -Dexec.args="--mode sign \
+               --serviceId crm \
+               --serviceVersion 1.5.0 \
+               --instanceId licensing-service~demo~00:11:22:33:44:55 \
+               --licenseKey BSAYLI~X66e_qYlfPxWiIaN2ahPb9tQFyqjMuTih06LCytzjZ0~0aT6lLTZGkO1zHHPHFDzwF7zPiZLRLWSl06HSVQO5z+NqtzzcFCUkkVFuqHTYKcAcI9037sQQQSfBQakQDUoCA== \
+               --privateKey <BASE64_PKCS8_PRIV>"
 ```
 
 Copy the resulting Base64 signature as the `signature` field in the **/issue** request.

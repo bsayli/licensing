@@ -34,14 +34,12 @@ public class SignatureValidatorImpl implements SignatureValidator {
   public void validate(IssueAccessRequest request) throws SignatureInvalidException {
     ensureStdBase64(request.signature());
 
-    String encSegment = extractEncryptedUserIdSegment(request.licenseKey());
-
     SignatureData data =
         SignatureData.builder()
             .serviceId(request.serviceId())
             .serviceVersion(request.serviceVersion())
             .instanceId(request.instanceId())
-            .encryptedLicenseKeyHash(sha256Base64(encSegment)) // <-- only 3rd segment is hashed
+            .encryptedLicenseKeyHash(sha256Base64(request.licenseKey()))
             .build();
 
     verifyEd25519(request.signature(), data);
@@ -108,15 +106,5 @@ public class SignatureValidatorImpl implements SignatureValidator {
     if (!s.matches("^[A-Za-z0-9+/]+={0,2}$")) {
       throw new SignatureInvalidException();
     }
-  }
-
-  // Expected license key format: PREFIX~random~encryptedUserId
-  private String extractEncryptedUserIdSegment(String licenseKey) {
-    if (licenseKey == null) throw new SignatureInvalidException();
-    String[] parts = licenseKey.split("~", -1);
-    if (parts.length != 3) throw new SignatureInvalidException();
-    String enc = parts[2];
-    if (enc == null || enc.isBlank()) throw new SignatureInvalidException();
-    return enc;
   }
 }

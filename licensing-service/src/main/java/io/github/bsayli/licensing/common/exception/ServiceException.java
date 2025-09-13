@@ -1,5 +1,7 @@
 package io.github.bsayli.licensing.common.exception;
 
+import org.springframework.http.HttpStatus;
+
 public abstract class ServiceException extends RuntimeException {
 
   private final ServiceErrorCode code;
@@ -27,5 +29,9 @@ public abstract class ServiceException extends RuntimeException {
 
   public Object[] getArgs() {
     return args;
+  }
+
+  public HttpStatus getHttpStatus() {
+    return code.httpStatus();
   }
 }

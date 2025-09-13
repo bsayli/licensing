@@ -3,9 +3,11 @@ package io.github.bsayli.licensing.sdk;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
 @ConfigurationPropertiesScan(basePackages = "io.github.bsayli.licensing")
+@ComponentScan(basePackages = "io.github.bsayli.licensing")
 public class LicenseSdkApplication {
 
   public static void main(String[] args) {

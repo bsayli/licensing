@@ -8,6 +8,7 @@ import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.sdk.api.dto.LicenseAccessRequest;
 import io.github.bsayli.licensing.sdk.api.dto.LicenseToken;
 import io.github.bsayli.licensing.sdk.common.exception.LicensingSdkHttpTransportException;
+import io.github.bsayli.licensing.sdk.common.exception.LicensingSdkRemoteServiceException;
 import io.github.bsayli.licensing.sdk.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.sdk.generator.SignatureGenerator;
 import io.github.bsayli.licensing.sdk.service.LicenseOrchestrationService;
@@ -19,6 +20,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationService {
+
+  private static final String CODE_TOKEN_TOO_OLD = "TOKEN_IS_TOO_OLD_FOR_REFRESH";
 
   private final LicenseServiceClient licenseServiceClient;
   private final LicenseTokenCacheService licenseTokenCacheService;
@@ -46,42 +49,12 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 
     try {
       if (cached == null) {
-        IssueAccessRequest issueReq =
-            new IssueAccessRequest()
-                .serviceId(request.serviceId())
-                .serviceVersion(request.serviceVersion())
-                .instanceId(request.instanceId())
-                .checksum(request.checksum())
-                .licenseKey(request.licenseKey());
-
-        issueReq.setSignature(signatureGenerator.generateForIssue(issueReq));
-
-        ApiClientResponse<LicenseAccessResponse> resp = licenseServiceClient.issueAccess(issueReq);
-        String token = responseHandler.extractTokenOrThrow(resp);
-
-        licenseTokenCacheService.put(clientId, token);
+        String token = issueAndCacheToken(request, clientId);
         return new LicenseToken(token);
       }
 
-      ValidateAccessRequest validateReq =
-          new ValidateAccessRequest()
-              .serviceId(request.serviceId())
-              .serviceVersion(request.serviceVersion())
-              .instanceId(request.instanceId())
-              .checksum(request.checksum());
-
-      validateReq.setSignature(signatureGenerator.generateForValidate(cached, validateReq));
-
-      ApiClientResponse<LicenseAccessResponse> vResp =
-          licenseServiceClient.validateAccess(cached, validateReq);
-
-      String maybeRefreshed = responseHandler.tokenIfOkOrNullOrThrow(vResp);
-      if (maybeRefreshed != null && !maybeRefreshed.isBlank()) {
-        licenseTokenCacheService.put(clientId, maybeRefreshed);
-        return new LicenseToken(maybeRefreshed);
-      }
-
-      return new LicenseToken(cached);
+      String token = validateThenMaybeRefreshOrReissue(request, clientId, cached);
+      return new LicenseToken(token);
 
     } catch (ApiClientException e) {
       HttpStatusCode status = e.getStatusCode();
@@ -90,5 +63,54 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
       throw new LicensingSdkHttpTransportException(
           "[SDK] transport/parse error when calling licensing-service", status, msgKey, raw, e);
     }
+  }
+
+  private String validateThenMaybeRefreshOrReissue(
+      LicenseAccessRequest request, String clientId, String cachedToken) {
+
+    ValidateAccessRequest validateReq =
+        new ValidateAccessRequest()
+            .serviceId(request.serviceId())
+            .serviceVersion(request.serviceVersion())
+            .instanceId(request.instanceId())
+            .checksum(request.checksum());
+
+    validateReq.setSignature(signatureGenerator.generateForValidate(cachedToken, validateReq));
+
+    ApiClientResponse<LicenseAccessResponse> vResp =
+        licenseServiceClient.validateAccess(cachedToken, validateReq);
+
+    try {
+      String maybeRefreshed = responseHandler.extractTokenIfPresentOrThrow(vResp);
+      if (maybeRefreshed != null && !maybeRefreshed.isBlank()) {
+        licenseTokenCacheService.put(clientId, maybeRefreshed);
+        return maybeRefreshed;
+      }
+      return cachedToken;
+    } catch (LicensingSdkRemoteServiceException ex) {
+      if (CODE_TOKEN_TOO_OLD.equals(ex.getErrorCode())) {
+        return issueAndCacheToken(request, clientId);
+      }
+      throw ex;
+    }
+  }
+
+  private String issueAndCacheToken(LicenseAccessRequest request, String clientId) {
+    IssueAccessRequest issueReq =
+        new IssueAccessRequest()
+            .serviceId(request.serviceId())
+            .serviceVersion(request.serviceVersion())
+            .instanceId(request.instanceId())
+            .checksum(request.checksum())
+            .licenseKey(request.licenseKey());
+
+    String signature = signatureGenerator.generateForIssue(issueReq);
+    issueReq.setSignature(signature);
+
+    ApiClientResponse<LicenseAccessResponse> resp = licenseServiceClient.issueAccess(issueReq);
+    String token = responseHandler.extractTokenOrThrow(resp);
+
+    licenseTokenCacheService.put(clientId, token);
+    return token;
   }
 }

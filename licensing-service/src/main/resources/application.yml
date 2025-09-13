@@ -42,6 +42,7 @@ cache:
       type: io.github.bsayli.licensing.domain.model.LicenseInfo
     userOfflineInfo:
       ttl-minutes: 1440    # 24h (offline fallback)
+      type: io.github.bsayli.licensing.domain.model.LicenseInfo
     activeClients:
       ttl-minutes: 93      # = 90 (exp) + 2 (jitter) + 1 (grace)
       type: io.github.bsayli.licensing.domain.model.ClientSessionSnapshot
