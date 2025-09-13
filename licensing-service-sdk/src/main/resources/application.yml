@@ -8,6 +8,12 @@ server:
     include-stacktrace: never
     include-exception: false
 
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
 spring:
   application:
     name: licensing-service-sdk

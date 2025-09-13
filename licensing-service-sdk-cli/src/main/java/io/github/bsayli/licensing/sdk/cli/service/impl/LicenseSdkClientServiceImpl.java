@@ -37,22 +37,26 @@ public class LicenseSdkClientServiceImpl implements LicenseSdkClientService {
   }
 
   @Override
-  public Integer validateLicense(String instanceId, String licenseKey, String serviceId, String serviceVersion) {
+  public Integer validateLicense(
+      String instanceId, String licenseKey, String serviceId, String serviceVersion) {
     final String url = normalizeBaseUrl(clientProperties.baseUrl()) + "/v1/licenses/access";
-    final LicenseAccessRequest body = new LicenseAccessRequest(licenseKey, instanceId, null, serviceId, serviceVersion);
+    final LicenseAccessRequest body =
+        new LicenseAccessRequest(licenseKey, instanceId, null, serviceId, serviceVersion);
 
     try (CloseableHttpClient http = buildHttpClient()) {
       final String jsonBody = mapper.writeValueAsString(body);
       final String response =
-              Request.post(url)
-                      .connectTimeout(CONNECT_TIMEOUT)
-                      .responseTimeout(RESPONSE_TIMEOUT)
-                      .setHeader(HttpHeaders.AUTHORIZATION, basicAuth(clientProperties.appUser(), clientProperties.appPass()))
-                      .setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.toString())
-                      .bodyString(jsonBody, ContentType.APPLICATION_JSON)
-                      .execute(http)
-                      .returnContent()
-                      .asString(StandardCharsets.UTF_8);
+          Request.post(url)
+              .connectTimeout(CONNECT_TIMEOUT)
+              .responseTimeout(RESPONSE_TIMEOUT)
+              .setHeader(
+                  HttpHeaders.AUTHORIZATION,
+                  basicAuth(clientProperties.appUser(), clientProperties.appPass()))
+              .setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.toString())
+              .bodyString(jsonBody, ContentType.APPLICATION_JSON)
+              .execute(http)
+              .returnContent()
+              .asString(StandardCharsets.UTF_8);
 
       final ApiResponse<LicenseToken> api = parseApiResponseLicenseToken(response);
       if (api == null) {
@@ -77,11 +81,10 @@ public class LicenseSdkClientServiceImpl implements LicenseSdkClientService {
     }
   }
 
-
   private CloseableHttpClient buildHttpClient() {
     return HttpClients.custom()
-            .setRetryStrategy(new DefaultHttpRequestRetryStrategy(RETRIES, TimeValue.ofSeconds(3)))
-            .build();
+        .setRetryStrategy(new DefaultHttpRequestRetryStrategy(RETRIES, TimeValue.ofSeconds(3)))
+        .build();
   }
 
   private String basicAuth(String user, String pass) {
@@ -98,7 +101,8 @@ public class LicenseSdkClientServiceImpl implements LicenseSdkClientService {
   private ApiResponse<LicenseToken> parseApiResponseLicenseToken(String json) {
     try {
       return mapper.readValue(
-              json, mapper.getTypeFactory().constructParametricType(ApiResponse.class, LicenseToken.class));
+          json,
+          mapper.getTypeFactory().constructParametricType(ApiResponse.class, LicenseToken.class));
     } catch (Exception e) {
       log.error("Failed to parse ApiResponse JSON", e);
       return null;
@@ -120,7 +124,8 @@ public class LicenseSdkClientServiceImpl implements LicenseSdkClientService {
   private void logFailure(ApiResponse<LicenseToken> api) {
     log.error("License validation failed. status={}, message={}", api.status(), api.message());
     if (api.errors() != null) {
-      api.errors().forEach(err -> log.error("errorCode={}, message={}", err.errorCode(), err.message()));
+      api.errors()
+          .forEach(err -> log.error("errorCode={}, message={}", err.errorCode(), err.message()));
     }
   }
 
