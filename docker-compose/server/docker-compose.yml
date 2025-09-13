@@ -1,42 +1,93 @@
 networks:
-  network:
+  license_network:
     driver: bridge
-    name: license_network
 
 services:
   keycloak:
-    image: quay.io/keycloak/keycloak:24.0.3
+    image: quay.io/keycloak/keycloak:26.3.3
     container_name: licensing-keycloak
-    networks: [network]
-    environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+    networks: [ license_network ]
     ports:
       - "8180:8080"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: licensing-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin123
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME: "localhost"
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "false"
+      KC_LOG_LEVEL: "INFO"
     volumes:
-      - ${HOME}/docker_volumes/licensing-keycloak:/opt/keycloak/data
+      - ${HOME}/docker_volumes/licensing-keycloak-26:/opt/keycloak/data
     command: start-dev
+    healthcheck:
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+    restart: unless-stopped
+
+  redis:
+    image: redis:8.2.1-bookworm
+    container_name: licensing-redis
+    networks: [ license_network ]
+    ports:
+      - "6379:6379"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-RedBar9182_}
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-RedBar9182_}
+      --appendonly no
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-RedBar9182_} ping | grep PONG" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
 
   licensing-service:
     build: ./../../licensing-service
     image: licensing-service:1.0.1
     container_name: licensing-service
-    networks: [network]
+    networks: [ license_network ]
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
     environment:
       SPRING_PROFILES_ACTIVE: dev
       KEYCLOAK_SERVER_URL: http://keycloak:8080
-    ports:
-      - "8081:8081"
-    depends_on: [keycloak]
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-RedBar9182_}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8081/licensing-service/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
 
   licensing-service-sdk:
     build: ./../../licensing-service-sdk
     image: licensing-service-sdk:1.0.1
     container_name: licensing-service-sdk
-    networks: [network]
-    environment:
-      SPRING_PROFILES_ACTIVE: dev
-      LICENSE_SERVICE_URL: http://licensing-service:8081
+    networks: [ license_network ]
+    depends_on:
+      licensing-service:
+        condition: service_healthy
     ports:
       - "8082:8082"
-    depends_on: [licensing-service]
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      LICENSE_SERVICE_URL: http://licensing-service:8081/licensing-service
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8082/licensing-service-sdk/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped

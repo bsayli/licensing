@@ -1,5 +1,5 @@
 networks:
-  licensing-service-sdk-cli:
+  licensing:
     name: license_network
     external: true
 
@@ -7,15 +7,13 @@ services:
   licensing-service-sdk-cli:
     build: ./../../licensing-service-sdk-cli
     image: licensing-service-sdk-cli:1.0.1
-    networks:
-      - licensing-service-sdk-cli
     container_name: licensing-service-sdk-cli
+    networks:
+      - licensing
     environment:
-      LICENSE_SERVICE_SDK_URL: "http://licensing-service-sdk:8082"
-      INSTANCE_ID: "c9ineCodegen~macbookuynjkl5~00:2A:8D:BE:F1:56"
-      SERVICE_ID: "c9ineCodegen"
-      SERVICE_VERSION: "1.2.2"
-      LICENSE_KEY: "v6ZFWUUUDlVaONpVJzzDowezuCkCk6szc4ClvB0ow6V+oyuY2bsJCPdVQErI0F7jiJ44X9xoyRCrMN2Ugz2iK1kekvRkHQdaxREMz8NnQCCIodstpdYqSv+h1lNJqROPzfvj23TxHBSKr0PzlS/OoqulJuHb0rU+9WR/LoAFAr5/L740bToGooZ/KLRKKeGOS3LCJfOApMCVvL9YblYxwPPLTOZC2A=="
-
-
-      
+      LICENSE_SERVICE_SDK_URL: "http://licensing-service-sdk:8082/licensing-service-sdk"
+      INSTANCE_ID: "licensing-service~demo~00:11:22:33:44:55"
+      SERVICE_ID: "crm"
+      SERVICE_VERSION: "1.5.0"
+      LICENSE_KEY: "BSAYLI~X66e_qYlfPxWiIaN2ahPb9tQFyqjMuTih06LCytzjZ0~0aT6lLTZGkO1zHHPHFDzwF7zPiZLRLWSl06HSVQO5z+NqtzzcFCUkkVFuqHTYKcAcI9037sQQQSfBQakQDUoCA=="
+    restart: "no"
