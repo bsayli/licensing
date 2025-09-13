@@ -54,7 +54,7 @@ This project provides a **complete licensing framework** for applications, combi
 
 * **license-generator**: Java project for license key generation, encryption, and cryptographic tooling.
 * **licensing-service**: Spring Boot application that issues and validates license tokens.
-* **licensing-service-sdk**: SDK for integrating licensing capabilities into external applications.
+* **licensing-service-sdk**: Spring Boot application acting as a client SDK (with caching & detached signature) for integrating licensing capabilities into external apps.
 * **licensing-service-sdk-cli**: Command-line tool for testing and interacting with the licensing service.
 
 ---
