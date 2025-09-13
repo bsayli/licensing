@@ -1,12 +1,43 @@
-FROM maven:3.9.8-amazoncorretto-21-al2023 AS builder
+FROM maven:3.9.11-eclipse-temurin-21-noble AS builder
 WORKDIR /app
-COPY src/main/java ./src/main/java
-COPY src/main/resources ./src/main/resources
-COPY pom.xml .
-RUN mvn clean package
 
-FROM eclipse-temurin:21-jre-ubi9-minimal
+COPY pom.xml .
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -q -DskipTests dependency:go-offline
+
+COPY src ./src
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -q -T 2C -DskipTests --no-transfer-progress clean package && \
+    java -Djarmode=layertools -jar target/*.jar extract
+
+FROM eclipse-temurin:21.0.8_9-jre-noble
 WORKDIR /app
-COPY --from=builder /app/target/*.jar licensing-service-sdk.jar
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates tzdata && \
+    rm -rf /var/lib/apt/lists/* && \
+    useradd -r -s /bin/false -d /app appuser && \
+    mkdir -p /app/logs && chown -R appuser:appuser /app
+
+LABEL org.opencontainers.image.title="licensing-service-sdk" \
+      org.opencontainers.image.description="Licensing Service SDK (Spring Boot)" \
+      org.opencontainers.image.version="1.0.1" \
+      org.opencontainers.image.source="https://github.com/bsayli/licensing" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
+COPY --from=builder --chown=appuser:appuser /app/dependencies/ ./
+COPY --from=builder --chown=appuser:appuser /app/snapshot-dependencies/ ./
+COPY --from=builder --chown=appuser:appuser /app/spring-boot-loader/ ./
+COPY --from=builder --chown=appuser:appuser /app/application/ ./
+
+USER appuser
+
+ENV SPRING_PROFILES_ACTIVE=default \
+    JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -Dfile.encoding=UTF-8"
+
 EXPOSE 8082
-ENTRYPOINT ["java", "-jar", "licensing-service-sdk.jar"]
+
+HEALTHCHECK --interval=30s --timeout=3s --retries=5 \
+  CMD curl -fsS http://127.0.0.1:8082/licensing-service-sdk/actuator/health || exit 1
+
+ENTRYPOINT ["sh","-c","java $JAVA_OPTS -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} -cp /app org.springframework.boot.loader.launch.JarLauncher"]

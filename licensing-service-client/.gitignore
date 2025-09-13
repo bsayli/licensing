@@ -1,0 +1,110 @@
+### OS-Specific ###
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+# Linux
+.Trash-*
+
+### Build Artifacts ###
+/build/
+/dist/
+/out/
+/target/
+/bin/
+/classes/
+
+### Maven ###
+/.mvn/wrapper/maven-wrapper.properties
+/.mvn/wrapper/maven-wrapper.jar
+/.mvn/wrapper/maven-wrapper.log
+/pom.xml.tag
+/pom.xml.releaseBackup
+/pom.xml.versionsBackup
+/pom.xml.next
+dependency-reduced-pom.xml
+release.properties
+
+### Gradle ###
+.gradle/
+/.gradle-cache/
+/.gradle-test/
+/.gradle-config/
+/.gradle-build/
+/*.lock
+
+### Logs ###
+*.log
+*.log.*
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea/
+/*.iws
+/*.iml
+/*.ipr
+.idea_modules/
+workspace.xml
+tasks.xml
+usage.statistics.xml
+dictionaries/
+shelf/
+/.vscode/
+/.vscode-test/
+
+### Eclipse ###
+.metadata/
+/tmp/
+*.class
+*.prefs
+/.settings/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
+
+### Spring Boot ###
+/*.jar
+/*.war
+/*.ear
+
+### System ###
+*.swp
+*.swo
+*.bak
+*~
+
+### Node/Frontend ###
+/node_modules/
+/yarn-error.log
+/yarn.lock
+/.npm
+
+### Additional Security ###
+*.pem
+*.crt
+*.key
+
+### Sensitive Files ###
+.env
+secrets.yml
+config.json
+/grafana-data/
+
+/docker-compose.override.yml
+/otel-collector-config.yml
+/prometheus.yml

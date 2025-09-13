@@ -12,6 +12,7 @@
     <modules>
         <module>license-generator</module>
         <module>licensing-service</module>
+        <module>licensing-service-client</module>
         <module>licensing-service-sdk</module>
         <module>licensing-service-sdk-cli</module>
     </modules>

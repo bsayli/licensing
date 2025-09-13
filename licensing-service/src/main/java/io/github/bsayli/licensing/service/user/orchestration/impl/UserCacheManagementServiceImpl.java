@@ -1,0 +1,89 @@
+package io.github.bsayli.licensing.service.user.orchestration.impl;
+
+import io.github.bsayli.licensing.domain.model.LicenseInfo;
+import io.github.bsayli.licensing.service.user.cache.UserCacheService;
+import io.github.bsayli.licensing.service.user.core.UserAsyncService;
+import io.github.bsayli.licensing.service.user.orchestration.UserCacheManagementService;
+import java.util.concurrent.CompletableFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+@Service
+public class UserCacheManagementServiceImpl implements UserCacheManagementService {
+
+  private static final Logger log = LoggerFactory.getLogger(UserCacheManagementServiceImpl.class);
+
+  private final UserCacheService offlineCache;
+  private final UserCacheService onlineCache;
+  private final UserAsyncService userAsyncService;
+
+  public UserCacheManagementServiceImpl(
+      UserCacheService userOfflineCacheService,
+      UserCacheService userOnlineCacheService,
+      UserAsyncService userAsyncService) {
+    this.offlineCache = userOfflineCacheService;
+    this.onlineCache = userOnlineCacheService;
+    this.userAsyncService = userAsyncService;
+  }
+
+  @Override
+  public void refreshAsync(String userId) {
+    CompletableFuture<LicenseInfo> future = userAsyncService.getUser(userId);
+    future.whenComplete(
+        (info, ex) -> {
+          if (ex != null) {
+            log.warn(
+                "Async refresh failed for userId={} ({}: {})",
+                userId,
+                ex.getClass().getSimpleName(),
+                ex.getMessage());
+            return;
+          }
+          if (info != null) {
+            onlineCache.put(userId, info);
+            offlineCache.put(userId, info);
+          } else {
+            onlineCache.evict(userId);
+            offlineCache.evict(userId);
+          }
+          log.debug("Async refresh completed for userId={}", userId);
+        });
+  }
+
+  @Override
+  public LicenseInfo getOffline(String userId) {
+    return offlineCache.get(userId); // null if not cached
+  }
+
+  @Override
+  public boolean isOnlineMissing(String userId) {
+    return !onlineCache.exists(userId);
+  }
+
+  @Override
+  public void putOffline(String userId, LicenseInfo licenseInfo) {
+    if (licenseInfo == null) {
+      offlineCache.evict(userId);
+    } else {
+      offlineCache.put(userId, licenseInfo);
+    }
+  }
+
+  @Override
+  public void putBoth(String userId, LicenseInfo licenseInfo) {
+    if (licenseInfo == null) {
+      onlineCache.evict(userId);
+      offlineCache.evict(userId);
+    } else {
+      onlineCache.put(userId, licenseInfo);
+      offlineCache.put(userId, licenseInfo);
+    }
+  }
+
+  @Override
+  public void evict(String userId) {
+    onlineCache.evict(userId);
+    offlineCache.evict(userId);
+  }
+}
