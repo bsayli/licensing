@@ -175,6 +175,13 @@ pull request.
 
 For any questions related to the project, please leave a comment in the repository’s discussion or issue tracker.
 
+## 🗺️ Roadmap
+
+Planned improvements and upcoming features:
+
+- [ ] Move sensitive configs to **HashiCorp Vault** for secure secrets management
+- [ ] Extend **Keycloak integration** to manage licenses (create, update, revoke) via dedicated endpoints
+
 ## ⭐ Support
 
 If you found this project useful, please consider giving it a star ⭐ on GitHub — it helps others discover it too!
