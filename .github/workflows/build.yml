@@ -8,6 +8,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,5 +23,83 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build all modules (root aggregator)
-        run: mvn -B -q -ntp clean verify
+      - name: Build & run tests with coverage
+        run: mvn -B -q -ntp clean verify -Pcoverage-aggregate
+
+      - name: List coverage dir (debug)
+        run: |
+          ls -la target/site || true
+          ls -la target/site/jacoco-aggregate || true
+
+      - name: Compute coverage from JaCoCo XML
+        id: cov
+        run: |
+          python3 - << 'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          p = Path("target/site/jacoco-aggregate/jacoco.xml")
+          if not p.exists():
+              print("::warning::jacoco.xml not found at target/site/jacoco-aggregate/jacoco.xml")
+              print("percent=0" )
+              print("covered=0" )
+              print("missed=0" )
+              exit(0)
+
+          tree = ET.parse(p)
+          root = tree.getroot()
+
+          covered = 0
+          missed = 0
+
+          for c in root.findall("counter"):
+              if c.attrib.get("type") == "LINE":
+                  covered += int(c.attrib.get("covered", "0"))
+                  missed  += int(c.attrib.get("missed", "0"))
+
+          if covered + missed == 0:
+              for c in root.iter("counter"):
+                  if c.attrib.get("type") == "LINE":
+                      covered += int(c.attrib.get("covered", "0"))
+                      missed  += int(c.attrib.get("missed", "0"))
+
+          total = covered + missed
+          percent = 0.0 if total == 0 else (covered * 100.0 / total)
+          # GitHub output
+          print(f"::set-output name=percent::{percent:.2f}")
+          print(f"::set-output name=covered::{covered}")
+          print(f"::set-output name=missed::{missed}")
+          PY
+
+      - name: Add job summary with coverage info
+        run: |
+          echo "### JaCoCo Report ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- **Lines**: ${{ steps.cov.outputs.percent }}%  (covered: ${{ steps.cov.outputs.covered }}, missed: ${{ steps.cov.outputs.missed }})" >> $GITHUB_STEP_SUMMARY
+          echo "- Open the HTML report by downloading the artifact or visiting GitHub Pages (if enabled)." >> $GITHUB_STEP_SUMMARY
+
+
+      - name: Comment coverage on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: coverage
+          message: |
+            **Coverage** (lines): **${{ steps.cov.outputs.percent }}%**
+            - Covered: ${{ steps.cov.outputs.covered }}
+            - Missed: ${{ steps.cov.outputs.missed }}
+            - JaCoCo report path: `target/site/jacoco-aggregate/jacoco.xml`
+
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: target/site/jacoco-aggregate/jacoco.xml
+          flags: unittests
+          name: codecov-coverage
+          fail_ci_if_error: true
+
+      - name: Upload coverage report (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-aggregate-report
+          path: target/site/jacoco-aggregate

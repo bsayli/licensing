@@ -1,8 +1,10 @@
 # Licensing Service Client
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
-[![JDK](https://img.shields.io/badge/JDK-21%2B-blue)](https://openjdk.org/projects/jdk/21/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
+[![OpenAPI Generator](https://img.shields.io/badge/OpenAPI%20Generator-7.x-blue?logo=openapiinitiative)](https://openapi-generator.tech/)
+[![Maven](https://img.shields.io/badge/Maven-3.9-blue?logo=apachemaven)](https://maven.apache.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
 
 A Java **client library** generated from the `licensing-service` OpenAPI definition using custom **generics-aware
 templates**. This module provides a typed SDK for issuing and validating license tokens against the `licensing-service`

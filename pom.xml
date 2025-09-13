@@ -5,7 +5,7 @@
 
     <groupId>io.github.bsayli</groupId>
     <artifactId>licensing-aggregator</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>licensing (aggregator)</name>
 
@@ -15,6 +15,9 @@
         <url>https://github.com/bsayli/licensing</url>
         <tag>HEAD</tag>
     </scm>
+    <properties>
+        <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
+    </properties>
 
     <licenses>
         <license>
@@ -31,4 +34,29 @@
         <module>licensing-service-sdk</module>
         <module>licensing-service-sdk-cli</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>coverage-aggregate</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${jacoco-maven-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>report-aggregate</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>report-aggregate</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

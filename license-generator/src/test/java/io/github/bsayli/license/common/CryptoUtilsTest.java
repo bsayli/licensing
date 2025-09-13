@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test;
 @DisplayName("Unit Test: CryptoUtils (AES/GCM helpers)")
 class CryptoUtilsTest {
 
-  // 256-bit AES key (Base64). Test-only fixture.
   private static final String KEY_B64 = "wL6U5l5CwzE0bU3x3Z9o6v7S0X7z4k1kqQx9m8k9c0w=";
 
   @Test

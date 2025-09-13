@@ -11,7 +11,7 @@
     </parent>
     <groupId>io.github.bsayli</groupId>
     <artifactId>licensing-service</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2-SNAPSHOT</version>
     <name>licensing-service</name>
     <description>Licensing Service App</description>
     <properties>
@@ -24,6 +24,7 @@
         <springdoc-openapi-starter.version>2.8.13</springdoc-openapi-starter.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <commons-pool2.version>2.12.1</commons-pool2.version>
+        <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
     </properties>
     <dependencies>
         <dependency>
@@ -147,6 +148,27 @@
                 <configuration>
                     <useModulePath>false</useModulePath>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
         </plugins>
