@@ -1,7 +1,14 @@
 # Welcome to the Licensing Project!
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
-[![JDK](https://img.shields.io/badge/JDK-21%2B-blue)](https://openjdk.org/projects/jdk/21/)
+[![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
+[![Keycloak](https://img.shields.io/badge/Keycloak-26.x-purple?logo=keycloak)](https://www.keycloak.org/)
+[![Redis](https://img.shields.io/badge/Redis-8.x-red?logo=redis)](https://redis.io/)
+[![Maven](https://img.shields.io/badge/Maven-3.9-blue?logo=apachemaven)](https://maven.apache.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://www.docker.com/)
+[![Caffeine](https://img.shields.io/badge/Caffeine-Cache-orange)](https://github.com/ben-manes/caffeine)
+[![JWT](https://img.shields.io/badge/JWT-EdDSA-lightgrey?logo=jsonwebtokens)](https://jwt.io/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ## Project Purpose
