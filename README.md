@@ -21,7 +21,9 @@
 
 ---
 
-> **Why this project?** Licensing is often treated as an afterthought in enterprise applications. This project provides a **complete end-to-end licensing framework** built on Spring Boot 3, integrating Keycloak, Redis, and EdDSA to standardize issue/validate flows with a **Service**, **SDK**, and **CLI**.
+> **Why this project?** Licensing is often treated as an afterthought in enterprise applications. This project provides
+> a **complete end-to-end licensing framework** built on Spring Boot 3, integrating Keycloak, Redis, and EdDSA to
+> standardize issue/validate flows with a **Service**, **SDK**, and **CLI**.
 
 ---
 
@@ -46,7 +48,9 @@ cd ../client && docker-compose up
 
 ## Project Purpose
 
-This project provides a **complete licensing framework** for applications, combining secure key generation, detached digital signatures, and token validation (JWT/EdDSA). It is designed to ensure license authenticity, prevent misuse, and integrate seamlessly with **Keycloak** for user identity and license metadata.
+This project provides a **complete licensing framework** for applications, combining secure key generation, detached
+digital signatures, and token validation (JWT/EdDSA). It is designed to ensure license authenticity, prevent misuse, and
+integrate seamlessly with **Keycloak** for user identity and license metadata.
 
 ---
 
@@ -54,7 +58,8 @@ This project provides a **complete licensing framework** for applications, combi
 
 * **license-generator**: Java project for license key generation, encryption, and cryptographic tooling.
 * **licensing-service**: Spring Boot application that issues and validates license tokens.
-* **licensing-service-sdk**: Spring Boot application acting as a client SDK (with caching & detached signature) for integrating licensing capabilities into external apps.
+* **licensing-service-sdk**: Spring Boot application acting as a client SDK (with caching & detached signature) for
+  integrating licensing capabilities into external apps.
 * **licensing-service-sdk-cli**: Command-line tool for testing and interacting with the licensing service.
 
 ---
@@ -62,7 +67,7 @@ This project provides a **complete licensing framework** for applications, combi
 ## Repository Structure
 
 | Directory          | Purpose                                                      |
-| ------------------ | ------------------------------------------------------------ |
+|--------------------|--------------------------------------------------------------|
 | **db**             | Keycloak database backup (`licensing-keycloak.zip`)          |
 | **docker-compose** | Docker Compose files to run servers and client               |
 | **scripts**        | Utility scripts to run the client (`run_license_sdk_cli.sh`) |
@@ -138,13 +143,15 @@ chmod +x run_license_sdk_cli.sh
 
 ## Security Note
 
-Demo configuration files contain inline secrets in `application.yml`. In production, **HashiCorp Vault** or another secret manager should be used. Vault integration is part of the **roadmap**.
+Demo configuration files contain inline secrets in `application.yml`. In production, **HashiCorp Vault** or another
+secret manager should be used. Vault integration is part of the **roadmap**.
 
 ---
 
 ## Feedback & Questions
 
-If you notice any issues in this documentation or have suggestions for improvements, feel free to open an **Issue** or a **Discussion**.
+If you notice any issues in this documentation or have suggestions for improvements, feel free to open an **Issue** or a
+**Discussion**.
 
 ---
 
@@ -164,7 +171,7 @@ If you found this project useful, please consider giving it a star ⭐ on GitHub
 ## Related Modules (Quick View)
 
 | Module                        | Purpose                                    | Quick Command                        |
-| ----------------------------- | ------------------------------------------ | ------------------------------------ |
+|-------------------------------|--------------------------------------------|--------------------------------------|
 | **licensing-service**         | REST API for issuing and validating tokens | `docker-compose up -d`               |
 | **licensing-service-sdk**     | Client SDK for integration                 | `mvn clean package`                  |
 | **licensing-service-sdk-cli** | CLI demo client                            | `java -jar ... -k ... -s ...`        |

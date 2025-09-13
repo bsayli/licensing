@@ -65,6 +65,43 @@ public class CacheConfig {
         .build();
   }
 
+  @Bean(name = "cacheObjectMapper")
+  public ObjectMapper cacheObjectMapper() {
+    return new ObjectMapper()
+        .findAndRegisterModules()
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+        .disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+  }
+
+  @Bean
+  public SimpleCacheErrorHandler cacheErrorHandler() {
+    return new SimpleCacheErrorHandler();
+  }
+
+  @Bean(name = CACHE_USER_INFO)
+  public Cache userInfo(CacheManager cm) {
+    return requireCache(cm, CACHE_USER_INFO);
+  }
+
+  @Bean(name = CACHE_USER_OFFLINE_INFO)
+  public Cache userOfflineInfo(CacheManager cm) {
+    return requireCache(cm, CACHE_USER_OFFLINE_INFO);
+  }
+
+  @Bean(name = CACHE_ACTIVE_CLIENTS)
+  public Cache activeClients(CacheManager cm) {
+    return requireCache(cm, CACHE_ACTIVE_CLIENTS);
+  }
+
+  private Cache requireCache(CacheManager cm, String name) {
+    Cache c = cm.getCache(name);
+    if (c == null) {
+      throw new IllegalStateException("Cache not configured: " + name);
+    }
+    return c;
+  }
+
   private Jackson2JsonRedisSerializer<?> buildSerializer(
       CacheProperties.CacheSpec spec, ObjectMapper mapper) {
 
@@ -101,42 +138,5 @@ public class CacheConfig {
         .serializeValuesWith(
             RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer))
         .entryTtl(ttl);
-  }
-
-  @Bean(name = "cacheObjectMapper")
-  public ObjectMapper cacheObjectMapper() {
-    return new ObjectMapper()
-        .findAndRegisterModules()
-        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-        .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
-        .disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-  }
-
-  @Bean
-  public SimpleCacheErrorHandler cacheErrorHandler() {
-    return new SimpleCacheErrorHandler();
-  }
-
-  private Cache requireCache(CacheManager cm, String name) {
-    Cache c = cm.getCache(name);
-    if (c == null) {
-      throw new IllegalStateException("Cache not configured: " + name);
-    }
-    return c;
-  }
-
-  @Bean(name = CACHE_USER_INFO)
-  public Cache userInfo(CacheManager cm) {
-    return requireCache(cm, CACHE_USER_INFO);
-  }
-
-  @Bean(name = CACHE_USER_OFFLINE_INFO)
-  public Cache userOfflineInfo(CacheManager cm) {
-    return requireCache(cm, CACHE_USER_OFFLINE_INFO);
-  }
-
-  @Bean(name = CACHE_ACTIVE_CLIENTS)
-  public Cache activeClients(CacheManager cm) {
-    return requireCache(cm, CACHE_ACTIVE_CLIENTS);
   }
 }
