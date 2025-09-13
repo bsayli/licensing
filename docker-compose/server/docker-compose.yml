@@ -1,5 +1,6 @@
 networks:
   license_network:
+    name: license_network
     driver: bridge
 
 services:
@@ -23,9 +24,10 @@ services:
     command: start-dev
     healthcheck:
       test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 || exit 1" ]
-      interval: 5s
-      timeout: 3s
-      retries: 40
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
     restart: unless-stopped
 
   redis:
@@ -41,10 +43,11 @@ services:
       --requirepass ${REDIS_PASSWORD:-RedBar9182_}
       --appendonly no
     healthcheck:
-      test: [ "CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-RedBar9182_} ping | grep PONG" ]
+      test: [ "CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-RedBar9182_} ping | grep -q PONG" ]
       interval: 10s
-      timeout: 3s
+      timeout: 5s
       retries: 5
+      start_period: 5s
     restart: unless-stopped
 
   licensing-service:
@@ -66,14 +69,17 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-RedBar9182_}
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8081/licensing-service/actuator/health"]
+      test: [ "CMD", "curl", "-fsS", "http://127.0.0.1:8081/licensing-service/actuator/health" ]
       interval: 10s
-      timeout: 3s
-      retries: 10
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     restart: unless-stopped
 
   licensing-service-sdk:
-    build: ./../../licensing-service-sdk
+    build:
+      context: ./../..
+      dockerfile: licensing-service-sdk/Dockerfile
     image: licensing-service-sdk:1.0.1
     container_name: licensing-service-sdk
     networks: [ license_network ]
@@ -84,10 +90,11 @@ services:
       - "8082:8082"
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      LICENSE_SERVICE_URL: http://licensing-service:8081/licensing-service
+      LICENSING_SERVICE_API_BASE_URL: http://licensing-service:8081/licensing-service
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8082/licensing-service-sdk/actuator/health"]
+      test: [ "CMD", "curl", "-fsS", "http://127.0.0.1:8082/licensing-service-sdk/actuator/health" ]
       interval: 10s
-      timeout: 3s
-      retries: 10
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     restart: unless-stopped

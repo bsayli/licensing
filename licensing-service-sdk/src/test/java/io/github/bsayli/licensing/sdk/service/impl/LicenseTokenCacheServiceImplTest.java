@@ -17,50 +17,49 @@ import org.springframework.cache.Cache;
 @DisplayName("Unit Test: LicenseTokenCacheServiceImpl")
 class LicenseTokenCacheServiceImplTest {
 
-    @Mock
-    private Cache cache;
+  @Mock private Cache cache;
 
-    private LicenseTokenCacheService newService() {
-        return new LicenseTokenCacheServiceImpl(cache);
-    }
+  private LicenseTokenCacheService newService() {
+    return new LicenseTokenCacheServiceImpl(cache);
+  }
 
-    @Test
-    @DisplayName("put delegates to Cache.put")
-    void put_delegates() {
-        LicenseTokenCacheService svc = newService();
-        svc.put("cid", "jwt-token");
-        verify(cache).put("cid", "jwt-token");
-        verifyNoMoreInteractions(cache);
-    }
+  @Test
+  @DisplayName("put delegates to Cache.put")
+  void put_delegates() {
+    LicenseTokenCacheService svc = newService();
+    svc.put("cid", "jwt-token");
+    verify(cache).put("cid", "jwt-token");
+    verifyNoMoreInteractions(cache);
+  }
 
-    @Test
-    @DisplayName("get returns cached value")
-    void get_returnsValue() {
-        LicenseTokenCacheService svc = newService();
-        when(cache.get(eq("cid"), eq(String.class))).thenReturn("jwt-token");
-        String v = svc.get("cid");
-        assertEquals("jwt-token", v);
-        verify(cache).get("cid", String.class);
-        verifyNoMoreInteractions(cache);
-    }
+  @Test
+  @DisplayName("get returns cached value")
+  void get_returnsValue() {
+    LicenseTokenCacheService svc = newService();
+    when(cache.get(eq("cid"), eq(String.class))).thenReturn("jwt-token");
+    String v = svc.get("cid");
+    assertEquals("jwt-token", v);
+    verify(cache).get("cid", String.class);
+    verifyNoMoreInteractions(cache);
+  }
 
-    @Test
-    @DisplayName("get returns null when cache miss")
-    void get_returnsNullOnMiss() {
-        LicenseTokenCacheService svc = newService();
-        when(cache.get(eq("cid"), eq(String.class))).thenReturn(null);
-        String v = svc.get("cid");
-        assertNull(v);
-        verify(cache).get("cid", String.class);
-        verifyNoMoreInteractions(cache);
-    }
+  @Test
+  @DisplayName("get returns null when cache miss")
+  void get_returnsNullOnMiss() {
+    LicenseTokenCacheService svc = newService();
+    when(cache.get(eq("cid"), eq(String.class))).thenReturn(null);
+    String v = svc.get("cid");
+    assertNull(v);
+    verify(cache).get("cid", String.class);
+    verifyNoMoreInteractions(cache);
+  }
 
-    @Test
-    @DisplayName("evict delegates to Cache.evict")
-    void evict_delegates() {
-        LicenseTokenCacheService svc = newService();
-        svc.evict("cid");
-        verify(cache).evict("cid");
-        verifyNoMoreInteractions(cache);
-    }
+  @Test
+  @DisplayName("evict delegates to Cache.evict")
+  void evict_delegates() {
+    LicenseTokenCacheService svc = newService();
+    svc.evict("cid");
+    verify(cache).evict("cid");
+    verifyNoMoreInteractions(cache);
+  }
 }
