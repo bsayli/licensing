@@ -109,10 +109,6 @@ Copy the detached signature into the `signature` field of your `/tokens/validate
 
 ---
 
-ℹ️ **Where to add this section:** place it right after the existing step
-`### 3) Create a **detached signature** for the request` in your **license-generator/README.md**. This way both
-license-key and license-token signing flows are documented together.
-
 ### 4) Ask the licensing-service for a token (server side)
 
 Use the REST API from the **licensing-service** project (`POST /v1/licenses/tokens`). See that README for cURL.
