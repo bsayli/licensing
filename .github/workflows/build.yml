@@ -30,6 +30,8 @@ jobs:
         run: |
           ls -la target/site || true
           ls -la target/site/jacoco-aggregate || true
+          # Modül raporlarını da göster:
+          find . -path '*/target/site/jacoco' -maxdepth 3 -type d -print || true
 
       - name: Compute coverage from JaCoCo XML
         id: cov
@@ -37,46 +39,31 @@ jobs:
           python3 - << 'PY'
           import xml.etree.ElementTree as ET
           from pathlib import Path
-
           p = Path("target/site/jacoco-aggregate/jacoco.xml")
-          if not p.exists():
-              print("::warning::jacoco.xml not found at target/site/jacoco-aggregate/jacoco.xml")
-              print("percent=0" )
-              print("covered=0" )
-              print("missed=0" )
-              exit(0)
-
-          tree = ET.parse(p)
-          root = tree.getroot()
-
-          covered = 0
-          missed = 0
-
-          for c in root.findall("counter"):
+          percent = "0.00"; covered = "0"; missed = "0"
+          if p.exists():
+            root = ET.parse(p).getroot()
+            cov = mis = 0
+            for c in root.iter("counter"):
               if c.attrib.get("type") == "LINE":
-                  covered += int(c.attrib.get("covered", "0"))
-                  missed  += int(c.attrib.get("missed", "0"))
-
-          if covered + missed == 0:
-              for c in root.iter("counter"):
-                  if c.attrib.get("type") == "LINE":
-                      covered += int(c.attrib.get("covered", "0"))
-                      missed  += int(c.attrib.get("missed", "0"))
-
-          total = covered + missed
-          percent = 0.0 if total == 0 else (covered * 100.0 / total)
-          # GitHub output
-          print(f"::set-output name=percent::{percent:.2f}")
-          print(f"::set-output name=covered::{covered}")
-          print(f"::set-output name=missed::{missed}")
+                cov += int(c.attrib.get("covered", "0"))
+                mis += int(c.attrib.get("missed", "0"))
+            tot = cov + mis
+            if tot > 0:
+              percent = f"{(cov * 100.0 / tot):.2f}"
+              covered = str(cov)
+              missed = str(mis)
+          with open("$GITHUB_OUTPUT", "a") as f:
+            f.write(f"percent={percent}\n")
+            f.write(f"covered={covered}\n")
+            f.write(f"missed={missed}\n")
           PY
 
       - name: Add job summary with coverage info
         run: |
-          echo "### JaCoCo Report ✅" >> $GITHUB_STEP_SUMMARY
-          echo "- **Lines**: ${{ steps.cov.outputs.percent }}%  (covered: ${{ steps.cov.outputs.covered }}, missed: ${{ steps.cov.outputs.missed }})" >> $GITHUB_STEP_SUMMARY
-          echo "- Open the HTML report by downloading the artifact or visiting GitHub Pages (if enabled)." >> $GITHUB_STEP_SUMMARY
-
+          echo "### JaCoCo Report ✅" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Lines**: ${{ steps.cov.outputs.percent }}%  (covered: ${{ steps.cov.outputs.covered }}, missed: ${{ steps.cov.outputs.missed }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Report: \`target/site/jacoco-aggregate/jacoco.xml\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comment coverage on PR
         if: ${{ github.event_name == 'pull_request' }}
@@ -89,14 +76,14 @@ jobs:
             - Missed: ${{ steps.cov.outputs.missed }}
             - JaCoCo report path: `target/site/jacoco-aggregate/jacoco.xml`
 
-
       - name: Upload to Codecov
         uses: codecov/codecov-action@v4
         with:
           files: target/site/jacoco-aggregate/jacoco.xml
           flags: unittests
           name: codecov-coverage
-          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
       - name: Upload coverage report (artifact)
         uses: actions/upload-artifact@v4

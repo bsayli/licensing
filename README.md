@@ -18,6 +18,12 @@
   <em>Spring Boot • Keycloak • Redis • EdDSA — Complete licensing framework</em>
 </p>
 
+<p align="center">
+  <img src="docs/images/licensing_flow.png" alt="Licensing flow diagram" width="820"/>
+  <br/>
+  <em>End-to-end license validation flow</em>
+</p>
+
 ## Project Purpose
 
 This project provides a **complete licensing framework** for applications, combining secure key generation, detached
