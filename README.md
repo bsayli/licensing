@@ -20,17 +20,32 @@
 
 ---
 
+> **Why this project?** Licensing is often treated as an afterthought in enterprise applications. This project provides a **complete end-to-end licensing framework** built on Spring Boot 3, integrating Keycloak, Redis, and EdDSA to standardize issue/validate flows with a **Service**, **SDK**, and **CLI**.
+
+---
+
 <p align="center">
-  <img src="docs/images/licensing_flow.png" alt="Licensing flow diagram" width="820"/>
+  <img src="docs/images/licensing_flow.png" alt="Licensing flow diagram" width="860"/>
   <br/>
   <em>End-to-end license validation flow</em>
 </p>
 
+---
+
+### TL;DR – Quickstart
+
+```bash
+git clone https://github.com/bsayli/licensing.git
+cd licensing/docker-compose/server && docker-compose up -d
+# wait ~45s on first run
+cd ../client && docker-compose up
+```
+
+---
+
 ## Project Purpose
 
-This project provides a **complete licensing framework** for applications, combining secure key generation, detached
-digital signatures, and token validation (JWT/EdDSA). It is designed to ensure license authenticity, prevent misuse, and
-integrate seamlessly with **Keycloak** for user identity and license metadata.
+This project provides a **complete licensing framework** for applications, combining secure key generation, detached digital signatures, and token validation (JWT/EdDSA). It is designed to ensure license authenticity, prevent misuse, and integrate seamlessly with **Keycloak** for user identity and license metadata.
 
 ---
 
@@ -45,9 +60,11 @@ integrate seamlessly with **Keycloak** for user identity and license metadata.
 
 ## Repository Structure
 
-* **db**: Keycloak database backup (`licensing-keycloak.zip`)
-* **docker-compose**: Docker Compose files to run servers and client
-* **scripts**: Script to run the client (`run_license_sdk_cli.sh`)
+| Directory          | Purpose                                                      |
+| ------------------ | ------------------------------------------------------------ |
+| **db**             | Keycloak database backup (`licensing-keycloak.zip`)          |
+| **docker-compose** | Docker Compose files to run servers and client               |
+| **scripts**        | Utility scripts to run the client (`run_license_sdk_cli.sh`) |
 
 ---
 
@@ -61,56 +78,26 @@ integrate seamlessly with **Keycloak** for user identity and license metadata.
 
 ---
 
-## Setting Up the Environment
-
-1. **Clone the Repository**
-
-```bash
-git clone https://github.com/bsayli/licensing.git
-```
-
-2. **Extract Keycloak DB**
-
-* Get `licensing-keycloak.zip` from `/licensing/db`
-* Copy and extract into your home directory (\$HOME)
-
----
-
 ## Running the Licensing Service
-
-1. Navigate to server docker-compose:
 
 ```bash
 cd licensing/docker-compose/server
-```
-
-2. Start the server components:
-
-```bash
 docker-compose up -d
 ```
 
 This starts Keycloak, Licensing Service, and Licensing Service SDK in the background.
-
-3. Wait \~45 seconds for the services to initialize on the first run.
+Wait \~45 seconds for the services to initialize on the first run.
 
 ---
 
 ## Running the License Validation Tool via Docker
 
-1. Navigate to client docker-compose:
-
 ```bash
 cd licensing/docker-compose/client
-```
-
-2. Start the client service:
-
-```bash
 docker-compose up
 ```
 
-3. Check logs for successful license validation. Example:
+Logs should confirm validation:
 
 ```text
 licensing-service-sdk-cli | INFO License validated successfully.
@@ -118,37 +105,14 @@ licensing-service-sdk-cli | INFO Token: <JWT_TOKEN>
 licensing-service-sdk-cli | INFO Message: License is valid
 ```
 
-4. Stopping containers:
-
-```bash
-# Client
-docker-compose down
-
-# Server
-cd ../server
-docker-compose down
-```
-
 ---
 
 ## Running the License Validation Tool Directly (Optional 1)
 
-1. Build the JAR:
-
 ```bash
 cd licensing/licensing-service-sdk-cli
 mvn clean package
-```
-
-2. The JAR will be in `target/`:
-
-```bash
 cd target
-```
-
-3. Run it:
-
-```bash
 java -jar licensing-service-sdk-cli-1.0.1.jar -s crm -v 1.5.0 -i "crm~macbook~00:2A:8D:BE:F1:56" -k "<LICENSE_KEY>"
 ```
 
@@ -156,21 +120,9 @@ java -jar licensing-service-sdk-cli-1.0.1.jar -s crm -v 1.5.0 -i "crm~macbook~00
 
 ## Running the License Validation Tool with Script (Optional 2)
 
-1. Navigate to script location:
-
 ```bash
 cd licensing/scripts
-```
-
-2. Make it executable:
-
-```bash
 chmod +x run_license_sdk_cli.sh
-```
-
-3. Run with options:
-
-```bash
 ./run_license_sdk_cli.sh -s billing -v 2.0.0 -i "billing~macbook~00:2A:8D:BE:F1:56" -k "<LICENSE_KEY>"
 ```
 
@@ -183,20 +135,36 @@ chmod +x run_license_sdk_cli.sh
 
 ---
 
+## Security Note
+
+Demo configuration files contain inline secrets in `application.yml`. In production, **HashiCorp Vault** or another secret manager should be used. Vault integration is part of the **roadmap**.
+
+---
+
 ## Feedback & Questions
 
-If you notice any issues in this documentation or have suggestions for improvements, feel free to open an issue or a
-pull request.
+If you notice any issues in this documentation or have suggestions for improvements, feel free to open an **Issue** or a **Discussion**.
 
-For any questions related to the project, please leave a comment in the repository’s discussion or issue tracker.
+---
 
 ## 🗺️ Roadmap
 
-Planned improvements and upcoming features:
+* [ ] Move sensitive configs to **HashiCorp Vault** for secure secrets management
+* [ ] Extend **Keycloak integration** to manage licenses (create, update, revoke) via dedicated endpoints
 
-- [ ] Move sensitive configs to **HashiCorp Vault** for secure secrets management
-- [ ] Extend **Keycloak integration** to manage licenses (create, update, revoke) via dedicated endpoints
+---
 
 ## ⭐ Support
 
 If you found this project useful, please consider giving it a star ⭐ on GitHub — it helps others discover it too!
+
+---
+
+## Related Modules (Quick View)
+
+| Module                        | Purpose                                    | Quick Command                        |
+| ----------------------------- | ------------------------------------------ | ------------------------------------ |
+| **licensing-service**         | REST API for issuing and validating tokens | `docker-compose up -d`               |
+| **licensing-service-sdk**     | Client SDK for integration                 | `mvn clean package`                  |
+| **licensing-service-sdk-cli** | CLI demo client                            | `java -jar ... -k ... -s ...`        |
+| **license-generator**         | Key & signature tooling                    | `mvn exec:java -Dexec.mainClass=...` |
