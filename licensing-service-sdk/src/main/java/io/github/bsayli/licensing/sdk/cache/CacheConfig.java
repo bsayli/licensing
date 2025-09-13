@@ -1,4 +1,3 @@
-// io.github.bsayli.licensing.sdk.config.CacheConfig
 package io.github.bsayli.licensing.sdk.config;
 
 import static io.github.bsayli.licensing.sdk.cache.CacheNames.CACHE_LICENSE_TOKENS;
