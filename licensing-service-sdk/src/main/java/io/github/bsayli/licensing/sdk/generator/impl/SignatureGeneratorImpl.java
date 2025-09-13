@@ -30,12 +30,12 @@ public class SignatureGeneratorImpl implements SignatureGenerator {
 
   @Override
   public String generateForIssue(IssueAccessRequest request) {
-    String keyHash = base64Sha256(request.getLicenseKey());
+    String keyHash = base64Sha256(request.getLicenseKey().trim());
     SignatureData payload =
         SignatureData.builder()
-            .serviceId(request.getServiceId())
-            .serviceVersion(request.getServiceVersion())
-            .instanceId(request.getInstanceId())
+            .serviceId(request.getServiceId().trim())
+            .serviceVersion(request.getServiceVersion().trim())
+            .instanceId(request.getInstanceId().trim())
             .encryptedLicenseKeyHash(keyHash)
             .build();
     return signPayload(payload);

@@ -104,7 +104,7 @@ public class LicenseControllerAdvice {
   @ExceptionHandler(ServiceException.class)
   public ResponseEntity<ApiResponse<Void>> handleServiceException(ServiceException ex) {
     ServiceErrorCode code = ex.getCode();
-    HttpStatus http = mapCodeToHttp(code);
+    HttpStatus http = code.httpStatus();
 
     var logger = http.is5xxServerError() ? log.atError() : log.atWarn();
     logger
@@ -124,20 +124,23 @@ public class LicenseControllerAdvice {
 
   @ExceptionHandler(RepositoryException.class)
   public ResponseEntity<ApiResponse<Void>> handleRepositoryException(RepositoryException ex) {
-    log.atWarn()
-        .setCause(ex)
-        .addArgument(ex.getErrorCode())
-        .addArgument(ex.getMessageKey())
-        .log("Repository exception. errorCode={}, messageKey={} ");
-
-    String detail = messageResolver.getMessage(ex.getMessageKey(), ex.getMessageArgs());
-    String top = messageResolver.getMessage("repository.operation.failed");
-
     HttpStatus http =
         switch (ex.getErrorCode()) {
           case USER_NOT_FOUND -> HttpStatus.NOT_FOUND;
-          case USER_ATTRIBUTE_MISSING, USER_ATTRIBUTE_INVALID_FORMAT -> HttpStatus.BAD_REQUEST;
+          case USER_ATTRIBUTE_MISSING, USER_ATTRIBUTE_INVALID_FORMAT ->
+              HttpStatus.INTERNAL_SERVER_ERROR;
         };
+
+    var logger = http.is5xxServerError() ? log.atError() : log.atWarn();
+    logger
+        .setCause(ex)
+        .addArgument(http.value())
+        .addArgument(ex.getErrorCode())
+        .addArgument(ex.getMessageKey())
+        .log("Repository exception handled. statusCode={}, errorCode={}, messageKey={} ");
+
+    String detail = messageResolver.getMessage(ex.getMessageKey(), ex.getMessageArgs());
+    String top = messageResolver.getMessage("repository.operation.failed");
 
     ApiResponse<Void> body =
         ApiResponse.error(http, top, List.of(new ApiError(ex.getErrorCode().name(), detail)));
@@ -146,20 +149,22 @@ public class LicenseControllerAdvice {
 
   @ExceptionHandler(UserOperationException.class)
   public ResponseEntity<ApiResponse<Void>> handleUserOperationException(UserOperationException ex) {
-    log.atWarn()
-        .setCause(ex)
-        .addArgument(ex.getErrorCode())
-        .addArgument(ex.getMessageKey())
-        .log("User operation exception. errorCode={}, messageKey={} ");
-
-    String detail = messageResolver.getMessage(ex.getMessageKey(), ex.getMessageArgs());
-    String top = messageResolver.getMessage("user.operation.failed");
-
     HttpStatus http =
         switch (ex.getErrorCode()) {
           case ALREADY_PROCESSING -> HttpStatus.CONFLICT;
           case MAX_RETRY_ATTEMPTS_EXCEEDED -> HttpStatus.TOO_MANY_REQUESTS;
         };
+
+    var logger = http.is5xxServerError() ? log.atError() : log.atWarn();
+    logger
+        .setCause(ex)
+        .addArgument(http.value())
+        .addArgument(ex.getErrorCode())
+        .addArgument(ex.getMessageKey())
+        .log("User operation exception handled. statusCode={}, errorCode={}, messageKey={} ");
+
+    String detail = messageResolver.getMessage(ex.getMessageKey(), ex.getMessageArgs());
+    String top = messageResolver.getMessage("user.operation.failed");
 
     ApiResponse<Void> body =
         ApiResponse.error(http, top, List.of(new ApiError(ex.getErrorCode().name(), detail)));
@@ -175,30 +180,6 @@ public class LicenseControllerAdvice {
         List.of(new ApiError(ServiceErrorCode.INTERNAL_SERVER_ERROR.name(), msg));
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
         .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, msg, errors));
-  }
-
-  private HttpStatus mapCodeToHttp(ServiceErrorCode s) {
-    return switch (s) {
-      case LICENSE_NOT_FOUND -> HttpStatus.NOT_FOUND;
-      case LICENSE_INVALID,
-          LICENSE_EXPIRED,
-          LICENSE_INACTIVE,
-          LICENSE_USAGE_LIMIT_EXCEEDED,
-          TOKEN_INVALID,
-          TOKEN_EXPIRED,
-          TOKEN_IS_TOO_OLD_FOR_REFRESH,
-          SIGNATURE_INVALID,
-          LICENSE_SERVICE_ID_NOT_SUPPORTED,
-          LICENSE_INVALID_SERVICE_ID,
-          LICENSE_INVALID_CHECKSUM,
-          LICENSE_SERVICE_VERSION_NOT_SUPPORTED ->
-          HttpStatus.UNAUTHORIZED;
-      case TOKEN_INVALID_ACCESS -> HttpStatus.FORBIDDEN;
-      case TOKEN_ALREADY_EXIST -> HttpStatus.CONFLICT;
-      case INVALID_PARAMETER, MISSING_PARAMETER, INVALID_REQUEST -> HttpStatus.BAD_REQUEST;
-      case INTERNAL_SERVER_ERROR, UNKNOWN_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
-      case TOKEN_CREATED, TOKEN_REFRESHED, TOKEN_ACTIVE -> HttpStatus.OK;
-    };
   }
 
   private String resolveStrict(String keyOrText, Object... args) {
