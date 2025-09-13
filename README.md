@@ -1,6 +1,7 @@
 # Welcome to the Licensing Project!
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
+[![Release](https://img.shields.io/github/v/release/bsayli/licensing?logo=github&label=release)](https://github.com/bsayli/licensing/releases/latest)
 [![codecov](https://codecov.io/gh/bsayli/licensing/branch/main/graph/badge.svg)](https://codecov.io/gh/bsayli/licensing)
 [![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
