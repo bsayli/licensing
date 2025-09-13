@@ -43,7 +43,7 @@ java -jar target/licensing-service-sdk-cli-<version>.jar \
 ### Options
 
 | Flag | Long Option         | Description                                                                  | Required |
-| ---- | ------------------- | ---------------------------------------------------------------------------- | -------- |
+|------|---------------------|------------------------------------------------------------------------------|----------|
 | `-k` | `--key`             | License key string (`PREFIX~RANDOM~ENCRYPTED_USER_ID`)                       | Yes      |
 | `-s` | `--service-id`      | Service identifier (e.g. `crm`)                                              | Yes      |
 | `-v` | `--service-version` | Service version (e.g. `1.5.0`)                                               | Yes      |
@@ -110,7 +110,7 @@ LICENSE_SERVICE_SDK_URL=http://my-server/licensing-service-sdk
 ## Exit Codes
 
 | Code | Meaning                                         |
-| ---- | ----------------------------------------------- |
+|------|-------------------------------------------------|
 | `0`  | License validated successfully                  |
 | `1`  | License validation failed (client/server error) |
 | `2`  | CLI usage error                                 |
