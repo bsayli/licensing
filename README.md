@@ -11,6 +11,12 @@
 [![JWT](https://img.shields.io/badge/JWT-EdDSA-lightgrey?logo=jsonwebtokens)](https://jwt.io/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+<p align="center">
+  <img src="docs/images/social-preview.png" alt="Licensing Project preview" width="720"/>
+  <br/>
+  <em>Spring Boot • Keycloak • Redis • EdDSA — Complete licensing framework</em>
+</p>
+
 ## Project Purpose
 
 This project provides a **complete licensing framework** for applications, combining secure key generation, detached
