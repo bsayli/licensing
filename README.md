@@ -1,7 +1,7 @@
 # Welcome to the Licensing Project!
 
-[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/bsayli/licensing/actions)
-[![JDK](https://img.shields.io/badge/JDK-17%2B-blue)](https://openjdk.org/projects/jdk/17/)
+[![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
+[![JDK](https://img.shields.io/badge/JDK-21%2B-blue)](https://openjdk.org/projects/jdk/21/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ## Project Purpose
@@ -34,7 +34,7 @@ integrate seamlessly with **Keycloak** for user identity and license metadata.
 * Git client installed
 * Docker installed and running
 * Docker Compose installed and running
-* Java (>= 17.x)
+* Java (>= 21.x)
 * Maven (>= 3.x)
 
 ---
@@ -91,13 +91,9 @@ docker-compose up
 3. Check logs for successful license validation. Example:
 
 ```text
-licensing-service-sdk-cli | INFO License validated successfully:
-licensing-service-sdk-cli | INFO {
-  "success" : true,
-  "status" : "LICENSE_ACTIVE",
-  "message" : "License is active",
-  "errorDetails" : null
-}
+licensing-service-sdk-cli | INFO License validated successfully.
+licensing-service-sdk-cli | INFO Token: <JWT_TOKEN>
+licensing-service-sdk-cli | INFO Message: License is valid
 ```
 
 4. Stopping containers:
@@ -131,7 +127,7 @@ cd target
 3. Run it:
 
 ```bash
-java -jar licensing-service-sdk-cli-1.0.1.jar -s crm -v 1.5.0 -i "crm~macbookuynjkl5~00:2A:8D:BE:F1:56" -k "<LICENSE_KEY>"
+java -jar licensing-service-sdk-cli-1.0.1.jar -s crm -v 1.5.0 -i "crm~macbook~00:2A:8D:BE:F1:56" -k "<LICENSE_KEY>"
 ```
 
 ---
@@ -153,13 +149,15 @@ chmod +x run_license_sdk_cli.sh
 3. Run with options:
 
 ```bash
-./run_license_sdk_cli.sh -s billing -v 2.0.0 -i "billing~macbookuynjkl5~00:2A:8D:BE:F1:56" -k "<LICENSE_KEY>"
+./run_license_sdk_cli.sh -s billing -v 2.0.0 -i "billing~macbook~00:2A:8D:BE:F1:56" -k "<LICENSE_KEY>"
 ```
 
 ---
 
-✅ **Note:** CLI examples must always be provided **on a single line**. If parameters contain spaces or special
-characters, they should be enclosed in quotes `"..."`.
+## Notes
+
+* CLI examples must always be provided **on a single line**.
+* If parameters contain spaces or special characters, they should be enclosed in quotes (`"..."`).
 
 ---
 
