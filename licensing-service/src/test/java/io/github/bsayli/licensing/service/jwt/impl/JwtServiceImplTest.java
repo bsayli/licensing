@@ -34,7 +34,6 @@ class JwtServiceImplTest {
     return Base64.getEncoder().encodeToString(in);
   }
 
-  /** Basit bir resolver: verilen anahtar için "msg-" + key döndürür. */
   private static LocalizedMessageResolver dummyResolver() {
     return new LocalizedMessageResolver() {
       @Override
@@ -67,7 +66,7 @@ class JwtServiceImplTest {
         b64(kp.getPublic().getEncoded()),
         ttl,
         jitterMax,
-        dummyResolver(), // <-- yeni parametre
+        dummyResolver(),
         clock,
         jitter::get,
         KeyFactory.getInstance("Ed25519"));
@@ -90,7 +89,6 @@ class JwtServiceImplTest {
     assertEquals("PRO", c.get("licenseTier"));
     assertEquals("ACTIVE", c.get("licenseStatus"));
 
-    // message claim: resolver "msg-license.message.active" döndürür
     assertEquals("msg-license.message.active", c.get("message"));
 
     assertEquals(now.getEpochSecond(), c.getIssuedAt().toInstant().getEpochSecond());
