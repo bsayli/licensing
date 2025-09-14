@@ -51,6 +51,11 @@
                                 <goals>
                                     <goal>report-aggregate</goal>
                                 </goals>
+                                <configuration>
+                                    <includes>
+                                        <include>io/github/bsayli/**</include>
+                                    </includes>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
