@@ -68,13 +68,13 @@ public final class SignatureDemo {
 
   private static void printUsage() {
     log.info(
-            """
+        """
             Usage:
               # Sign sample payload (encrypted license key variant)
               java -cp license-generator.jar io.github.bsayli.license.signature.SignatureDemo \\
                 --mode sign-sample-key \\
                 --privateKey <base64-pkcs8-ed25519>
-    
+
               # Sign sample payload (license token variant)
               java -cp license-generator.jar io.github.bsayli.license.signature.SignatureDemo \\
                 --mode sign-sample-token \\
