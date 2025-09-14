@@ -45,7 +45,7 @@ java -jar target/licensing-service-sdk-cli-<version>.jar \
 ### Options
 
 | Flag | Long Option         | Description                                                                  | Required |
-|------|---------------------|------------------------------------------------------------------------------|----------|
+| ---- | ------------------- | ---------------------------------------------------------------------------- | -------- |
 | `-k` | `--key`             | License key string (`PREFIX~RANDOM~ENCRYPTED_USER_ID`)                       | Yes      |
 | `-s` | `--service-id`      | Service identifier (e.g. `crm`)                                              | Yes      |
 | `-v` | `--service-version` | Service version (e.g. `1.5.0`)                                               | Yes      |
@@ -89,12 +89,22 @@ The CLI loads properties from `application.properties` (on classpath):
 licensing.sdk.server.url=http://localhost:8082/licensing-service-sdk
 licensing.sdk.server.app.user=licensingSdkUser
 licensing.sdk.server.app.pass=licensingSdkPass
+licensing.sdk.api.path=/v1/licenses/access
+licensing.sdk.http.connect-timeout-seconds=40
+licensing.sdk.http.response-timeout-seconds=40
+licensing.sdk.http.retries=3
+licensing.sdk.http.retry-interval-seconds=3
 ```
 
-Override the base URL via environment variable:
+Override via environment variables:
 
 ```
 LICENSE_SERVICE_SDK_URL=http://my-server/licensing-service-sdk
+LICENSE_SERVICE_SDK_CONNECT_TIMEOUT=20
+LICENSE_SERVICE_SDK_RESPONSE_TIMEOUT=20
+LICENSE_SERVICE_SDK_RETRIES=5
+LICENSE_SERVICE_SDK_RETRY_INTERVAL=2
+LICENSE_SERVICE_SDK_API_PATH=/v1/licenses/access
 ```
 
 ---
@@ -112,7 +122,7 @@ LICENSE_SERVICE_SDK_URL=http://my-server/licensing-service-sdk
 ## Exit Codes
 
 | Code | Meaning                                         |
-|------|-------------------------------------------------|
+| ---- | ----------------------------------------------- |
 | `0`  | License validated successfully                  |
 | `1`  | License validation failed (client/server error) |
 | `2`  | CLI usage error                                 |
