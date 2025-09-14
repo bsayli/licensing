@@ -1,0 +1,134 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  main:
+    allow-bean-definition-overriding: true
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration
+
+  messages:
+    basename: messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6370
+      password:
+      timeout: 2s
+      client-type: lettuce
+      lettuce:
+        pool:
+          enabled: true
+          max-active: 2
+          max-idle: 2
+          min-idle: 0
+        shutdown-timeout: 2s
+
+server:
+  port: 8085
+  servlet:
+    context-path: /licensing-service
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: never
+    include-exception: false
+
+logging:
+  level:
+    root: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+    org.springframework.security: OFF
+    io.github.bsayli.licensing: DEBUG
+
+management:
+  prometheus:
+    metrics:
+      export:
+        enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: "health,info"
+  tracing:
+    enabled: false
+
+app:
+  openapi:
+    base-url: "http://localhost:${server.port}${server.servlet.context-path:}"
+
+cache:
+  default-spec:
+    ttl-minutes: 5
+  caches:
+    userInfo:
+      ttl-minutes: 10
+      type: io.github.bsayli.licensing.domain.model.LicenseInfo
+    userOfflineInfo:
+      ttl-minutes: 30
+      type: io.github.bsayli.licensing.domain.model.LicenseInfo
+    activeClients:
+      ttl-minutes: 10
+      type: io.github.bsayli.licensing.domain.model.ClientSessionSnapshot
+
+licensing:
+  api:
+    basic:
+      username: "testUser"
+      password: "testPass"
+      realm: "LicensingService-Test"
+
+license:
+  jwt:
+    private:
+      key: 'MFECAQEwBQYDK2VwBCIEIJa52B/FN/sjW/nlB9Id+Na2B8rI2+5ZPhXTIQSzH+3BgSEA6lNvY1+qsRSYgo66OFxWZxQymd2wC6LYNr1+q2gHHMo='
+    public:
+      key: 'MCowBQYDK2VwAyEA6lNvY1+qsRSYgo66OFxWZxQymd2wC6LYNr1+q2gHHMo='
+  service:
+    ids: [ crm, billing, reporting ]
+    checksum-required: [ crm, billing, reporting ]
+
+userid:
+  secret:
+    key: 's/PUyV6Ym/v0A+HehYFZ9GTpatSL1MkcVW1zBLf3cX4='
+
+signature:
+  public:
+    key: 'MCowBQYDK2VwAyEAl/bnQXUbWqDOZYxCBd0mQ2JejBUWNteKhfC2zPS+GME='
+
+keycloak:
+  server-url: http://localhost:8180
+  realm: licensing-realm
+  client-id: licensing-service-client
+  client-secret: 'test-secret'
+  timeout: 5
+  pool:
+    max-total: 5
+    max-per-route: 2
+
+retry:
+  user-service:
+    max-attempts: 1
+    initial-delay: 200
+    multiplier: 2
+    max-delay: 1
+
+jwt:
+  token:
+    expiration: 15m
+    max:
+      jitter: 1m
+
+async:
+  pool:
+    core: 2
+    max: 4
+    queue: 50
+    threadNamePrefix: "LicenseService-Test-"
