@@ -1,8 +1,6 @@
 package io.github.bsayli.license.cli;
 
-import io.github.bsayli.license.licensekey.encrypter.UserIdEncrypter;
-import io.github.bsayli.license.licensekey.generator.LicenseKeyGenerator;
-import io.github.bsayli.license.licensekey.model.LicenseKeyData;
+import io.github.bsayli.license.cli.service.LicenseKeyService;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.List;
@@ -12,64 +10,59 @@ import org.slf4j.LoggerFactory;
 
 public final class LicenseKeyGeneratorCli {
 
+  static final int EXIT_OK = 0;
+  static final int EXIT_USAGE = 2;
+  static final int EXIT_CRYPTO = 3;
   private static final Logger log = LoggerFactory.getLogger(LicenseKeyGeneratorCli.class);
-
   private static final String ARG_USER_ID = "--userId";
   private static final String ARG_PRINT_SEGMENTS = "--printSegments";
   private static final String ARG_HELP_LONG = "--help";
   private static final String ARG_HELP_SHORT = "-h";
-
-  private static final int EXIT_OK = 0;
-  private static final int EXIT_USAGE = 2;
-  private static final int EXIT_CRYPTO = 3;
-
   private static final String MSG_MISSING_USER_ID = "Missing --userId <uuid>";
   private static final String MSG_BLANK_USER_ID = "--userId must not be blank";
 
   private LicenseKeyGeneratorCli() {}
 
   public static void main(String[] args) {
-    List<String> argv = Arrays.asList(args);
+    System.exit(run(args));
+  }
+
+  static int run(String[] args) {
+    final List<String> argv = Arrays.asList(args);
 
     if (argv.contains(ARG_HELP_LONG) || argv.contains(ARG_HELP_SHORT)) {
-      printUsage(EXIT_OK);
+      printUsage();
+      return EXIT_OK;
     }
 
-    String userId =
-        readOptionValue(argv, ARG_USER_ID)
-            .orElseThrow(
-                () -> {
-                  log.error(MSG_MISSING_USER_ID);
-                  printUsage(EXIT_USAGE);
-                  return new IllegalStateException(MSG_MISSING_USER_ID);
-                });
-
+    String userId = readOptionValue(argv, ARG_USER_ID).orElse(null);
+    if (userId == null) {
+      log.error(MSG_MISSING_USER_ID);
+      printUsage();
+      return EXIT_USAGE;
+    }
     if (userId.isBlank()) {
       log.error(MSG_BLANK_USER_ID);
-      printUsage(EXIT_USAGE);
+      printUsage();
+      return EXIT_USAGE;
     }
 
     try {
-      // 1) Encrypt Keycloak user UUID
-      String encryptedUserId = UserIdEncrypter.encrypt(userId);
+      var svc = new LicenseKeyService();
+      var out = svc.generate(userId);
 
-      // 2) Build license key (PREFIX ~ random ~ encryptedUserId)
-      LicenseKeyData licenseKeyData = LicenseKeyGenerator.generateLicenseKey(encryptedUserId);
-      String licenseKey = licenseKeyData.generateLicenseKey();
+      log.info("License Key: {}", out.licenseKey());
 
-      // 3) Output
-      log.info("License Key: {}", licenseKey);
-
-      if (hasFlag(argv, ARG_PRINT_SEGMENTS)) {
-        log.info("  prefix         : {}", licenseKeyData.prefix());
-        log.info("  randomString   : {}", licenseKeyData.randomString());
-        log.info("  encryptedUserId: {}", licenseKeyData.uuid());
+      if (argv.contains(ARG_PRINT_SEGMENTS)) {
+        log.info("  prefix         : {}", out.prefix());
+        log.info("  randomString   : {}", out.randomString());
+        log.info("  encryptedUserId: {}", out.encryptedUserId());
       }
 
-      System.exit(EXIT_OK);
+      return EXIT_OK;
     } catch (GeneralSecurityException e) {
       log.error("License key generation failed: {}", e.getMessage(), e);
-      System.exit(EXIT_CRYPTO);
+      return EXIT_CRYPTO;
     }
   }
 
@@ -79,27 +72,20 @@ public final class LicenseKeyGeneratorCli {
     int valIdx = idx + 1;
     if (valIdx >= argv.size()) return Optional.empty();
     String val = argv.get(valIdx);
-    if (val != null && !val.startsWith("--") && !val.startsWith("-")) {
-      return Optional.of(val);
-    }
+    if (val != null && !val.startsWith("--") && !val.startsWith("-")) return Optional.of(val);
     return Optional.empty();
   }
 
-  private static boolean hasFlag(List<String> argv, String flag) {
-    return argv.contains(flag);
-  }
-
-  private static void printUsage(int exitCode) {
+  private static void printUsage() {
     log.info(
         """
-                Usage:
-                  java -cp license-generator.jar io.github.bsayli.license.cli.LicenseKeyGeneratorCli --userId <uuid> [--printSegments]
+            Usage:
+              java -cp license-generator.jar io.github.bsayli.license.cli.LicenseKeyGeneratorCli --userId <uuid> [--printSegments]
 
-                Options:
-                  --userId <uuid>     Keycloak user UUID to bind this license to
-                  --printSegments     Also print prefix, random and encryptedUserId parts
-                  --help, -h          Show this help
-                """);
-    System.exit(exitCode);
+            Options:
+              --userId <uuid>     Keycloak user UUID to bind this license to
+              --printSegments     Also print prefix, random and encryptedUserId parts
+              --help, -h          Show this help
+            """);
   }
 }
