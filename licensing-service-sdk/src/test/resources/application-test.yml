@@ -1,0 +1,65 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  main:
+    allow-bean-definition-overriding: true
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration
+
+  messages:
+    basename: messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
+server:
+  port: 0
+  servlet:
+    context-path: /licensing-service-sdk
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: never
+    include-exception: false
+
+logging:
+  level:
+    root: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+    org.springframework.security: OFF
+    io.github.bsayli.licensing: DEBUG
+
+app:
+  openapi:
+    base-url: "http://localhost:${server.port}${server.servlet.context-path:}"
+
+caching:
+  spring:
+    licenseTokenTTL: 30m
+
+licensing:
+  sdk:
+    api:
+      basic:
+        username: "testSdkUser"
+        password: "testSdkPass"
+        realm: "LicensingServiceSDK-Test"
+
+licensing-service-api:
+  base-url: "http://localhost:8081/licensing-service"
+  basic:
+    username: "licensingUser"
+    password: "licensingPass"
+  connect-timeout-seconds: 5
+  connection-request-timeout-seconds: 5
+  read-timeout-seconds: 8
+  max-connections-total: 16
+  max-connections-per-route: 8
+
+signature:
+  private:
+    key: "MC4CAQAwBQYDK2VwBCIEIG265cW0Yrh583IXT/Hmfd2A1hFnHXViCZHpJu83OBFj"

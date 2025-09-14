@@ -13,11 +13,10 @@ import org.springframework.security.web.SecurityFilterChain;
 @Profile("test")
 public class TestSecurityConfig {
 
-    @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(reg -> reg.anyRequest().permitAll())
-                .build();
-    }
+  @Bean
+  SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    return http.csrf(AbstractHttpConfigurer::disable)
+        .authorizeHttpRequests(reg -> reg.anyRequest().permitAll())
+        .build();
+  }
 }
