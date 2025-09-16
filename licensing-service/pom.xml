@@ -25,6 +25,8 @@
         <commons-pool2.version>2.12.1</commons-pool2.version>
         <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
         <keycloak-admin-client.version>26.0.6</keycloak-admin-client.version>
+        <embedded-redis.version>1.4.3</embedded-redis.version>
+        <jedis.version>6.0.0</jedis.version>
     </properties>
     <dependencies>
         <dependency>
@@ -129,8 +131,21 @@
         <dependency>
             <groupId>com.github.codemonstur</groupId>
             <artifactId>embedded-redis</artifactId>
-            <version>1.4.3</version>
+            <version>${embedded-redis.version}</version>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>${jedis.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.json</groupId>
+                    <artifactId>json</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
 
