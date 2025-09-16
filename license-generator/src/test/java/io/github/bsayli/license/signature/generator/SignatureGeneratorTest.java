@@ -23,6 +23,26 @@ class SignatureGeneratorTest {
     return Base64.getEncoder().encodeToString(bytes);
   }
 
+  private static SignatureData payloadWithEncKeyHash() throws Exception {
+    String hashB64 = SignatureGenerator.base64Sha256("dummy-encrypted-license-key");
+    return new SignatureData.Builder()
+        .serviceId("bsayli-licensing")
+        .serviceVersion("1.0.0")
+        .instanceId("bsayli-licensing~localdev~mac")
+        .encryptedLicenseKeyHash(hashB64)
+        .build();
+  }
+
+  private static SignatureData payloadWithTokenHash() throws Exception {
+    String hashB64 = SignatureGenerator.base64Sha256("dummy-license-token");
+    return new SignatureData.Builder()
+        .serviceId("bsayli-licensing")
+        .serviceVersion("1.0.0")
+        .instanceId("bsayli-licensing~localdev~mac")
+        .licenseTokenHash(hashB64)
+        .build();
+  }
+
   @Test
   @DisplayName("Signing payload (encryptedLicenseKeyHash) then verifying should succeed")
   void sign_verify_withEncryptedKeyHash_ok() throws Exception {
@@ -30,7 +50,7 @@ class SignatureGeneratorTest {
     String privateKeyB64 = b64(kp.getPrivate().getEncoded()); // PKCS#8
     String publicKeyB64 = b64(kp.getPublic().getEncoded()); // SPKI
 
-    SignatureData payload = SignatureGenerator.sampleSignatureDataWithLicenseKey();
+    SignatureData payload = payloadWithEncKeyHash();
     String json = payload.toJson();
 
     String signatureB64 = SignatureGenerator.createSignature(payload, privateKeyB64);
@@ -46,7 +66,7 @@ class SignatureGeneratorTest {
     String privateKeyB64 = b64(kp.getPrivate().getEncoded());
     String publicKeyB64 = b64(kp.getPublic().getEncoded());
 
-    SignatureData payload = SignatureGenerator.sampleSignatureDataWithLicenseToken();
+    SignatureData payload = payloadWithTokenHash();
     String json = payload.toJson();
 
     String signatureB64 = SignatureGenerator.createSignature(payload, privateKeyB64);
@@ -62,7 +82,7 @@ class SignatureGeneratorTest {
     String privateKeyB64 = b64(kp.getPrivate().getEncoded());
     String publicKeyB64 = b64(kp.getPublic().getEncoded());
 
-    SignatureData payload = SignatureGenerator.sampleSignatureDataWithLicenseKey();
+    SignatureData payload = payloadWithEncKeyHash();
     String json = payload.toJson();
 
     String signatureB64 = SignatureGenerator.createSignature(payload, privateKeyB64);
@@ -79,13 +99,13 @@ class SignatureGeneratorTest {
     String privateKeyB64 = b64(kp.getPrivate().getEncoded());
     String publicKeyB64 = b64(kp.getPublic().getEncoded());
 
-    SignatureData payload = SignatureGenerator.sampleSignatureDataWithLicenseKey();
+    SignatureData payload = payloadWithEncKeyHash();
     String json = payload.toJson();
 
     String signatureB64 = SignatureGenerator.createSignature(payload, privateKeyB64);
 
     byte[] sig = Base64.getDecoder().decode(signatureB64);
-    sig[sig.length - 1] ^= 0x01; // son baytta bit çevir
+    sig[sig.length - 1] ^= 0x01; // flip last bit
     String tamperedSigB64 = Base64.getEncoder().encodeToString(sig);
 
     SignatureValidator validator = new SignatureValidator(publicKeyB64);

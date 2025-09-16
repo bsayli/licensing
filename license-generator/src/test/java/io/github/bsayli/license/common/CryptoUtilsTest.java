@@ -1,13 +1,14 @@
 package io.github.bsayli.license.common;
 
-import static io.github.bsayli.license.common.CryptoUtils.aesGcmDecryptFromBase64;
-import static io.github.bsayli.license.common.CryptoUtils.aesGcmEncryptToBase64;
+import static io.github.bsayli.license.common.CryptoUtils.aesGcmDecryptRaw;
+import static io.github.bsayli.license.common.CryptoUtils.aesGcmEncryptRaw;
 import static io.github.bsayli.license.common.CryptoUtils.concat;
 import static io.github.bsayli.license.common.CryptoUtils.loadAesKeyFromBase64;
 import static io.github.bsayli.license.common.CryptoUtils.toBase64;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Base64;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import javax.crypto.SecretKey;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -20,16 +21,17 @@ class CryptoUtilsTest {
   private static final String KEY_B64 = "wL6U5l5CwzE0bU3x3Z9o6v7S0X7z4k1kqQx9m8k9c0w=";
 
   @Test
-  @DisplayName("AES-GCM round-trip returns original plaintext")
+  @DisplayName("AES-GCM raw round-trip returns original plaintext")
   void aesGcm_roundTrip_ok() throws Exception {
     SecretKey key = loadAesKeyFromBase64(KEY_B64);
 
     String plain = "hello-license";
-    String enc = aesGcmEncryptToBase64(key, plain);
-    String dec = aesGcmDecryptFromBase64(key, enc);
+    byte[] enc = aesGcmEncryptRaw(key, plain.getBytes(StandardCharsets.UTF_8));
+    byte[] dec = aesGcmDecryptRaw(key, enc);
 
-    assertEquals(plain, dec);
-    assertNotEquals(plain, enc);
+    assertEquals(plain, new String(dec, StandardCharsets.UTF_8));
+    assertNotEquals(
+        plain, new String(enc, StandardCharsets.UTF_8)); // ciphertext is not readable text
   }
 
   @Test
@@ -37,30 +39,27 @@ class CryptoUtilsTest {
       "AES-GCM uses random IV: encrypting same plaintext twice yields different ciphertexts")
   void aesGcm_randomIv_changesCiphertext() throws Exception {
     SecretKey key = loadAesKeyFromBase64(KEY_B64);
-    String plain = "same-plaintext";
+    byte[] p = "same-plaintext".getBytes(StandardCharsets.UTF_8);
 
-    String enc1 = aesGcmEncryptToBase64(key, plain);
-    String enc2 = aesGcmEncryptToBase64(key, plain);
+    byte[] enc1 = aesGcmEncryptRaw(key, p);
+    byte[] enc2 = aesGcmEncryptRaw(key, p);
 
-    assertNotEquals(enc1, enc2, "Ciphertexts should differ due to random IV");
-    // sanity: both look like Base64
-    assertDoesNotThrow(() -> Base64.getDecoder().decode(enc1));
-    assertDoesNotThrow(() -> Base64.getDecoder().decode(enc2));
+    assertFalse(Arrays.equals(enc1, enc2), "Ciphertexts should differ due to random IV");
+    assertTrue(enc1.length > 0 && enc2.length > 0);
   }
 
   @Test
   @DisplayName("AES-GCM decryption fails if ciphertext is tampered")
   void aesGcm_decrypt_throwsOnTamper() throws Exception {
     SecretKey key = loadAesKeyFromBase64(KEY_B64);
-    String enc = aesGcmEncryptToBase64(key, "payload");
+    byte[] enc = aesGcmEncryptRaw(key, "payload".getBytes(StandardCharsets.UTF_8));
 
-    // flip 1 byte somewhere in the middle (post-IV region most likely)
-    byte[] bytes = java.util.Base64.getDecoder().decode(enc);
-    int flipIndex = Math.min(bytes.length - 1, 20);
-    bytes[flipIndex] ^= 0x01;
+    // Flip a byte past the IV region to ensure tag validation fails.
+    int ivLen = CryptoConstants.GCM_IV_LENGTH_BYTES; // 12
+    int flipIndex = Math.max(ivLen, Math.min(enc.length - 1, ivLen + 5));
+    enc[flipIndex] ^= 0x01;
 
-    String tampered = java.util.Base64.getEncoder().encodeToString(bytes);
-    assertThrows(Exception.class, () -> aesGcmDecryptFromBase64(key, tampered));
+    assertThrows(Exception.class, () -> aesGcmDecryptRaw(key, enc));
   }
 
   @Test

@@ -23,6 +23,16 @@ class SignatureValidatorTest {
     return Base64.getEncoder().encodeToString(bytes);
   }
 
+  private static SignatureData buildPayloadWithEncKeyHash(String encKeyPlain) throws Exception {
+    String hashB64 = SignatureGenerator.base64Sha256(encKeyPlain);
+    return new SignatureData.Builder()
+        .serviceId("bsayli-licensing")
+        .serviceVersion("1.0.0")
+        .instanceId("bsayli-licensing~localdev~mac")
+        .encryptedLicenseKeyHash(hashB64)
+        .build();
+  }
+
   @Test
   @DisplayName("validateSignature returns true for a matching signature & JSON")
   void validate_true_onValidSignature() throws Exception {
@@ -30,7 +40,7 @@ class SignatureValidatorTest {
     String privateKeyB64 = b64(kp.getPrivate().getEncoded()); // PKCS#8
     String publicKeyB64 = b64(kp.getPublic().getEncoded()); // SPKI
 
-    SignatureData payload = SignatureGenerator.sampleSignatureDataWithLicenseKey();
+    SignatureData payload = buildPayloadWithEncKeyHash("dummy-encrypted-license-key");
     String json = payload.toJson();
     String sig = SignatureGenerator.createSignature(payload, privateKeyB64);
 
@@ -45,10 +55,11 @@ class SignatureValidatorTest {
     String privateKeyB64 = b64(kp.getPrivate().getEncoded());
     String publicKeyB64 = b64(kp.getPublic().getEncoded());
 
-    SignatureData payload = SignatureGenerator.sampleSignatureDataWithLicenseKey();
+    SignatureData payload = buildPayloadWithEncKeyHash("dummy-encrypted-license-key");
     String json = payload.toJson();
     String sig = SignatureGenerator.createSignature(payload, privateKeyB64);
 
+    // Any mutation should break verification (signature is over exact bytes)
     String differentJson = json + " ";
 
     SignatureValidator validator = new SignatureValidator(publicKeyB64);
