@@ -21,9 +21,7 @@
 
 ---
 
-> **Why this project?** Licensing is often treated as an afterthought in enterprise applications. This project provides
-> a **complete end-to-end licensing framework** built on Spring Boot 3, integrating Keycloak, Redis, and EdDSA to
-> standardize issue/validate flows with a **Service**, **SDK**, and **CLI**.
+> **Why this project?** Licensing is often treated as an afterthought in enterprise applications. This project provides a **complete end-to-end licensing framework** built on Spring Boot 3, integrating Keycloak, Redis, and EdDSA to standardize issue/validate flows with a **Service**, **SDK**, and **CLI**.
 
 ---
 
@@ -39,21 +37,16 @@
 
 ```bash
 git clone https://github.com/bsayli/licensing.git
-cd licensing/docker-compose
-docker-compose up -d
+cd licensing/docker-compose/server && docker-compose up -d
 # wait ~45s on first run
+cd ../client && docker-compose up
 ```
-
-> Optional (local/dev only): If you want to start **Keycloak + Redis** separately, you can use
-`docker-compose.infra.yml`.
 
 ---
 
 ## Project Purpose
 
-This project provides a **complete licensing framework** for applications, combining secure key generation, detached
-digital signatures, and token validation (JWT/EdDSA). It is designed to ensure license authenticity, prevent misuse, and
-integrate seamlessly with **Keycloak** for user identity and license metadata.
+This project provides a **complete licensing framework** for applications, combining secure key generation, detached digital signatures, and token validation (JWT/EdDSA). It is designed to ensure license authenticity, prevent misuse, and integrate seamlessly with **Keycloak** for user identity and license metadata.
 
 ---
 
@@ -61,8 +54,7 @@ integrate seamlessly with **Keycloak** for user identity and license metadata.
 
 * **license-generator**: Java project for license key generation, encryption, and cryptographic tooling.
 * **licensing-service**: Spring Boot application that issues and validates license tokens.
-* **licensing-service-sdk**: Spring Boot application acting as a client SDK (with caching & detached signature) for
-  integrating licensing capabilities into external apps.
+* **licensing-service-sdk**: Spring Boot application acting as a client SDK (with caching & detached signature) for integrating licensing capabilities into external apps.
 * **licensing-service-sdk-cli**: Command-line tool for testing and interacting with the licensing service.
 
 ---
@@ -70,9 +62,9 @@ integrate seamlessly with **Keycloak** for user identity and license metadata.
 ## Repository Structure
 
 | Directory          | Purpose                                                      |
-|--------------------|--------------------------------------------------------------|
+| ------------------ | ------------------------------------------------------------ |
 | **db**             | Keycloak database backup (`licensing-keycloak.zip`)          |
-| **docker-compose** | Docker Compose files for infra + services                    |
+| **docker-compose** | Docker Compose files to run servers and client               |
 | **scripts**        | Utility scripts to run the client (`run_license_sdk_cli.sh`) |
 
 ---
@@ -90,15 +82,11 @@ integrate seamlessly with **Keycloak** for user identity and license metadata.
 ## Running the Licensing Service
 
 ```bash
-cd licensing/docker-compose
+cd licensing/docker-compose/server
 docker-compose up -d
 ```
 
-This starts **Keycloak**, **Redis**, **Licensing Service**, and **Licensing Service SDK** in the background.
-Wait \~45 seconds for the services to initialize on the first run.
-
-> For local/dev split mode: you can run `docker-compose -f docker-compose.infra.yml up -d` to only start Keycloak +
-> Redis.
+This starts Keycloak, Licensing Service, and Licensing Service SDK in the background. Wait \~45 seconds for the services to initialize on the first run.
 
 ---
 
@@ -125,7 +113,7 @@ licensing-service-sdk-cli | INFO Message: License is valid
 cd licensing/licensing-service-sdk-cli
 mvn clean package
 cd target
-java -jar licensing-service-sdk-cli-1.0.1.jar -s crm -v 1.5.0 -i "crm~macbook~00:2A:8D:BE:F1:56" -k "<LICENSE_KEY>"
+java -jar licensing-service-sdk-cli-1.0.1.jar -s crm -v 1.5.0 -i "crm~macbook~00:2A:8D:BE:F1:56" -k "BSAYLI.<opaqueB64Url>"
 ```
 
 ---
@@ -135,7 +123,7 @@ java -jar licensing-service-sdk-cli-1.0.1.jar -s crm -v 1.5.0 -i "crm~macbook~00
 ```bash
 cd licensing/scripts
 chmod +x run_license_sdk_cli.sh
-./run_license_sdk_cli.sh -s billing -v 2.0.0 -i "billing~macbook~00:2A:8D:BE:F1:56" -k "<LICENSE_KEY>"
+./run_license_sdk_cli.sh -s billing -v 2.0.0 -i "billing~macbook~00:2A:8D:BE:F1:56" -k "BSAYLI.<opaqueB64Url>"
 ```
 
 ---
@@ -149,15 +137,13 @@ chmod +x run_license_sdk_cli.sh
 
 ## Security Note
 
-Demo configuration files contain inline secrets in `application.yml`. In production, **HashiCorp Vault** or another
-secret manager should be used. Vault integration is part of the **roadmap**.
+Demo configuration files contain inline secrets in `application.yml`. In production, **HashiCorp Vault** or another secret manager should be used. Vault integration is part of the **roadmap**.
 
 ---
 
 ## Feedback & Questions
 
-If you notice any issues in this documentation or have suggestions for improvements, feel free to open an **Issue** or a
-**Discussion**.
+If you notice any issues in this documentation or have suggestions for improvements, feel free to open an **Issue** or a **Discussion**.
 
 ---
 
@@ -176,11 +162,9 @@ If you found this project useful, please consider giving it a star ⭐ on GitHub
 
 ## Related Modules (Quick View)
 
-| Module                          | Purpose                                    | Quick Command                                                           |
-|---------------------------------|--------------------------------------------|-------------------------------------------------------------------------|
-| **docker-compose (all-in-one)** | Keycloak + Redis + Service + SDK           | `cd docker-compose && docker-compose up -d`                             |
-| **docker-compose.infra** (opt)  | Keycloak + Redis (infra only, dev/testing) | `cd docker-compose && docker-compose -f docker-compose.infra.yml up -d` |
-| **licensing-service**           | REST API for issuing and validating tokens | (started via all-in-one compose)                                        |
-| **licensing-service-sdk**       | Client SDK for integration                 | `mvn clean package`                                                     |
-| **licensing-service-sdk-cli**   | CLI demo client                            | `java -jar ... -k ... -s ...`                                           |
-| **license-generator**           | Key & signature tooling                    | `mvn exec:java -Dexec.mainClass=...`                                    |
+| Module                        | Purpose                                    | Quick Command                        |
+| ----------------------------- | ------------------------------------------ | ------------------------------------ |
+| **licensing-service**         | REST API for issuing and validating tokens | `docker-compose up -d`               |
+| **licensing-service-sdk**     | Client SDK for integration                 | `mvn clean package`                  |
+| **licensing-service-sdk-cli** | CLI demo client                            | `java -jar ... -k ... -s ...`        |
+| **license-generator**         | Key & signature tooling                    | `mvn exec:java -Dexec.mainClass=...` |
