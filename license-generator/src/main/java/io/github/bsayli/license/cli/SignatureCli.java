@@ -2,6 +2,8 @@ package io.github.bsayli.license.cli;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.bsayli.license.cli.service.SignatureService;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.List;
@@ -22,11 +24,13 @@ public final class SignatureCli {
   private static final String ARG_INSTANCE_ID = "--instanceId";
   private static final String ARG_LICENSE_KEY = "--licenseKey";
   private static final String ARG_TOKEN = "--token";
-  private static final String ARG_PRIVATE_KEY = "--privateKey";
+
+  // changed: now file-based
+  private static final String ARG_PRIVATE_KEY_FILE = "--privateKeyFile";
+  private static final String ARG_PUBLIC_KEY_FILE = "--publicKeyFile";
 
   private static final String ARG_DATA_JSON = "--dataJson";
   private static final String ARG_SIGNATURE = "--signatureB64";
-  private static final String ARG_PUBLIC_KEY = "--publicKey";
 
   private static final String ARG_HELP_LONG = "--help";
   private static final String ARG_HELP_SHORT = "-h";
@@ -61,7 +65,7 @@ public final class SignatureCli {
       return MODE_SIGN.equalsIgnoreCase(mode) ? runSign(argv) : runVerify(argv);
     } catch (Exception e) {
       log.error("Unexpected error: {}", e.getMessage(), e);
-      return EXIT_SIGN;
+      return MODE_SIGN.equalsIgnoreCase(mode) ? EXIT_SIGN : EXIT_VERIFY;
     }
   }
 
@@ -69,15 +73,13 @@ public final class SignatureCli {
     String serviceId = readRequired(argv, ARG_SERVICE_ID, "Missing --serviceId");
     String serviceVersion = readRequired(argv, ARG_SERVICE_VERSION, "Missing --serviceVersion");
     String instanceId = readRequired(argv, ARG_INSTANCE_ID, "Missing --instanceId");
-    String privateKeyB64 =
-        readRequired(argv, ARG_PRIVATE_KEY, "Missing --privateKey (PKCS#8 Base64 Ed25519)");
+    String privateKeyPath = readRequired(argv, ARG_PRIVATE_KEY_FILE, "Missing --privateKeyFile");
 
     boolean missingRequired =
         isBlank(serviceId)
             || isBlank(serviceVersion)
             || isBlank(instanceId)
-            || isBlank(privateKeyB64);
-
+            || isBlank(privateKeyPath);
     if (missingRequired) {
       printUsage();
       return EXIT_USAGE;
@@ -85,7 +87,6 @@ public final class SignatureCli {
 
     Optional<String> licOpt = readOptionValue(argv, ARG_LICENSE_KEY).filter(s -> !s.isBlank());
     Optional<String> tokOpt = readOptionValue(argv, ARG_TOKEN).filter(s -> !s.isBlank());
-
     if (licOpt.isPresent() == tokOpt.isPresent()) {
       log.error("Provide exactly one of --licenseKey or --token");
       printUsage();
@@ -93,6 +94,8 @@ public final class SignatureCli {
     }
 
     try {
+      String privateKeyB64 = readFileTrimmed(privateKeyPath, "private key");
+
       var svc = new SignatureService();
       SignatureService.SignResult result =
           licOpt.isPresent()
@@ -109,22 +112,30 @@ public final class SignatureCli {
     } catch (GeneralSecurityException | JsonProcessingException e) {
       log.error("Signing error: {}", e.getMessage(), e);
       return EXIT_SIGN;
+    } catch (IllegalArgumentException e) {
+      log.error(e.getMessage());
+      printUsage();
+      return EXIT_USAGE;
+    } catch (Exception e) {
+      log.error("I/O error: {}", e.getMessage(), e);
+      return EXIT_SIGN;
     }
   }
 
   private static int runVerify(List<String> argv) {
     String dataJson = readRequired(argv, ARG_DATA_JSON, "Missing --dataJson");
     String signatureB64 = readRequired(argv, ARG_SIGNATURE, "Missing --signatureB64");
-    String publicKeyB64 =
-        readRequired(argv, ARG_PUBLIC_KEY, "Missing --publicKey (SPKI Base64 Ed25519)");
+    String publicKeyPath = readRequired(argv, ARG_PUBLIC_KEY_FILE, "Missing --publicKeyFile");
 
-    boolean missingRequired = isBlank(dataJson) || isBlank(signatureB64) || isBlank(publicKeyB64);
+    boolean missingRequired = isBlank(dataJson) || isBlank(signatureB64) || isBlank(publicKeyPath);
     if (missingRequired) {
       printUsage();
       return EXIT_USAGE;
     }
 
     try {
+      String publicKeyB64 = readFileTrimmed(publicKeyPath, "public key");
+
       var svc = new SignatureService();
       boolean ok = svc.verify(publicKeyB64, dataJson, signatureB64);
       if (ok) {
@@ -137,6 +148,30 @@ public final class SignatureCli {
     } catch (GeneralSecurityException e) {
       log.error("Verification error: {}", e.getMessage(), e);
       return EXIT_VERIFY;
+    } catch (IllegalArgumentException e) {
+      log.error(e.getMessage());
+      printUsage();
+      return EXIT_USAGE;
+    } catch (Exception e) {
+      log.error("I/O error: {}", e.getMessage(), e);
+      return EXIT_VERIFY;
+    }
+  }
+
+  private static String readFileTrimmed(String pathStr, String what) {
+    Path p = Path.of(pathStr);
+    if (!Files.exists(p)) {
+      throw new IllegalArgumentException("File not found for " + what + ": " + p.toAbsolutePath());
+    }
+    try {
+      String s = Files.readString(p).trim();
+      if (s.isBlank()) {
+        throw new IllegalArgumentException("Empty " + what + " file: " + p.toAbsolutePath());
+      }
+      return s;
+    } catch (Exception e) {
+      throw new IllegalArgumentException(
+          "Failed to read " + what + " file: " + p.toAbsolutePath(), e);
     }
   }
 
@@ -169,41 +204,41 @@ public final class SignatureCli {
   private static void printUsage() {
     log.info(
         """
-            Usage:
+                Usage:
 
-              # SIGN (Ed25519, PKCS#8 private key Base64)
-              java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
-                --mode sign \\
-                --serviceId <id> --serviceVersion <ver> --instanceId <inst> \\
-                --licenseKey <FULL-license-key> \\
-                --privateKey <base64-pkcs8-ed25519>
+                  # SIGN (Ed25519, private key read from file)
+                  java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
+                    --mode sign \\
+                    --serviceId <id> --serviceVersion <ver> --instanceId <inst> \\
+                    --licenseKey <FULL-license-key> \\
+                    --privateKeyFile /secure/keys/signature.private.key
 
-              # or with token (exactly one of --licenseKey or --token)
-              java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
-                --mode sign \\
-                --serviceId <id> --serviceVersion <ver> --instanceId <inst> \\
-                --token <jwt> \\
-                --privateKey <base64-pkcs8-ed25519>
+                  # or with token (exactly one of --licenseKey or --token)
+                  java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
+                    --mode sign \\
+                    --serviceId <id> --serviceVersion <ver> --instanceId <inst> \\
+                    --token <jwt> \\
+                    --privateKeyFile /secure/keys/signature.private.key
 
-              # VERIFY (Ed25519, SPKI public key Base64)
-              java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
-                --mode verify \\
-                --dataJson '{...}' \\
-                --signatureB64 <base64-signature> \\
-                --publicKey <base64-spki-ed25519>
+                  # VERIFY (Ed25519, public key read from file)
+                  java -cp license-generator.jar io.github.bsayli.license.cli.SignatureCli \\
+                    --mode verify \\
+                    --dataJson '{...}' \\
+                    --signatureB64 <base64-signature> \\
+                    --publicKeyFile /secure/keys/signature.public.key
 
-            Options:
-              --mode sign|verify
-              --serviceId <id>
-              --serviceVersion <version>
-              --instanceId <instance>
-              --licenseKey <FULL license key>   (sign)
-              --token <jwt>                     (sign)
-              --privateKey <base64-pkcs8-ed25519>  (sign)
-              --publicKey  <base64-spki-ed25519>  (verify)
-              --dataJson <json>                   (verify)
-              --signatureB64 <base64>             (verify)
-              --help, -h
-            """);
+                Options:
+                  --mode sign|verify
+                  --serviceId <id>
+                  --serviceVersion <version>
+                  --instanceId <instance>
+                  --licenseKey <FULL license key>   (sign)
+                  --token <jwt>                     (sign)
+                  --privateKeyFile </path/to/pkcs8> (sign)
+                  --publicKeyFile  </path/to/spki>  (verify)
+                  --dataJson <json>                 (verify)
+                  --signatureB64 <base64>           (verify)
+                  --help, -h
+                """);
   }
 }

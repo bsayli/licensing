@@ -6,9 +6,9 @@ import javax.crypto.SecretKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class LicenseKeyService {
+public final class LicenseKeyGeneratorService {
 
-  private static final Logger log = LoggerFactory.getLogger(LicenseKeyService.class);
+  private static final Logger log = LoggerFactory.getLogger(LicenseKeyGeneratorService.class);
 
   public LicenseKeyResult generate(String userId, SecretKey aesKey) {
     if (userId == null || userId.isBlank()) {

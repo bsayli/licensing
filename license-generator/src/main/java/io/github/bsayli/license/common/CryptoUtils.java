@@ -4,6 +4,7 @@ import static io.github.bsayli.license.common.CryptoConstants.*;
 
 import java.security.GeneralSecurityException;
 import java.security.Key;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -57,5 +58,14 @@ public final class CryptoUtils {
     Cipher cipher = Cipher.getInstance(AES_GCM_TRANSFORMATION);
     cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
     return cipher.doFinal(ctAndTag);
+  }
+
+  public static String base64Sha256(String text) throws GeneralSecurityException {
+    byte[] digest = MessageDigest.getInstance("SHA-256").digest(text.getBytes(UTF8));
+    return B64_ENC.encodeToString(digest);
+  }
+
+  public static byte[] sha256(byte[] data) throws GeneralSecurityException {
+    return MessageDigest.getInstance("SHA-256").digest(data);
   }
 }

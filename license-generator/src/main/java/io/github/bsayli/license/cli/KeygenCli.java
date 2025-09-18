@@ -21,14 +21,23 @@ public final class KeygenCli {
   private static final String ARG_MODE = "--mode";
   private static final String MODE_AES = "aes";
   private static final String MODE_ED25519 = "ed25519";
+
   private static final String ARG_SIZE = "--size";
   private static final String ARG_DIR = "--dir";
+  private static final String ARG_PURPOSE = "--purpose";
+  private static final String PURPOSE_SIGNATURE = "signature";
+  private static final String PURPOSE_JWT = "jwt";
+
   private static final String ARG_HELP_LONG = "--help";
   private static final String ARG_HELP_SHORT = "-h";
 
   private static final String AES_FILE = "aes.key";
-  private static final String PUB_FILE = "signature.public.key";
-  private static final String PRIV_FILE = "signature.private.key";
+
+  private static final String SIGN_PUB_FILE = "signature.public.key";
+  private static final String SIGN_PRIV_FILE = "signature.private.key";
+
+  private static final String JWT_PUB_FILE = "jwt.public.key";
+  private static final String JWT_PRIV_FILE = "jwt.private.key";
 
   private KeygenCli() {}
 
@@ -67,7 +76,18 @@ public final class KeygenCli {
     }
 
     try {
-      return MODE_AES.equalsIgnoreCase(mode) ? generateAes(dir, argv) : generateEd25519(dir);
+      if (MODE_AES.equalsIgnoreCase(mode)) {
+        return generateAes(dir, argv);
+      } else {
+        var purpose = read(ARG_PURPOSE, argv).orElse(PURPOSE_SIGNATURE);
+        if (!PURPOSE_SIGNATURE.equalsIgnoreCase(purpose)
+            && !PURPOSE_JWT.equalsIgnoreCase(purpose)) {
+          log.error("Missing or invalid --purpose (expected: signature | jwt)");
+          printUsage();
+          return EXIT_USAGE;
+        }
+        return generateEd25519(dir, purpose);
+      }
     } catch (IllegalArgumentException e) {
       log.error(e.getMessage());
       printUsage();
@@ -92,12 +112,15 @@ public final class KeygenCli {
     return EXIT_OK;
   }
 
-  private static int generateEd25519(Path dir) throws GeneralSecurityException, IOException {
+  private static int generateEd25519(Path dir, String purpose)
+      throws GeneralSecurityException, IOException {
     var service = new KeygenService();
     var pair = service.generateEd25519();
 
-    var pub = dir.resolve(PUB_FILE);
-    var prv = dir.resolve(PRIV_FILE);
+    boolean isJwt = PURPOSE_JWT.equalsIgnoreCase(purpose);
+
+    var pub = dir.resolve(isJwt ? JWT_PUB_FILE : SIGN_PUB_FILE);
+    var prv = dir.resolve(isJwt ? JWT_PRIV_FILE : SIGN_PRIV_FILE);
 
     writeTextFileAtomically(pub, pair.publicSpkiB64());
     writeTextFileAtomically(prv, pair.privatePkcs8B64());
@@ -105,8 +128,8 @@ public final class KeygenCli {
     setFilePermissions600(pub);
     setFilePermissions600(prv);
 
-    log.info("Ed25519 public key  written to {}", pub.toAbsolutePath());
-    log.info("Ed25519 private key written to {}", prv.toAbsolutePath());
+    log.info("{} public key  written to {}", isJwt ? "JWT" : "Signature", pub.toAbsolutePath());
+    log.info("{} private key written to {}", isJwt ? "JWT" : "Signature", prv.toAbsolutePath());
     return EXIT_OK;
   }
 
@@ -164,18 +187,24 @@ public final class KeygenCli {
   private static void printUsage() {
     log.info(
         """
-            Usage:
-              # AES secret key -> {DIR}/aes.key
-              java -cp license-generator.jar io.github.bsayli.license.cli.KeygenCli \\
-                  --mode aes --size 256 --dir /secure/keys
+                Usage:
+                  # AES secret key -> {DIR}/aes.key
+                  java -cp license-generator.jar io.github.bsayli.license.cli.KeygenCli \\
+                      --mode aes --size 256 --dir /secure/keys
 
-              # Ed25519 key pair -> {DIR}/signature.public.key & {DIR}/signature.private.key
-              java -cp license-generator.jar io.github.bsayli.license.cli.KeygenCli \\
-                  --mode ed25519 --dir /secure/keys
+                  # Ed25519 key pair for detached signatures
+                  java -cp license-generator.jar io.github.bsayli.license.cli.KeygenCli \\
+                      --mode ed25519 --purpose signature --dir /secure/keys
+                  # -> signature.public.key, signature.private.key
 
-            Notes:
-              - Keys are written to files only (never printed).
-              - On POSIX systems, files are set to 600 when supported.
-            """);
+                  # Ed25519 key pair for JWT signing
+                  java -cp license-generator.jar io.github.bsayli.license.cli.KeygenCli \\
+                      --mode ed25519 --purpose jwt --dir /secure/keys
+                  # -> jwt.public.key, jwt.private.key
+
+                Notes:
+                  - Keys are written to files only (never printed).
+                  - On POSIX systems, files are set to 600 when supported.
+                """);
   }
 }

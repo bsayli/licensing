@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 @Tag("unit")
 @DisplayName("Unit Test: JwtTokenExtractor")
-class JwtTokenExtractorTest {
+class LicenseTokenJwtValidatorTest {
 
   private static KeyPair ed25519() throws Exception {
     return KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
@@ -45,7 +45,7 @@ class JwtTokenExtractorTest {
             .compact();
 
     String pubSpkiBase64 = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
-    JwtTokenExtractor extractor = new JwtTokenExtractor(pubSpkiBase64);
+    LicenseTokenJwtValidator extractor = new LicenseTokenJwtValidator(pubSpkiBase64);
 
     LicenseValidationResult res = extractor.validateAndGetToken(token);
 
@@ -76,7 +76,7 @@ class JwtTokenExtractorTest {
             .compact();
 
     String pubSpkiBase64 = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
-    JwtTokenExtractor extractor = new JwtTokenExtractor(pubSpkiBase64);
+    LicenseTokenJwtValidator extractor = new LicenseTokenJwtValidator(pubSpkiBase64);
 
     assertThrows(ExpiredJwtException.class, () -> extractor.validateAndGetToken(token));
   }
@@ -84,8 +84,8 @@ class JwtTokenExtractorTest {
   @Test
   @DisplayName("Blank public key should throw IllegalArgumentException at construction")
   void constructor_blankKey_shouldThrow() {
-    assertThrows(IllegalArgumentException.class, () -> new JwtTokenExtractor("  "));
-    assertThrows(IllegalArgumentException.class, () -> new JwtTokenExtractor(null));
+    assertThrows(IllegalArgumentException.class, () -> new LicenseTokenJwtValidator("  "));
+    assertThrows(IllegalArgumentException.class, () -> new LicenseTokenJwtValidator(null));
   }
 
   @Test
@@ -93,7 +93,7 @@ class JwtTokenExtractorTest {
   void validate_blankToken_shouldThrow() throws Exception {
     KeyPair kp = ed25519();
     String pubSpkiBase64 = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
-    JwtTokenExtractor extractor = new JwtTokenExtractor(pubSpkiBase64);
+    LicenseTokenJwtValidator extractor = new LicenseTokenJwtValidator(pubSpkiBase64);
 
     assertThrows(IllegalArgumentException.class, () -> extractor.validateAndGetToken(" "));
     assertThrows(IllegalArgumentException.class, () -> extractor.validateAndGetToken(null));
@@ -114,7 +114,7 @@ class JwtTokenExtractorTest {
             .compact();
 
     String wrongPubSpki = Base64.getEncoder().encodeToString(verifier.getPublic().getEncoded());
-    JwtTokenExtractor extractor = new JwtTokenExtractor(wrongPubSpki);
+    LicenseTokenJwtValidator extractor = new LicenseTokenJwtValidator(wrongPubSpki);
 
     assertThrows(JwtException.class, () -> extractor.validateAndGetToken(token));
   }

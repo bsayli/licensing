@@ -10,10 +10,10 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("unit")
-@DisplayName("Unit Test: LicenseKeyService")
-class LicenseKeyServiceTest {
+@DisplayName("Unit Test: LicenseKeyGeneratorService")
+class LicenseKeyGeneratorServiceTest {
 
-  private final LicenseKeyService svc = new LicenseKeyService();
+  private final LicenseKeyGeneratorService svc = new LicenseKeyGeneratorService();
 
   private static SecretKey genAes(int bits) throws Exception {
     KeyGenerator kg = KeyGenerator.getInstance("AES");

@@ -1,12 +1,14 @@
 package io.github.bsayli.license.signature.validator;
 
+import static io.github.bsayli.license.common.CryptoConstants.B64_ENC;
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.github.bsayli.license.common.CryptoUtils;
 import io.github.bsayli.license.signature.generator.SignatureGenerator;
 import io.github.bsayli.license.signature.model.SignatureData;
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.util.Base64;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -20,11 +22,11 @@ class SignatureValidatorTest {
   }
 
   private static String b64(byte[] bytes) {
-    return Base64.getEncoder().encodeToString(bytes);
+    return B64_ENC.encodeToString(bytes);
   }
 
-  private static SignatureData buildPayloadWithEncKeyHash(String encKeyPlain) throws Exception {
-    String hashB64 = SignatureGenerator.base64Sha256(encKeyPlain);
+  private static SignatureData buildPayloadWithEncKeyHash() throws GeneralSecurityException {
+    String hashB64 = CryptoUtils.base64Sha256("dummy-encrypted-license-key");
     return new SignatureData.Builder()
         .serviceId("bsayli-licensing")
         .serviceVersion("1.0.0")
@@ -40,7 +42,7 @@ class SignatureValidatorTest {
     String privateKeyB64 = b64(kp.getPrivate().getEncoded()); // PKCS#8
     String publicKeyB64 = b64(kp.getPublic().getEncoded()); // SPKI
 
-    SignatureData payload = buildPayloadWithEncKeyHash("dummy-encrypted-license-key");
+    SignatureData payload = buildPayloadWithEncKeyHash();
     String json = payload.toJson();
     String sig = SignatureGenerator.createSignature(payload, privateKeyB64);
 
@@ -55,11 +57,10 @@ class SignatureValidatorTest {
     String privateKeyB64 = b64(kp.getPrivate().getEncoded());
     String publicKeyB64 = b64(kp.getPublic().getEncoded());
 
-    SignatureData payload = buildPayloadWithEncKeyHash("dummy-encrypted-license-key");
+    SignatureData payload = buildPayloadWithEncKeyHash();
     String json = payload.toJson();
     String sig = SignatureGenerator.createSignature(payload, privateKeyB64);
 
-    // Any mutation should break verification (signature is over exact bytes)
     String differentJson = json + " ";
 
     SignatureValidator validator = new SignatureValidator(publicKeyB64);

@@ -46,7 +46,7 @@ java -jar target/licensing-service-sdk-cli-<version>.jar \
 
 | Flag | Long Option         | Description                                                                  | Required |
 |------|---------------------|------------------------------------------------------------------------------|----------|
-| `-k` | `--key`             | License key string (`PREFIX~RANDOM~ENCRYPTED_USER_ID`)                       | Yes      |
+| `-k` | `--key`             | License key string (`BSAYLI.<opaquePayloadBase64Url>`)                       | Yes      |
 | `-s` | `--service-id`      | Service identifier (e.g. `crm`)                                              | Yes      |
 | `-v` | `--service-version` | Service version (e.g. `1.5.0`)                                               | Yes      |
 | `-i` | `--instance-id`     | Unique instance identifier (e.g. `licensing-service~demo~00:11:22:33:44:55`) | Yes      |
@@ -65,7 +65,7 @@ Default values can also be injected from environment variables:
 
 ```bash
 java -jar target/licensing-service-sdk-cli-1.0.1.jar \
-  -k 'BSAYLI~X66e_qYlfPxWiIaN2ahPb9tQFyqjMuTih06LCytzjZ0~0aT6lLTZGkO1zHHPHFDzwF7zPiZLRLWSl06HSVQO5z+NqtzzcFCUkkVFuqHTYKcAcI9037sQQQSfBQakQDUoCA==' \
+  -k 'BSAYLI.AQA3-gCQ66DQsfC0LwnAO8DTjKgad7DhPaOtCf7WG2bFUoK9pmScIhhCf2S-D0j8g4jC7nlFrLDpuM0ezEoDQc79SizxxEIUGN9YUhTNBW7iRQ' \
   -s crm \
   -v 1.5.0 \
   -i 'licensing-service~demo~00:11:22:33:44:55'

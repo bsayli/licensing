@@ -1,7 +1,7 @@
 # Welcome to the Licensing Project!
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
-[![Release](https://img.shields.io/github/v/release/bsayli/licensing?logo=github&label=release)](https://github.com/bsayli/licensing/releases/latest)
+[![Release](https://img.shields.io/github/v/release/bsayli/licensing?logo=github\&label=release)](https://github.com/bsayli/licensing/releases/latest)
 [![codecov](https://codecov.io/gh/bsayli/licensing/branch/main/graph/badge.svg)](https://codecov.io/gh/bsayli/licensing)
 [![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
@@ -39,10 +39,13 @@
 
 ```bash
 git clone https://github.com/bsayli/licensing.git
-cd licensing/docker-compose/server && docker-compose up -d
+cd licensing/docker-compose
+docker-compose up -d
 # wait ~45s on first run
-cd ../client && docker-compose up
 ```
+
+> Optional (local/dev only): If you want to start **Keycloak + Redis** separately, you can use
+`docker-compose.infra.yml`.
 
 ---
 
@@ -69,7 +72,7 @@ integrate seamlessly with **Keycloak** for user identity and license metadata.
 | Directory          | Purpose                                                      |
 |--------------------|--------------------------------------------------------------|
 | **db**             | Keycloak database backup (`licensing-keycloak.zip`)          |
-| **docker-compose** | Docker Compose files to run servers and client               |
+| **docker-compose** | Docker Compose files for infra + services                    |
 | **scripts**        | Utility scripts to run the client (`run_license_sdk_cli.sh`) |
 
 ---
@@ -87,12 +90,15 @@ integrate seamlessly with **Keycloak** for user identity and license metadata.
 ## Running the Licensing Service
 
 ```bash
-cd licensing/docker-compose/server
+cd licensing/docker-compose
 docker-compose up -d
 ```
 
-This starts Keycloak, Licensing Service, and Licensing Service SDK in the background.
+This starts **Keycloak**, **Redis**, **Licensing Service**, and **Licensing Service SDK** in the background.
 Wait \~45 seconds for the services to initialize on the first run.
+
+> For local/dev split mode: you can run `docker-compose -f docker-compose.infra.yml up -d` to only start Keycloak +
+> Redis.
 
 ---
 
@@ -170,9 +176,11 @@ If you found this project useful, please consider giving it a star ⭐ on GitHub
 
 ## Related Modules (Quick View)
 
-| Module                        | Purpose                                    | Quick Command                        |
-|-------------------------------|--------------------------------------------|--------------------------------------|
-| **licensing-service**         | REST API for issuing and validating tokens | `docker-compose up -d`               |
-| **licensing-service-sdk**     | Client SDK for integration                 | `mvn clean package`                  |
-| **licensing-service-sdk-cli** | CLI demo client                            | `java -jar ... -k ... -s ...`        |
-| **license-generator**         | Key & signature tooling                    | `mvn exec:java -Dexec.mainClass=...` |
+| Module                          | Purpose                                    | Quick Command                                                           |
+|---------------------------------|--------------------------------------------|-------------------------------------------------------------------------|
+| **docker-compose (all-in-one)** | Keycloak + Redis + Service + SDK           | `cd docker-compose && docker-compose up -d`                             |
+| **docker-compose.infra** (opt)  | Keycloak + Redis (infra only, dev/testing) | `cd docker-compose && docker-compose -f docker-compose.infra.yml up -d` |
+| **licensing-service**           | REST API for issuing and validating tokens | (started via all-in-one compose)                                        |
+| **licensing-service-sdk**       | Client SDK for integration                 | `mvn clean package`                                                     |
+| **licensing-service-sdk-cli**   | CLI demo client                            | `java -jar ... -k ... -s ...`                                           |
+| **license-generator**           | Key & signature tooling                    | `mvn exec:java -Dexec.mainClass=...`                                    |
