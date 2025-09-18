@@ -5,6 +5,7 @@
     <groupId>io.github.bsayli</groupId>
     <artifactId>licensing-service-sdk-cli</artifactId>
     <version>1.0.4-SNAPSHOT</version>
+  
     <name>licensing-service-sdk-cli</name>
     <description>Licensing Service Sdk Cli</description>
 

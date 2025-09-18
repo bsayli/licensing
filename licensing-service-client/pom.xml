@@ -7,6 +7,7 @@
     <groupId>io.github.bsayli</groupId>
     <artifactId>licensing-service-client</artifactId>
     <version>1.0.4-SNAPSHOT</version>
+  
     <name>licensing-service-client</name>
     <description>Generated client for licensing-service using generics-aware OpenAPI templates</description>
     <packaging>jar</packaging>
