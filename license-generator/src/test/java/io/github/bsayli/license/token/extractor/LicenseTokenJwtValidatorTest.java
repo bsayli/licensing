@@ -8,6 +8,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
@@ -18,12 +19,16 @@ import org.junit.jupiter.api.Test;
 
 @Tag("unit")
 @DisplayName("Unit Test: JwtTokenExtractor")
-class JwtTokenExtractorTest {
+class LicenseTokenJwtValidatorTest {
+
+  private static KeyPair ed25519() throws Exception {
+    return KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
+  }
 
   @Test
-  @DisplayName("Valid EdDSA-signed token should be verified and claims extracted")
-  void validate_happyPath_ok() {
-    KeyPair kp = Jwts.SIG.EdDSA.keyPair().build();
+  @DisplayName("Valid Ed25519-signed token should be verified and claims extracted")
+  void validate_happyPath_ok() throws Exception {
+    KeyPair kp = ed25519();
 
     Instant now = Instant.now();
     Instant exp = now.plus(5, ChronoUnit.MINUTES);
@@ -40,7 +45,7 @@ class JwtTokenExtractorTest {
             .compact();
 
     String pubSpkiBase64 = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
-    JwtTokenExtractor extractor = new JwtTokenExtractor(pubSpkiBase64);
+    LicenseTokenJwtValidator extractor = new LicenseTokenJwtValidator(pubSpkiBase64);
 
     LicenseValidationResult res = extractor.validateAndGetToken(token);
 
@@ -54,11 +59,11 @@ class JwtTokenExtractorTest {
 
   @Test
   @DisplayName("Expired token should raise ExpiredJwtException")
-  void validate_expiredToken_shouldThrow() {
-    KeyPair kp = Jwts.SIG.EdDSA.keyPair().build();
+  void validate_expiredToken_shouldThrow() throws Exception {
+    KeyPair kp = ed25519();
 
     Instant now = Instant.now();
-    Instant exp = now.minus(1, ChronoUnit.MINUTES); // geçmiş
+    Instant exp = now.minus(1, ChronoUnit.MINUTES);
 
     String token =
         Jwts.builder()
@@ -71,7 +76,7 @@ class JwtTokenExtractorTest {
             .compact();
 
     String pubSpkiBase64 = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
-    JwtTokenExtractor extractor = new JwtTokenExtractor(pubSpkiBase64);
+    LicenseTokenJwtValidator extractor = new LicenseTokenJwtValidator(pubSpkiBase64);
 
     assertThrows(ExpiredJwtException.class, () -> extractor.validateAndGetToken(token));
   }
@@ -79,16 +84,16 @@ class JwtTokenExtractorTest {
   @Test
   @DisplayName("Blank public key should throw IllegalArgumentException at construction")
   void constructor_blankKey_shouldThrow() {
-    assertThrows(IllegalArgumentException.class, () -> new JwtTokenExtractor("  "));
-    assertThrows(IllegalArgumentException.class, () -> new JwtTokenExtractor(null));
+    assertThrows(IllegalArgumentException.class, () -> new LicenseTokenJwtValidator("  "));
+    assertThrows(IllegalArgumentException.class, () -> new LicenseTokenJwtValidator(null));
   }
 
   @Test
   @DisplayName("Blank token should throw IllegalArgumentException")
-  void validate_blankToken_shouldThrow() {
-    KeyPair kp = Jwts.SIG.EdDSA.keyPair().build();
+  void validate_blankToken_shouldThrow() throws Exception {
+    KeyPair kp = ed25519();
     String pubSpkiBase64 = Base64.getEncoder().encodeToString(kp.getPublic().getEncoded());
-    JwtTokenExtractor extractor = new JwtTokenExtractor(pubSpkiBase64);
+    LicenseTokenJwtValidator extractor = new LicenseTokenJwtValidator(pubSpkiBase64);
 
     assertThrows(IllegalArgumentException.class, () -> extractor.validateAndGetToken(" "));
     assertThrows(IllegalArgumentException.class, () -> extractor.validateAndGetToken(null));
@@ -96,9 +101,9 @@ class JwtTokenExtractorTest {
 
   @Test
   @DisplayName("Token signed with a different key should fail verification (JwtException)")
-  void validate_wrongKey_shouldThrow() {
-    KeyPair signer = Jwts.SIG.EdDSA.keyPair().build();
-    KeyPair verifier = Jwts.SIG.EdDSA.keyPair().build(); // farklı public key
+  void validate_wrongKey_shouldThrow() throws Exception {
+    KeyPair signer = ed25519();
+    KeyPair verifier = ed25519();
 
     String token =
         Jwts.builder()
@@ -109,7 +114,7 @@ class JwtTokenExtractorTest {
             .compact();
 
     String wrongPubSpki = Base64.getEncoder().encodeToString(verifier.getPublic().getEncoded());
-    JwtTokenExtractor extractor = new JwtTokenExtractor(wrongPubSpki);
+    LicenseTokenJwtValidator extractor = new LicenseTokenJwtValidator(wrongPubSpki);
 
     assertThrows(JwtException.class, () -> extractor.validateAndGetToken(token));
   }

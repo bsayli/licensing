@@ -71,7 +71,7 @@ IssueAccessRequest req = new IssueAccessRequest()
         .serviceId("crm")
         .serviceVersion("1.5.0")
         .instanceId("crm~host~mac")
-        .licenseKey("BSAYLI~RND~ENC")
+        .licenseKey("BSAYLI.<opaquePayloadBase64Url>")
         .signature("BASE64SIG");
 
 ApiClientResponse<LicenseAccessResponse> resp = adapter.issueAccess(req);

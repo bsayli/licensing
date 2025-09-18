@@ -7,7 +7,6 @@ import io.github.bsayli.licensing.testconfig.EmbeddedRedisConfig;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -38,7 +37,7 @@ class CacheConfigIT {
 
   @Test
   @DisplayName("Configured caches are registered and usable with Redis TTL applied")
-  void cachesRegisteredAndWorkingWithTtl() throws Exception {
+  void cachesRegisteredAndWorkingWithTtl() {
     assertConfiguredCachesRegistered();
 
     for (Map.Entry<String, CacheProperties.CacheSpec> e : cacheProperties.caches().entrySet()) {
@@ -65,7 +64,6 @@ class CacheConfigIT {
       assertThat(readBack).as("value should be readable from cache %s", cacheName).isNotNull();
 
       String redisKey = cacheName + "::" + key;
-      TimeUnit.MILLISECONDS.sleep(50);
 
       Long ttlSeconds = stringRedisTemplate.getExpire(redisKey);
       assertThat(ttlSeconds)

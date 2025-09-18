@@ -1,7 +1,7 @@
 package io.github.bsayli.license.token.extractor;
 
 import static io.github.bsayli.license.common.CryptoConstants.B64_DEC;
-import static io.github.bsayli.license.common.CryptoConstants.EDDSA_BC_ALGO;
+import static io.github.bsayli.license.common.CryptoConstants.ED25519_STD_ALGO;
 import static io.github.bsayli.license.common.LicenseConstants.*;
 
 import io.github.bsayli.license.token.extractor.model.LicenseValidationResult;
@@ -9,18 +9,13 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PublicKey;
-import java.security.Security;
-import java.security.spec.InvalidKeySpecException;
+import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.Date;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-public class JwtTokenExtractor {
+public class LicenseTokenJwtValidator {
 
   private static final String BC_PROVIDER = BouncyCastleProvider.PROVIDER_NAME;
 
@@ -37,16 +32,28 @@ public class JwtTokenExtractor {
 
   private final PublicKey publicKey;
 
-  public JwtTokenExtractor(String publicKeyBase64) {
+  public LicenseTokenJwtValidator(String publicKeyBase64) {
     if (publicKeyBase64 == null || publicKeyBase64.isBlank()) {
       throw new IllegalArgumentException(ERR_NULL_OR_BLANK_KEY);
     }
     try {
-      KeyFactory keyFactory = KeyFactory.getInstance(EDDSA_BC_ALGO, BC_PROVIDER);
       byte[] der = B64_DEC.decode(publicKeyBase64);
-      this.publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(der));
-    } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeySpecException e) {
+      X509EncodedKeySpec spec = new X509EncodedKeySpec(der);
+      KeyFactory keyFactory = resolveKeyFactory();
+      this.publicKey = keyFactory.generatePublic(spec);
+    } catch (Exception e) {
       throw new IllegalArgumentException(ERR_INVALID_KEY, e);
+    }
+  }
+
+  private static KeyFactory resolveKeyFactory() throws GeneralSecurityException {
+    try {
+      return KeyFactory.getInstance(ED25519_STD_ALGO);
+    } catch (NoSuchAlgorithmException e) {
+      if (Security.getProvider(BC_PROVIDER) == null) {
+        Security.addProvider(new BouncyCastleProvider());
+      }
+      return KeyFactory.getInstance(ED25519_STD_ALGO, BC_PROVIDER);
     }
   }
 
