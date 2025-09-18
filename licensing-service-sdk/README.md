@@ -49,7 +49,8 @@ subproject.
 
 ## High-Level Flow
 
-1. **Application** calls SDK’s `/v1/licenses/access` endpoint with a license key.
+1. **Application** calls SDK’s `/v1/licenses/access` endpoint with a license key (format:
+   `BSAYLI.<opaquePayloadBase64Url>`).
 2. SDK computes **clientId** (hash of instanceId + service info).
 3. SDK checks **local cache** for a token.
 
@@ -83,7 +84,7 @@ Controller: `LicenseController`
 
 ```json
 {
-  "licenseKey": "<LICENSE_KEY>",
+  "licenseKey": "<BSAYLI.<opaquePayloadBase64Url>>",
   "instanceId": "crm~host123~00:AA:BB:CC:DD:EE",
   "checksum": "<optional>",
   "serviceId": "crm",
@@ -110,7 +111,7 @@ Controller: `LicenseController`
 curl -u licensingSdkUser:licensingSdkPass \
   -H 'Content-Type: application/json' \
   -d '{
-        "licenseKey":"<LICENSE_KEY>",
+        "licenseKey":"<BSAYLI.<opaquePayloadBase64Url>>",
         "instanceId":"crm~host123~00:AA:BB:CC:DD:EE",
         "checksum":"<OPTIONAL>",
         "serviceId":"crm",
@@ -166,7 +167,7 @@ licensing-service-api:
 
 caching:
   spring:
-    licenseTokenTTL: 90m
+    licenseTokenTTL: 65m  # refreshes well before server expiry (server ~90m + jitter)
 
 signature:
   private:
@@ -178,14 +179,14 @@ signature:
 * `SERVER_PORT`, `SERVER_SERVLET_CONTEXT_PATH`
 * `LICENSING_SERVICE_API_BASE_URL`, `LICENSING_SERVICE_API_BASIC_USERNAME`, `LICENSING_SERVICE_API_BASIC_PASSWORD`
 * `CACHING_SPRING_LICENSETOKENTTL`
-* `SIGNATURE_PRIVATE_KEY`
+* `SIGNATURE_PRIVATE_KEY` (Base64 PKCS#8 Ed25519 private key used to create detached signatures)
 
 ---
 
 ## Caching
 
 * `licenseTokens` — local token cache (Caffeine)
-* Configurable TTL (default `65m`) to align with Licensing Service JWT expiration (90m − jitter)
+* Default TTL is **65m** so the SDK renews well before server-side JWT expiry (90m ± jitter)
 
 ---
 
@@ -193,7 +194,7 @@ signature:
 
 * **Algorithm**: EdDSA (Ed25519)
 * **Detached signature** generation for issue/validate requests
-* **ClientId** computed via SHA-256 hash (instanceId + serviceId + serviceVersion + checksum)
+* **ClientId** computed via SHA‑256 hash (instanceId + serviceId + serviceVersion + checksum)
 
 ---
 

@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("unit")
-@DisplayName("Unit Test: LicenseTokenService")
-class LicenseTokenServiceTest {
+@DisplayName("Unit Test: LicenseTokenValidationService")
+class LicenseTokenValidationServiceTest {
 
-  private final LicenseTokenService svc = new LicenseTokenService();
+  private final LicenseTokenValidationService svc = new LicenseTokenValidationService();
 
   @Test
   @DisplayName("Blank inputs should throw IllegalArgumentException")

@@ -6,7 +6,8 @@ import io.github.bsayli.license.common.LicenseConstants;
 import io.github.bsayli.license.licensekey.model.LicenseKeyData;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Pattern;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -15,68 +16,62 @@ import org.junit.jupiter.api.Test;
 @DisplayName("Unit Test: LicenseKeyGenerator")
 class LicenseKeyGeneratorTest {
 
+  private static SecretKey genAes(int bits) throws Exception {
+    KeyGenerator kg = KeyGenerator.getInstance("AES");
+    kg.init(bits);
+    return kg.generateKey();
+  }
+
   @Test
-  @DisplayName("Generated license key should follow PREFIX~random~encryptedUserId format")
-  void generateLicenseKey_format_ok() {
-    String encryptedUserId = "encryptedUserId123";
-    LicenseKeyData keyData = LicenseKeyGenerator.generateLicenseKey(encryptedUserId);
+  @DisplayName("Generated license key should follow 'PREFIX.OPAQUE' format")
+  void generateLicenseKey_format_ok() throws Exception {
+    String userId = "11111111-2222-3333-4444-555555555555";
+    SecretKey aesKey = genAes(256);
+
+    LicenseKeyData keyData = LicenseKeyGenerator.generateLicenseKey(userId, aesKey);
     String licenseKey = keyData.generateLicenseKey();
 
-    String[] parts = licenseKey.split(LicenseConstants.LICENSE_DELIMITER);
+    assertNotNull(licenseKey);
+    assertFalse(licenseKey.isBlank());
 
-    assertEquals(3, parts.length, "License key must have 3 segments");
-    assertEquals(LicenseConstants.LICENSE_KEY_PREFIX, parts[0]);
-    assertEquals(encryptedUserId, parts[2]);
-    assertFalse(parts[1].isBlank(), "Random segment must not be blank");
+    String[] parts = licenseKey.split("\\.", 2);
+    assertEquals(2, parts.length, "License key must have 2 segments: PREFIX.OPAQUE");
+    assertEquals(LicenseConstants.LICENSE_KEY_PREFIX, parts[0], "Prefix must match");
+
+    String opaque = parts[1];
+    assertNotNull(opaque);
+    assertFalse(opaque.isBlank());
+
+    // URL-safe Base64 (no padding)
+    assertTrue(
+        opaque.matches("^[A-Za-z0-9_-]+$"), "Opaque payload must be URL-safe Base64 (no padding)");
   }
 
   @Test
-  @DisplayName("Random segment should differ across multiple invocations")
-  void randomSegment_shouldBeDifferent() {
-    String encryptedUserId = "encryptedUserId123";
+  @DisplayName("Opaque payload must be URL-safe Base64 (no '+', '/', '=')")
+  void opaque_is_urlsafe_base64() throws Exception {
+    String userId = "enc-uid";
+    SecretKey aesKey = genAes(256);
 
-    Set<String> randomSegments = new HashSet<>();
-    for (int i = 0; i < 5; i++) {
-      LicenseKeyData keyData = LicenseKeyGenerator.generateLicenseKey(encryptedUserId);
-      String[] parts = keyData.generateLicenseKey().split(LicenseConstants.LICENSE_DELIMITER);
-      randomSegments.add(parts[1]);
-    }
-
-    assertTrue(randomSegments.size() > 1, "Random segment must vary across generations");
-  }
-
-  @Test
-  @DisplayName("Random segment is URL-safe Base64 (no '+', '/', '=') and has expected length")
-  void randomSegment_urlSafe_and_expectedLength() {
-    String encryptedUserId = "enc-uid";
-    LicenseKeyData keyData = LicenseKeyGenerator.generateLicenseKey(encryptedUserId);
-    String[] parts = keyData.generateLicenseKey().split(LicenseConstants.LICENSE_DELIMITER);
-    String random = parts[1];
-
-    Pattern urlSafe = Pattern.compile("^[A-Za-z0-9_-]+$");
-    assertTrue(urlSafe.matcher(random).matches(), "Random segment must be URL-safe Base64");
-
-    int n = LicenseConstants.RANDOM_BYTES_FOR_KEY;
-    int paddedLen = 4 * ((n + 2) / 3);
-    int paddingChars = (3 - (n % 3)) % 3;
-    int expectedLen = paddedLen - paddingChars;
-
-    assertEquals(
-        expectedLen, random.length(), "Random segment length should match expected Base64 length");
+    String opaque = LicenseKeyGenerator.generateLicenseKey(userId, aesKey).opaquePayloadB64Url();
+    assertNotNull(opaque);
+    assertFalse(opaque.isBlank());
+    assertTrue(
+        opaque.matches("^[A-Za-z0-9_-]+$"), "Opaque payload must be URL-safe Base64 (no padding)");
   }
 
   @Test
   @DisplayName("Many generated keys should be unique (probabilistic check)")
-  void generate_many_shouldBeUnique() {
-    String encryptedUserId = "enc-uid";
+  void generate_many_shouldBeUnique() throws Exception {
+    String userId = "enc-uid";
+    SecretKey aesKey = genAes(256);
+
     int count = 100;
     Set<String> keys = new HashSet<>(count);
-
     for (int i = 0; i < count; i++) {
-      LicenseKeyData keyData = LicenseKeyGenerator.generateLicenseKey(encryptedUserId);
-      keys.add(keyData.generateLicenseKey());
+      LicenseKeyData kd = LicenseKeyGenerator.generateLicenseKey(userId, aesKey);
+      keys.add(kd.generateLicenseKey());
     }
-
     assertEquals(count, keys.size(), "Generated license keys should be unique in a larger sample");
   }
 }

@@ -4,6 +4,7 @@ import static io.github.bsayli.license.common.CryptoConstants.*;
 
 import java.security.GeneralSecurityException;
 import java.security.Key;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -12,10 +13,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 public final class CryptoUtils {
   private CryptoUtils() {}
-
-  public static String toBase64(SecretKey key) {
-    return B64_ENC.encodeToString(key.getEncoded());
-  }
 
   public static String toBase64(Key key) {
     return B64_ENC.encodeToString(key.getEncoded());
@@ -33,38 +30,42 @@ public final class CryptoUtils {
     return out;
   }
 
-  public static String aesGcmEncryptToBase64(SecretKey key, String plainText)
+  public static byte[] aesGcmEncryptRaw(SecretKey key, byte[] plaintext)
       throws GeneralSecurityException {
-    return aesGcmEncryptToBase64(key, plainText.getBytes(UTF8));
-  }
 
-  public static String aesGcmEncryptToBase64(SecretKey key, byte[] plaintext)
-      throws GeneralSecurityException {
     byte[] iv = new byte[GCM_IV_LENGTH_BYTES];
     RNG.nextBytes(iv);
 
     Cipher cipher = Cipher.getInstance(AES_GCM_TRANSFORMATION);
     cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+    byte[] ctAndTag = cipher.doFinal(plaintext); // CT || TAG
 
-    byte[] cipherBytes = cipher.doFinal(plaintext);
-    return B64_ENC.encodeToString(concat(iv, cipherBytes));
+    return concat(iv, ctAndTag);
   }
 
-  public static String aesGcmDecryptFromBase64(SecretKey key, String encryptedBase64)
+  public static byte[] aesGcmDecryptRaw(SecretKey key, byte[] ivAndCipherText)
       throws GeneralSecurityException {
-    byte[] plain = aesGcmDecryptBytesFromBase64(key, encryptedBase64);
-    return new String(plain, UTF8);
-  }
 
-  public static byte[] aesGcmDecryptBytesFromBase64(SecretKey key, String encryptedBase64)
-      throws GeneralSecurityException {
-    byte[] all = B64_DEC.decode(encryptedBase64);
-    byte[] iv = Arrays.copyOfRange(all, 0, GCM_IV_LENGTH_BYTES);
-    byte[] cipherBytes = Arrays.copyOfRange(all, GCM_IV_LENGTH_BYTES, all.length);
+    if (ivAndCipherText == null
+        || ivAndCipherText.length < GCM_IV_LENGTH_BYTES + GCM_TAG_LENGTH_BYTES) {
+      throw new IllegalArgumentException("Invalid GCM payload");
+    }
+
+    byte[] iv = Arrays.copyOfRange(ivAndCipherText, 0, GCM_IV_LENGTH_BYTES);
+    byte[] ctAndTag =
+        Arrays.copyOfRange(ivAndCipherText, GCM_IV_LENGTH_BYTES, ivAndCipherText.length);
 
     Cipher cipher = Cipher.getInstance(AES_GCM_TRANSFORMATION);
     cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+    return cipher.doFinal(ctAndTag);
+  }
 
-    return cipher.doFinal(cipherBytes);
+  public static String base64Sha256(String text) throws GeneralSecurityException {
+    byte[] digest = MessageDigest.getInstance("SHA-256").digest(text.getBytes(UTF8));
+    return B64_ENC.encodeToString(digest);
+  }
+
+  public static byte[] sha256(byte[] data) throws GeneralSecurityException {
+    return MessageDigest.getInstance("SHA-256").digest(data);
   }
 }

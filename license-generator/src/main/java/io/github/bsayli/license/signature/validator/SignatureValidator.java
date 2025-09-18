@@ -1,11 +1,14 @@
 package io.github.bsayli.license.signature.validator;
 
+import static io.github.bsayli.license.common.CryptoConstants.B64_DEC;
 import static io.github.bsayli.license.common.CryptoConstants.ED25519_STD_ALGO;
+import static io.github.bsayli.license.common.CryptoConstants.UTF8;
 
-import java.nio.charset.StandardCharsets;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.Signature;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
 
 public final class SignatureValidator {
 
@@ -16,7 +19,7 @@ public final class SignatureValidator {
       throw new IllegalArgumentException("Public key must not be null/blank");
     }
     try {
-      byte[] der = Base64.getDecoder().decode(publicKeyBase64);
+      byte[] der = B64_DEC.decode(publicKeyBase64);
       KeyFactory kf = KeyFactory.getInstance(ED25519_STD_ALGO);
       this.publicKey = kf.generatePublic(new X509EncodedKeySpec(der));
     } catch (Exception e) {
@@ -26,8 +29,8 @@ public final class SignatureValidator {
 
   public boolean validateSignature(String signatureB64, String canonicalJson)
       throws GeneralSecurityException {
-    byte[] sig = Base64.getDecoder().decode(signatureB64);
-    byte[] data = canonicalJson.getBytes(StandardCharsets.UTF_8);
+    byte[] sig = B64_DEC.decode(signatureB64);
+    byte[] data = canonicalJson.getBytes(UTF8);
 
     Signature s = Signature.getInstance(ED25519_STD_ALGO);
     s.initVerify(publicKey);

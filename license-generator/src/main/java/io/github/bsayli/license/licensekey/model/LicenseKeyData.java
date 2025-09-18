@@ -1,14 +1,10 @@
 package io.github.bsayli.license.licensekey.model;
 
-import io.github.bsayli.license.common.LicenseConstants;
+import static io.github.bsayli.license.common.LicenseConstants.LICENSE_DELIMITER;
 
-public record LicenseKeyData(String prefix, String randomString, String uuid) {
+public record LicenseKeyData(String prefix, String opaquePayloadB64Url) {
 
   public String generateLicenseKey() {
-    return prefix
-        + LicenseConstants.LICENSE_DELIMITER
-        + randomString
-        + LicenseConstants.LICENSE_DELIMITER
-        + uuid;
+    return prefix + LICENSE_DELIMITER + opaquePayloadB64Url;
   }
 }

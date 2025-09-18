@@ -49,14 +49,14 @@ integrity, and uses **Redis** caches for performance and token/session handling.
 * **Token refresh orchestration** (re-issue)
 * **Redis** caches (online/offline user info, sessions)
 * **Internationalized** error messages (messages.properties)
-* **OpenAPI** with schema wrappers (generic ApiResponse<T>)
+* **OpenAPI** with schema wrappers (generic `ApiResponse<T>`)
 
 ---
 
 ## High-Level Flow
 
 1. **Client** calls `POST /v1/licenses/access` with a license key + detached signature.
-2. Service **decrypts** the license key → extracts **userId**.
+2. Service **decrypts** the license key (format **`BSAYLI.<opaqueB64Url>`**) → extracts **userId**.
 3. Service **evaluates license** (Keycloak + policy checks).
 4. Service **issues JWT** and **caches** client session context.
 5. Client later calls `POST /v1/licenses/access/validate` with the JWT + detached signature.
@@ -89,7 +89,7 @@ Controller: `LicenseController`
   "instanceId": "crm~host123~00:AA:BB:CC:DD:EE",
   "signature": "<Base64 detached signature>",
   "checksum": "<optional checksum>",
-  "licenseKey": "<BSAYLI~RANDOM_BASE64URL~ENCRYPTED_USER_ID>"
+  "licenseKey": "<BSAYLI.<opaquePayloadBase64Url>>"
 }
 ```
 
@@ -274,12 +274,17 @@ Defined in `CacheConfig` (Redis):
 * `JwtServiceImpl` signs on issue and verifies on validate
 * **Format pre-check**: base64url parts & `alg` header enforcement
 * **Detached signature** (`SignatureValidator`): validates Base64 signature over canonical JSON payload (
-  `SignatureData`)
-* **AES/GCM** utilities:
+  `SignatureData`).
+* **AES/GCM** utilities:\*\* `UserIdEncryptorImpl` — encrypt/decrypt user UUIDs.
 
-    * `UserIdEncryptorImpl` — encrypt/decrypt user UUIDs
+**License key format**
 
-> For key generation and signing helpers, see the **license-generator** subproject.
+* String form: `BSAYLI.<opaqueB64Url>` (Base64URL **without padding**)
+* Opaque bytes layout: `version(1) | flags(1) | salt(16) | gcm( iv(12) || ciphertext || tag(16) )`
+* `UserIdEncryptorImpl` parses the opaque payload and decrypts the `gcm` part to extract `userId`.
+
+> For key generation and signing helpers (AES key, Ed25519 signature/JWT keys, detached signatures), see the *
+*license-generator** subproject.
 
 ---
 

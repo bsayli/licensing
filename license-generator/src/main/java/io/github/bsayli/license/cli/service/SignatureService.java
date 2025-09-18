@@ -1,13 +1,11 @@
 package io.github.bsayli.license.cli.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.github.bsayli.license.common.CryptoUtils;
 import io.github.bsayli.license.signature.generator.SignatureGenerator;
 import io.github.bsayli.license.signature.model.SignatureData;
 import io.github.bsayli.license.signature.validator.SignatureValidator;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
-import java.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,19 +16,6 @@ public final class SignatureService {
   private static void validateNotBlank(String v, String name) {
     if (v == null || v.isBlank()) {
       throw new IllegalArgumentException("--" + name + " must not be blank");
-    }
-  }
-
-  private static String base64Sha256(String text) {
-    byte[] digest = sha256(text.getBytes(StandardCharsets.UTF_8));
-    return Base64.getEncoder().encodeToString(digest);
-  }
-
-  private static byte[] sha256(byte[] input) {
-    try {
-      return MessageDigest.getInstance("SHA-256").digest(input);
-    } catch (Exception e) {
-      throw new IllegalStateException("SHA-256 not available", e);
     }
   }
 
@@ -48,7 +33,7 @@ public final class SignatureService {
     validateNotBlank(fullLicenseKey, "licenseKey");
     validateNotBlank(privateKeyPkcs8B64, "privateKey");
 
-    String licenseKeyHashB64 = base64Sha256(fullLicenseKey);
+    String licenseKeyHashB64 = CryptoUtils.base64Sha256(fullLicenseKey);
 
     SignatureData data =
         new SignatureData.Builder()
@@ -80,7 +65,7 @@ public final class SignatureService {
     validateNotBlank(jwtToken, "token");
     validateNotBlank(privateKeyPkcs8B64, "privateKey");
 
-    String tokenHashB64 = base64Sha256(jwtToken);
+    String tokenHashB64 = CryptoUtils.base64Sha256(jwtToken);
 
     SignatureData data =
         new SignatureData.Builder()

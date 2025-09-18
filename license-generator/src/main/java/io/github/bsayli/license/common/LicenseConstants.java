@@ -3,7 +3,7 @@ package io.github.bsayli.license.common;
 public final class LicenseConstants {
 
   public static final String LICENSE_KEY_PREFIX = "BSAYLI";
-  public static final String LICENSE_DELIMITER = "~";
+  public static final String LICENSE_DELIMITER = ".";
   public static final int RANDOM_BYTES_FOR_KEY = 32;
 
   public static final String CLAIM_LICENSE_STATUS = "licenseStatus";

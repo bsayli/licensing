@@ -18,10 +18,13 @@ public class OpenApiConfig {
   @Value("${app.openapi.base-url:}")
   private String baseUrl;
 
+  @Value("${app.openapi.version:}")
+  private String version;
+
   @Bean
   public OpenAPI licensingServiceOpenAPI() {
     var openapi =
-        new OpenAPI().info(new Info().title(TITLE).version(VERSION).description(DESCRIPTION));
+        new OpenAPI().info(new Info().title(TITLE).version(version).description(DESCRIPTION));
 
     if (openapi.getComponents() == null) {
       openapi.components(new Components());
