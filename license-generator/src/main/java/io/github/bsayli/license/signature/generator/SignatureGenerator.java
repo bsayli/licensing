@@ -9,7 +9,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.bsayli.license.signature.model.SignatureData;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
-import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -28,15 +27,6 @@ public final class SignatureGenerator {
     sig.initSign(privateKey);
     sig.update(data);
     return B64_ENC.encodeToString(sig.sign());
-  }
-
-  /**
-   * Utility for hashing arbitrary text and returning Base64(SHA-256(text)). Useful if you store
-   * hashes (not raw values) inside SignatureData.
-   */
-  public static String base64Sha256(String text) throws GeneralSecurityException {
-    byte[] digest = MessageDigest.getInstance("SHA-256").digest(text.getBytes(UTF8));
-    return B64_ENC.encodeToString(digest);
   }
 
   private static PrivateKey decodeEd25519PrivateKeyFromBase64(String pkcs8Base64)

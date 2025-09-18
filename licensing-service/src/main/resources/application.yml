@@ -74,20 +74,20 @@ app:
 license:
   jwt:
     private:
-      key: 'MFECAQEwBQYDK2VwBCIEIJa52B/FN/sjW/nlB9Id+Na2B8rI2+5ZPhXTIQSzH+3BgSEA6lNvY1+qsRSYgo66OFxWZxQymd2wC6LYNr1+q2gHHMo='
+      key: 'MC4CAQAwBQYDK2VwBCIEIKuiaWNlW28cRkwTVEMvyruAEF/jZomZw0M6GnIXEg5B'
     public:
-      key: 'MCowBQYDK2VwAyEA6lNvY1+qsRSYgo66OFxWZxQymd2wC6LYNr1+q2gHHMo='
+      key: 'MCowBQYDK2VwAyEA7Of0J8DCzgMz1dhqubVrCx6SfiZT6tsULQx2MnJ9Wbw='
   service:
     ids: [ crm, billing, reporting ]
     checksum-required: [ crm, billing, reporting ]
 
 userid:
   secret:
-    key: 's/PUyV6Ym/v0A+HehYFZ9GTpatSL1MkcVW1zBLf3cX4='
+    key: '2u3mWVT8QJEyreemcKchXBJu7FRipIztJ76DBHlyhT8='
 
 signature:
   public:
-    key: 'MCowBQYDK2VwAyEAl/bnQXUbWqDOZYxCBd0mQ2JejBUWNteKhfC2zPS+GME='
+    key: 'MCowBQYDK2VwAyEAyHQ5vPg4ukYWGR/sCLKLAzyQLzhszsX5SLNbJ6XeJBw='
 
 keycloak:
   server-url: http://localhost:8180

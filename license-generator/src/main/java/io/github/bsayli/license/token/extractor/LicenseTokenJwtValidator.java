@@ -15,7 +15,7 @@ import java.time.Instant;
 import java.util.Date;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-public class JwtTokenExtractor {
+public class LicenseTokenJwtValidator {
 
   private static final String BC_PROVIDER = BouncyCastleProvider.PROVIDER_NAME;
 
@@ -32,7 +32,7 @@ public class JwtTokenExtractor {
 
   private final PublicKey publicKey;
 
-  public JwtTokenExtractor(String publicKeyBase64) {
+  public LicenseTokenJwtValidator(String publicKeyBase64) {
     if (publicKeyBase64 == null || publicKeyBase64.isBlank()) {
       throw new IllegalArgumentException(ERR_NULL_OR_BLANK_KEY);
     }
