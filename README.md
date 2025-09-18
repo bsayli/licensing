@@ -90,6 +90,19 @@ This starts Keycloak, Licensing Service, and Licensing Service SDK in the backgr
 
 ---
 
+## Running the Licensing Service
+
+```bash
+cd licensing/docker-compose/server
+docker-compose up -d
+```
+
+This starts Keycloak, Licensing Service, and Licensing Service SDK in the background. Wait \~45 seconds for the services to initialize on the first run.
+
+**Optional (local/dev only):** If you want to start only **Keycloak + Redis** separately, you can use `docker-compose.infra.yml`.
+
+---
+
 ## Running the License Validation Tool via Docker
 
 ```bash
@@ -125,8 +138,6 @@ cd licensing/scripts
 chmod +x run_license_sdk_cli.sh
 ./run_license_sdk_cli.sh -s billing -v 2.0.0 -i "billing~macbook~00:2A:8D:BE:F1:56" -k "BSAYLI.<opaqueB64Url>"
 ```
-
----
 
 ## Notes
 
