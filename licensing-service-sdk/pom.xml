@@ -12,6 +12,7 @@
     <groupId>io.github.bsayli</groupId>
     <artifactId>licensing-service-sdk</artifactId>
     <version>1.0.4-SNAPSHOT</version>
+  
     <name>licensing-service-sdk</name>
     <description>Licensing Service SDK App</description>
 
