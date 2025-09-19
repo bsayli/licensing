@@ -95,17 +95,6 @@ docker-compose up -d
 
 This starts Keycloak, Licensing Service, and Licensing Service SDK in the background. Wait \~45 seconds for the services to initialize on the first run.
 
----
-
-## Running the Licensing Service
-
-```bash
-cd licensing/docker-compose/server
-docker-compose up -d
-```
-
-This starts Keycloak, Licensing Service, and Licensing Service SDK in the background. Wait \~45 seconds for the services to initialize on the first run.
-
 **Optional (local/dev only):** If you want to start only **Keycloak + Redis** separately, you can use `docker-compose.infra.yml`.
 
 ---
@@ -180,9 +169,9 @@ If you found this project useful, please consider giving it a star ⭐ on GitHub
 
 ## Related Modules (Quick View)
 
-| Module                        | Purpose                                    | Quick Command                        |
-| ----------------------------- | ------------------------------------------ | ------------------------------------ |
-| **licensing-service**         | REST API for issuing and validating tokens | `docker-compose up -d`               |
-| **licensing-service-sdk**     | Client SDK for integration                 | `mvn clean package`                  |
-| **licensing-service-sdk-cli** | CLI demo client                            | `java -jar ... -k ... -s ...`        |
-| **license-generator**         | Key & signature tooling                    | `mvn exec:java -Dexec.mainClass=...` |
+| Module                        | Purpose                                    | Documentation                                              |
+| ----------------------------- | ------------------------------------------ | ---------------------------------------------------------- |
+| **licensing-service**         | REST API for issuing and validating tokens | [README](licensing-service/README.md)                      |
+| **licensing-service-sdk**     | Client SDK for integration                 | [README](licensing-service-sdk/README.md)                  |
+| **licensing-service-sdk-cli** | CLI demo client                            | [README](licensing-service-sdk-cli/README.md)              |
+| **license-generator**         | Key & signature tooling                    | [README](license-generator/README.md)                      |
