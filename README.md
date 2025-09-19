@@ -33,10 +33,24 @@
 
 ---
 
-### TL;DR – Quickstart
+## Setting Up the Environment
+
+1. **Clone the Repository**
 
 ```bash
 git clone https://github.com/bsayli/licensing.git
+```
+
+2. **Extract Keycloak DB**
+
+* Get `licensing-keycloak.zip` from `/licensing/db`
+* Copy and extract into your home directory (\$HOME)
+
+---
+
+### TL;DR – Quickstart
+
+```bash
 cd licensing/docker-compose/server && docker-compose up -d
 # wait ~45s on first run
 cd ../client && docker-compose up
