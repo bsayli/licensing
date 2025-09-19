@@ -79,6 +79,13 @@ This project provides a **complete licensing framework** for applications, combi
 
 ---
 
+## Keycloak Configuration
+
+This project relies on **Keycloak** to store and manage license metadata.  
+A full step-by-step guide is provided in [KEYCLOAK_CONFIG.md](docs/KEYCLOAK_CONFIG.md).
+
+---
+
 ## Running the Licensing Service
 
 ```bash
