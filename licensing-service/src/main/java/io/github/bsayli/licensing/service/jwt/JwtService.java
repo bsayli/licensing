@@ -5,9 +5,9 @@ import io.jsonwebtoken.Claims;
 
 public interface JwtService {
 
-  Claims verifyAndExtractJwtClaims(String token);
+    Claims verifyAndExtractJwtClaims(String token);
 
-  String generateToken(String clientId, String licenseTier, LicenseStatus licenseStatus);
+    String generateToken(String clientId, String licenseTier, LicenseStatus licenseStatus);
 
-  boolean validateTokenFormat(String token);
+    boolean validateTokenFormat(String token);
 }

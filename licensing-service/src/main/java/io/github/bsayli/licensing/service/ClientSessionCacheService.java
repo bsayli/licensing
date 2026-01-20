@@ -5,9 +5,9 @@ import io.github.bsayli.licensing.domain.model.ClientSessionSnapshot;
 
 public interface ClientSessionCacheService {
 
-  void put(ClientInfo clientInfo);
+    void put(ClientInfo clientInfo);
 
-  ClientSessionSnapshot find(String clientId);
+    ClientSessionSnapshot find(String clientId);
 
-  void evict(String clientId);
+    void evict(String clientId);
 }

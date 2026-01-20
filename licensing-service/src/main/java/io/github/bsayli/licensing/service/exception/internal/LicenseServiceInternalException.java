@@ -5,11 +5,11 @@ import io.github.bsayli.licensing.common.exception.ServiceException;
 
 public class LicenseServiceInternalException extends ServiceException {
 
-  public LicenseServiceInternalException(Object... args) {
-    super(ServiceErrorCode.INTERNAL_SERVER_ERROR, args);
-  }
+    public LicenseServiceInternalException(Object... args) {
+        super(ServiceErrorCode.INTERNAL_SERVER_ERROR, args);
+    }
 
-  public LicenseServiceInternalException(Throwable cause, Object... args) {
-    super(ServiceErrorCode.INTERNAL_SERVER_ERROR, cause, args);
-  }
+    public LicenseServiceInternalException(Throwable cause, Object... args) {
+        super(ServiceErrorCode.INTERNAL_SERVER_ERROR, cause, args);
+    }
 }

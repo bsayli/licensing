@@ -6,7 +6,7 @@ import io.github.bsayli.licensing.domain.model.LicenseInfo;
 
 public interface LicenseServicePolicyValidator {
 
-  void assertValid(LicenseInfo licenseInfo, IssueAccessRequest request);
+    void assertValid(LicenseInfo licenseInfo, IssueAccessRequest request);
 
-  void assertValid(LicenseInfo licenseInfo, ValidateAccessRequest request);
+    void assertValid(LicenseInfo licenseInfo, ValidateAccessRequest request);
 }

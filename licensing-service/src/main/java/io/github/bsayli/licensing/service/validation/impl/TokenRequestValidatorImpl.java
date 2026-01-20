@@ -14,94 +14,95 @@ import io.github.bsayli.licensing.service.jwt.JwtService;
 import io.github.bsayli.licensing.service.validation.TokenRequestValidator;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
-import java.util.Objects;
 import org.springframework.stereotype.Service;
+
+import java.util.Objects;
 
 @Service
 public class TokenRequestValidatorImpl implements TokenRequestValidator {
 
-  private final JwtService jwtService;
-  private final ClientSessionCacheService cacheService;
-  private final ClientIdGenerator clientIdGenerator;
-  private final SignatureValidator signatureValidator;
+    private final JwtService jwtService;
+    private final ClientSessionCacheService cacheService;
+    private final ClientIdGenerator clientIdGenerator;
+    private final SignatureValidator signatureValidator;
 
-  public TokenRequestValidatorImpl(
-      JwtService jwtService,
-      ClientSessionCacheService cacheService,
-      ClientIdGenerator clientIdGenerator,
-      SignatureValidator signatureValidator) {
-    this.jwtService = jwtService;
-    this.cacheService = cacheService;
-    this.clientIdGenerator = clientIdGenerator;
-    this.signatureValidator = signatureValidator;
-  }
-
-  @Override
-  public void assertValid(ValidateAccessRequest request, String token) {
-    signatureValidator.validate(request, token);
-
-    if (!jwtService.validateTokenFormat(token)) {
-      throw new TokenInvalidException();
+    public TokenRequestValidatorImpl(
+            JwtService jwtService,
+            ClientSessionCacheService cacheService,
+            ClientIdGenerator clientIdGenerator,
+            SignatureValidator signatureValidator) {
+        this.jwtService = jwtService;
+        this.cacheService = cacheService;
+        this.clientIdGenerator = clientIdGenerator;
+        this.signatureValidator = signatureValidator;
     }
 
-    assertRequestMatchesCache(request, token);
+    @Override
+    public void assertValid(ValidateAccessRequest request, String token) {
+        signatureValidator.validate(request, token);
 
-    try {
-      Claims claims = jwtService.verifyAndExtractJwtClaims(token);
+        if (!jwtService.validateTokenFormat(token)) {
+            throw new TokenInvalidException();
+        }
 
-      String subjectClientId = claims.getSubject();
-      String requestedClientId = clientIdGenerator.getClientId(request);
-      if (!Objects.equals(subjectClientId, requestedClientId)) {
-        throw new TokenAccessDeniedException();
-      }
+        assertRequestMatchesCache(request, token);
 
-      if (isExpired(claims)) {
-        throwTokenExceptionBasedOnCache(request, token);
-      }
-    } catch (ExpiredJwtException e) {
-      throwTokenExceptionBasedOnCache(request, token);
-    }
-  }
+        try {
+            Claims claims = jwtService.verifyAndExtractJwtClaims(token);
 
-  private void assertRequestMatchesCache(ValidateAccessRequest request, String token) {
-    String clientId = clientIdGenerator.getClientId(request);
-    ClientSessionSnapshot cached = cacheService.find(clientId);
+            String subjectClientId = claims.getSubject();
+            String requestedClientId = clientIdGenerator.getClientId(request);
+            if (!Objects.equals(subjectClientId, requestedClientId)) {
+                throw new TokenAccessDeniedException();
+            }
 
-    if (cached == null) {
-      return;
-    }
-
-    boolean tokenMatches = Objects.equals(cached.licenseToken(), token);
-    if (!tokenMatches) {
-      throw new TokenInvalidException();
+            if (isExpired(claims)) {
+                throwTokenExceptionBasedOnCache(request, token);
+            }
+        } catch (ExpiredJwtException e) {
+            throwTokenExceptionBasedOnCache(request, token);
+        }
     }
 
-    boolean serviceMatches = Objects.equals(cached.serviceId(), request.serviceId());
-    boolean versionMatches = Objects.equals(cached.serviceVersion(), request.serviceVersion());
-    boolean checksumMatches = Objects.equals(cached.checksum(), request.checksum());
+    private void assertRequestMatchesCache(ValidateAccessRequest request, String token) {
+        String clientId = clientIdGenerator.getClientId(request);
+        ClientSessionSnapshot cached = cacheService.find(clientId);
 
-    if (!(serviceMatches && versionMatches && checksumMatches)) {
-      throw new InvalidRequestException();
+        if (cached == null) {
+            return;
+        }
+
+        boolean tokenMatches = Objects.equals(cached.licenseToken(), token);
+        if (!tokenMatches) {
+            throw new TokenInvalidException();
+        }
+
+        boolean serviceMatches = Objects.equals(cached.serviceId(), request.serviceId());
+        boolean versionMatches = Objects.equals(cached.serviceVersion(), request.serviceVersion());
+        boolean checksumMatches = Objects.equals(cached.checksum(), request.checksum());
+
+        if (!(serviceMatches && versionMatches && checksumMatches)) {
+            throw new InvalidRequestException();
+        }
     }
-  }
 
-  private void throwTokenExceptionBasedOnCache(ValidateAccessRequest request, String token) {
-    String clientId = clientIdGenerator.getClientId(request);
-    ClientSessionSnapshot cached = cacheService.find(clientId);
+    private void throwTokenExceptionBasedOnCache(ValidateAccessRequest request, String token) {
+        String clientId = clientIdGenerator.getClientId(request);
+        ClientSessionSnapshot cached = cacheService.find(clientId);
 
-    if (cached == null) {
-      throw new TokenIsTooOldForRefreshException();
+        if (cached == null) {
+            throw new TokenIsTooOldForRefreshException();
+        }
+
+        if (Objects.equals(cached.licenseToken(), token)) {
+            throw new TokenExpiredException(cached.encUserId());
+        } else {
+            throw new TokenInvalidException();
+        }
     }
 
-    if (Objects.equals(cached.licenseToken(), token)) {
-      throw new TokenExpiredException(cached.encUserId());
-    } else {
-      throw new TokenInvalidException();
+    private boolean isExpired(Claims claims) {
+        long now = System.currentTimeMillis();
+        return claims.getExpiration() == null || claims.getExpiration().getTime() <= now;
     }
-  }
-
-  private boolean isExpired(Claims claims) {
-    long now = System.currentTimeMillis();
-    return claims.getExpiration() == null || claims.getExpiration().getTime() <= now;
-  }
 }

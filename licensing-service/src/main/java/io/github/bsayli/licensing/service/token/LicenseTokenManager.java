@@ -10,43 +10,43 @@ import org.springframework.stereotype.Component;
 @Component
 public class LicenseTokenManager {
 
-  private final JwtService jwtService;
-  private final ClientSessionCacheService cache;
+    private final JwtService jwtService;
+    private final ClientSessionCacheService cache;
 
-  public LicenseTokenManager(JwtService jwtService, ClientSessionCacheService cache) {
-    this.jwtService = jwtService;
-    this.cache = cache;
-  }
-
-  public String issueAndCache(LicenseTokenIssueRequest req) {
-    LicenseValidationResult result = req.result();
-    String token =
-        jwtService.generateToken(req.clientId(), result.licenseTier(), result.licenseStatus());
-
-    ClientInfo clientInfo =
-        new ClientInfo.Builder()
-            .serviceId(req.serviceId())
-            .serviceVersion(req.serviceVersion())
-            .instanceId(req.instanceId())
-            .checksum(req.checksum())
-            .signature(req.signature())
-            .encUserId(result.userId())
-            .licenseToken(token)
-            .build();
-
-    cache.put(clientInfo);
-    return token;
-  }
-
-  public String peekActive(String clientId) {
-    ClientSessionSnapshot snap = cache.find(clientId);
-    if (snap == null) return null;
-    try {
-      jwtService.verifyAndExtractJwtClaims(snap.licenseToken());
-      return snap.licenseToken();
-    } catch (io.jsonwebtoken.ExpiredJwtException e) {
-      cache.evict(clientId);
-      return null;
+    public LicenseTokenManager(JwtService jwtService, ClientSessionCacheService cache) {
+        this.jwtService = jwtService;
+        this.cache = cache;
     }
-  }
+
+    public String issueAndCache(LicenseTokenIssueRequest req) {
+        LicenseValidationResult result = req.result();
+        String token =
+                jwtService.generateToken(req.clientId(), result.licenseTier(), result.licenseStatus());
+
+        ClientInfo clientInfo =
+                new ClientInfo.Builder()
+                        .serviceId(req.serviceId())
+                        .serviceVersion(req.serviceVersion())
+                        .instanceId(req.instanceId())
+                        .checksum(req.checksum())
+                        .signature(req.signature())
+                        .encUserId(result.userId())
+                        .licenseToken(token)
+                        .build();
+
+        cache.put(clientInfo);
+        return token;
+    }
+
+    public String peekActive(String clientId) {
+        ClientSessionSnapshot snap = cache.find(clientId);
+        if (snap == null) return null;
+        try {
+            jwtService.verifyAndExtractJwtClaims(snap.licenseToken());
+            return snap.licenseToken();
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            cache.evict(clientId);
+            return null;
+        }
+    }
 }

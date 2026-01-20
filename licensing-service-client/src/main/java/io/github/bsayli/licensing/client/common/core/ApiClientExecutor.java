@@ -1,25 +1,20 @@
 package io.github.bsayli.licensing.client.common.core;
 
-import io.github.bsayli.licensing.client.common.contract.ApiClientResponse;
-import java.util.function.Supplier;
+import io.github.bsayli.apicontract.envelope.ServiceResponse;
+import io.github.bsayli.licensing.client.common.problem.ApiClientException;
+import io.github.bsayli.licensing.client.common.problem.ApiProblemException;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpStatusCodeException;
+
+import java.util.function.Supplier;
 
 @Component
 public class ApiClientExecutor {
 
-  private final ResponseParser responseParser;
-
-  public ApiClientExecutor(ResponseParser responseParser) {
-    this.responseParser = responseParser;
-  }
-
-  public <T> ApiClientResponse<T> handle(
-      String operation, Class<T> clazz, Supplier<ApiClientResponse<T>> supplier) {
-    try {
-      return supplier.get();
-    } catch (HttpStatusCodeException e) {
-      return responseParser.parseOrThrow(operation, e, clazz);
+    public <T> ServiceResponse<T> handle(String operation, Supplier<ServiceResponse<T>> supplier) {
+        try {
+            return supplier.get();
+        } catch (ApiProblemException e) {
+            throw new ApiClientException(operation, e);
+        }
     }
-  }
 }

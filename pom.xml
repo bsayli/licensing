@@ -16,7 +16,7 @@
         <tag>HEAD</tag>
     </scm>
     <properties>
-        <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
     </properties>
 
     <licenses>
@@ -31,8 +31,8 @@
         <module>license-generator</module>
         <module>licensing-service</module>
         <module>licensing-service-client</module>
-        <module>licensing-service-sdk</module>
-        <module>licensing-service-sdk-cli</module>
+        <module>licensing-agent</module>
+        <module>licensing-agent-cli</module>
     </modules>
 
     <profiles>

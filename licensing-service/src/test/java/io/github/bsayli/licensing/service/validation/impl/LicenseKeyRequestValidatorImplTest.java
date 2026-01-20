@@ -1,8 +1,5 @@
 package io.github.bsayli.licensing.service.validation.impl;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.domain.model.ClientSessionSnapshot;
 import io.github.bsayli.licensing.generator.ClientIdGenerator;
@@ -18,100 +15,109 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
+
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Unit Test: LicenseKeyRequestValidatorImpl")
 class LicenseKeyRequestValidatorImplTest {
 
-  @Mock private ClientSessionCacheService cache;
-  @Mock private ClientIdGenerator clientIdGenerator;
-  @Mock private UserIdEncryptor userIdEncryptor;
-  @Mock private SignatureValidator signatureValidator;
+    @Mock
+    private ClientSessionCacheService cache;
+    @Mock
+    private ClientIdGenerator clientIdGenerator;
+    @Mock
+    private UserIdEncryptor userIdEncryptor;
+    @Mock
+    private SignatureValidator signatureValidator;
 
-  @InjectMocks private LicenseKeyRequestValidatorImpl validator;
+    @InjectMocks
+    private LicenseKeyRequestValidatorImpl validator;
 
-  private static IssueAccessRequest req(String checksum) {
-    String licenseKey = "L".repeat(100) + "~rnd~" + "A".repeat(64);
-    String instanceId = "inst-1";
-    String safeChecksum = (checksum != null) ? checksum : "c".repeat(40);
-    String serviceId = "crm";
-    String serviceVersion = "1.2.3";
-    String signature = "S".repeat(60);
-    return new IssueAccessRequest(
-        licenseKey, instanceId, safeChecksum, serviceId, serviceVersion, signature);
-  }
+    private static IssueAccessRequest req(String checksum) {
+        String licenseKey = "L".repeat(100) + "~rnd~" + "A".repeat(64);
+        String instanceId = "inst-1";
+        String safeChecksum = (checksum != null) ? checksum : "c".repeat(40);
+        String serviceId = "crm";
+        String serviceVersion = "1.2.3";
+        String signature = "S".repeat(60);
+        return new IssueAccessRequest(
+                licenseKey, instanceId, safeChecksum, serviceId, serviceVersion, signature);
+    }
 
-  private static ClientSessionSnapshot cached(
-      String serviceId, String version, String checksum, String encUserId) {
-    return ClientSessionSnapshot.builder()
-        .serviceId(serviceId)
-        .serviceVersion(version)
-        .checksum(checksum)
-        .encUserId(encUserId)
-        .licenseToken("ignored")
-        .build();
-  }
+    private static ClientSessionSnapshot cached(
+            String serviceId, String version, String checksum, String encUserId) {
+        return ClientSessionSnapshot.builder()
+                .serviceId(serviceId)
+                .serviceVersion(version)
+                .checksum(checksum)
+                .encUserId(encUserId)
+                .licenseToken("ignored")
+                .build();
+    }
 
-  @Test
-  @DisplayName("assertSignatureValid delegates to SignatureValidator")
-  void assertSignatureValid_delegates() {
-    IssueAccessRequest request = req("chk");
-    assertDoesNotThrow(() -> validator.assertSignatureValid(request));
-    verify(signatureValidator).validate(request);
-    verifyNoMoreInteractions(signatureValidator);
-  }
+    @Test
+    @DisplayName("assertSignatureValid delegates to SignatureValidator")
+    void assertSignatureValid_delegates() {
+        IssueAccessRequest request = req("chk");
+        assertDoesNotThrow(() -> validator.assertSignatureValid(request));
+        verify(signatureValidator).validate(request);
+        verifyNoMoreInteractions(signatureValidator);
+    }
 
-  @Test
-  @DisplayName("assertNoConflictingCachedContext returns when cache is empty (null)")
-  void assertNoConflictingCachedContext_cacheEmpty() {
-    IssueAccessRequest request = req("chk");
-    when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
-    when(cache.find("client-1")).thenReturn(null); // cache miss
+    @Test
+    @DisplayName("assertNoConflictingCachedContext returns when cache is empty (null)")
+    void assertNoConflictingCachedContext_cacheEmpty() {
+        IssueAccessRequest request = req("chk");
+        when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
+        when(cache.find("client-1")).thenReturn(null); // cache miss
 
-    assertDoesNotThrow(() -> validator.assertNoConflictingCachedContext(request, "user-1"));
+        assertDoesNotThrow(() -> validator.assertNoConflictingCachedContext(request, "user-1"));
 
-    verify(clientIdGenerator).getClientId(request);
-    verify(cache).find("client-1");
-    verifyNoMoreInteractions(clientIdGenerator, cache);
-    verifyNoInteractions(userIdEncryptor);
-  }
+        verify(clientIdGenerator).getClientId(request);
+        verify(cache).find("client-1");
+        verifyNoMoreInteractions(clientIdGenerator, cache);
+        verifyNoInteractions(userIdEncryptor);
+    }
 
-  @Test
-  @DisplayName("assertNoConflictingCachedContext returns when context matches cached session")
-  void assertNoConflictingCachedContext_sameContext_returns() {
-    IssueAccessRequest request = req("chk");
-    when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
+    @Test
+    @DisplayName("assertNoConflictingCachedContext returns when context matches cached session")
+    void assertNoConflictingCachedContext_sameContext_returns() {
+        IssueAccessRequest request = req("chk");
+        when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
 
-    ClientSessionSnapshot c = cached("crm", "1.2.3", "chk", "encU");
-    when(cache.find("client-1")).thenReturn(c);
-    when(userIdEncryptor.decrypt("encU")).thenReturn("user-1");
+        ClientSessionSnapshot c = cached("crm", "1.2.3", "chk", "encU");
+        when(cache.find("client-1")).thenReturn(c);
+        when(userIdEncryptor.decrypt("encU")).thenReturn("user-1");
 
-    assertDoesNotThrow(() -> validator.assertNoConflictingCachedContext(request, "user-1"));
+        assertDoesNotThrow(() -> validator.assertNoConflictingCachedContext(request, "user-1"));
 
-    verify(clientIdGenerator).getClientId(request);
-    verify(cache).find("client-1");
-    verify(userIdEncryptor).decrypt("encU");
-    verifyNoMoreInteractions(clientIdGenerator, cache, userIdEncryptor);
-  }
+        verify(clientIdGenerator).getClientId(request);
+        verify(cache).find("client-1");
+        verify(userIdEncryptor).decrypt("encU");
+        verifyNoMoreInteractions(clientIdGenerator, cache, userIdEncryptor);
+    }
 
-  @Test
-  @DisplayName(
-      "assertNoConflictingCachedContext throws InvalidRequestException for different context")
-  void assertNoConflictingCachedContext_differentContext() {
-    IssueAccessRequest request = req("chk");
-    when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
+    @Test
+    @DisplayName(
+            "assertNoConflictingCachedContext throws InvalidRequestException for different context")
+    void assertNoConflictingCachedContext_differentContext() {
+        IssueAccessRequest request = req("chk");
+        when(clientIdGenerator.getClientId(request)).thenReturn("client-1");
 
-    ClientSessionSnapshot c = cached("crm", "9.9.9", "chk", "encU");
-    when(cache.find("client-1")).thenReturn(c);
-    when(userIdEncryptor.decrypt("encU")).thenReturn("user-2");
+        ClientSessionSnapshot c = cached("crm", "9.9.9", "chk", "encU");
+        when(cache.find("client-1")).thenReturn(c);
+        when(userIdEncryptor.decrypt("encU")).thenReturn("user-2");
 
-    assertThrows(
-        InvalidRequestException.class,
-        () -> validator.assertNoConflictingCachedContext(request, "user-1"));
+        assertThrows(
+                InvalidRequestException.class,
+                () -> validator.assertNoConflictingCachedContext(request, "user-1"));
 
-    verify(clientIdGenerator).getClientId(request);
-    verify(cache).find("client-1");
-    verify(userIdEncryptor).decrypt("encU");
-    verifyNoMoreInteractions(clientIdGenerator, cache, userIdEncryptor);
-  }
+        verify(clientIdGenerator).getClientId(request);
+        verify(cache).find("client-1");
+        verify(userIdEncryptor).decrypt("encU");
+        verifyNoMoreInteractions(clientIdGenerator, cache, userIdEncryptor);
+    }
 }

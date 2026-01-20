@@ -15,63 +15,63 @@ import org.springframework.stereotype.Service;
 @Service
 public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationService {
 
-  private final LicenseValidationService licenseValidationService;
-  private final ClientIdGenerator clientIdGenerator;
-  private final LicenseTokenManager tokenManager;
+    private final LicenseValidationService licenseValidationService;
+    private final ClientIdGenerator clientIdGenerator;
+    private final LicenseTokenManager tokenManager;
 
-  public LicenseOrchestrationServiceImpl(
-      LicenseValidationService licenseValidationService,
-      ClientIdGenerator clientIdGenerator,
-      LicenseTokenManager tokenManager) {
-    this.licenseValidationService = licenseValidationService;
-    this.clientIdGenerator = clientIdGenerator;
-    this.tokenManager = tokenManager;
-  }
-
-  @Override
-  public LicenseAccessResponse issueAccess(IssueAccessRequest request) {
-    LicenseValidationResult result = licenseValidationService.validateLicense(request);
-    String clientId = clientIdGenerator.getClientId(request);
-    String existing = tokenManager.peekActive(clientId);
-    if (existing != null) {
-      return LicenseAccessResponse.active(existing);
+    public LicenseOrchestrationServiceImpl(
+            LicenseValidationService licenseValidationService,
+            ClientIdGenerator clientIdGenerator,
+            LicenseTokenManager tokenManager) {
+        this.licenseValidationService = licenseValidationService;
+        this.clientIdGenerator = clientIdGenerator;
+        this.tokenManager = tokenManager;
     }
 
-    String token =
-        tokenManager.issueAndCache(
-            new LicenseTokenIssueRequest.Builder()
-                .clientId(clientId)
-                .result(result)
-                .serviceId(request.serviceId())
-                .serviceVersion(request.serviceVersion())
-                .instanceId(request.instanceId())
-                .checksum(request.checksum())
-                .signature(request.signature())
-                .build());
+    @Override
+    public LicenseAccessResponse issueAccess(IssueAccessRequest request) {
+        LicenseValidationResult result = licenseValidationService.validateLicense(request);
+        String clientId = clientIdGenerator.getClientId(request);
+        String existing = tokenManager.peekActive(clientId);
+        if (existing != null) {
+            return LicenseAccessResponse.active(existing);
+        }
 
-    return LicenseAccessResponse.created(token);
-  }
+        String token =
+                tokenManager.issueAndCache(
+                        new LicenseTokenIssueRequest.Builder()
+                                .clientId(clientId)
+                                .result(result)
+                                .serviceId(request.serviceId())
+                                .serviceVersion(request.serviceVersion())
+                                .instanceId(request.instanceId())
+                                .checksum(request.checksum())
+                                .signature(request.signature())
+                                .build());
 
-  @Override
-  public LicenseAccessResponse validateAccess(ValidateAccessRequest request, String token) {
-    LicenseValidationResult result = licenseValidationService.validateLicense(request, token);
-
-    if (ServiceErrorCode.TOKEN_REFRESHED == result.serviceStatus()) {
-      String clientId = clientIdGenerator.getClientId(request);
-      String newToken =
-          tokenManager.issueAndCache(
-              new LicenseTokenIssueRequest.Builder()
-                  .clientId(clientId)
-                  .result(result)
-                  .serviceId(request.serviceId())
-                  .serviceVersion(request.serviceVersion())
-                  .instanceId(request.instanceId())
-                  .checksum(request.checksum())
-                  .signature(request.signature())
-                  .build());
-      return LicenseAccessResponse.refreshed(newToken);
+        return LicenseAccessResponse.created(token);
     }
 
-    return LicenseAccessResponse.active();
-  }
+    @Override
+    public LicenseAccessResponse validateAccess(ValidateAccessRequest request, String token) {
+        LicenseValidationResult result = licenseValidationService.validateLicense(request, token);
+
+        if (ServiceErrorCode.TOKEN_REFRESHED == result.serviceStatus()) {
+            String clientId = clientIdGenerator.getClientId(request);
+            String newToken =
+                    tokenManager.issueAndCache(
+                            new LicenseTokenIssueRequest.Builder()
+                                    .clientId(clientId)
+                                    .result(result)
+                                    .serviceId(request.serviceId())
+                                    .serviceVersion(request.serviceVersion())
+                                    .instanceId(request.instanceId())
+                                    .checksum(request.checksum())
+                                    .signature(request.signature())
+                                    .build());
+            return LicenseAccessResponse.refreshed(newToken);
+        }
+
+        return LicenseAccessResponse.active();
+    }
 }

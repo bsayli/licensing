@@ -1,7 +1,5 @@
 package io.github.bsayli.licensing.common.openapi;
 
-import static io.github.bsayli.licensing.common.openapi.OpenApiConstants.*;
-
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -15,31 +13,36 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-  @Value("${app.openapi.base-url:}")
-  private String baseUrl;
+    @Value("${app.openapi.version:${project.version:unknown}}")
+    private String version;
 
-  @Value("${app.openapi.version:}")
-  private String version;
+    @Value("${app.openapi.base-url:}")
+    private String baseUrl;
 
-  @Bean
-  public OpenAPI licensingServiceOpenAPI() {
-    var openapi =
-        new OpenAPI().info(new Info().title(TITLE).version(version).description(DESCRIPTION));
+    @Bean
+    public OpenAPI licensingServiceOpenAPI() {
+        var openapi =
+                new OpenAPI()
+                        .components(new Components())
+                        .info(
+                                new Info()
+                                        .title(OpenApiConstants.TITLE)
+                                        .version(version)
+                                        .description(OpenApiConstants.DESCRIPTION));
 
-    if (openapi.getComponents() == null) {
-      openapi.components(new Components());
+        if (baseUrl != null && !baseUrl.isBlank()) {
+            openapi.addServersItem(
+                    new Server().url(baseUrl).description(OpenApiConstants.SERVER_DESCRIPTION));
+        }
+
+        openapi
+                .getComponents()
+                .addSecuritySchemes(
+                        "basicAuth",
+                        new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("basic"));
+
+        openapi.addSecurityItem(new SecurityRequirement().addList("basicAuth"));
+
+        return openapi;
     }
-
-    if (baseUrl != null && !baseUrl.isBlank()) {
-      openapi.addServersItem(new Server().url(baseUrl).description(SERVER_DESCRIPTION));
-    }
-
-    openapi
-        .getComponents()
-        .addSecuritySchemes(
-            "basicAuth", new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("basic"));
-    openapi.addSecurityItem(new SecurityRequirement().addList("basicAuth"));
-
-    return openapi;
-  }
 }

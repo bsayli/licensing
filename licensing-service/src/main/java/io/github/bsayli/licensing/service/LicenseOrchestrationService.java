@@ -5,7 +5,7 @@ import io.github.bsayli.licensing.api.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 
 public interface LicenseOrchestrationService {
-  LicenseAccessResponse issueAccess(IssueAccessRequest request);
+    LicenseAccessResponse issueAccess(IssueAccessRequest request);
 
-  LicenseAccessResponse validateAccess(ValidateAccessRequest request, String bearerToken);
+    LicenseAccessResponse validateAccess(ValidateAccessRequest request, String bearerToken);
 }

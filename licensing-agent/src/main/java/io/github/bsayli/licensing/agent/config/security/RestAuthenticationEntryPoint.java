@@ -1,0 +1,43 @@
+package io.github.bsayli.licensing.agent.config.security;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+
+@Component
+public class RestAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
+
+    private final BasicAuthProperties props;
+
+    public RestAuthenticationEntryPoint(BasicAuthProperties props) {
+        this.props = props;
+    }
+
+    @PostConstruct
+    public void init() {
+        setRealmName(props.realm() != null ? props.realm() : "LicensingServiceSDK");
+    }
+
+    @Override
+    public void commence(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            AuthenticationException authException)
+            throws IOException {
+
+        response.addHeader("WWW-Authenticate", "Basic realm=\"" + getRealmName() + "\"");
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        String body =
+                """
+                        {"success":false,"status":"UNAUTHORIZED","message":"Authentication failed","errorDetails":null}
+                        """;
+        response.getWriter().println(body);
+    }
+}

@@ -4,7 +4,7 @@ import io.github.bsayli.licensing.domain.model.LicenseInfo;
 
 public interface UserOrchestrationService {
 
-  void recordUsage(String userId, String instanceId);
+    void recordUsage(String userId, String instanceId);
 
-  LicenseInfo getLicenseInfo(String userId);
+    LicenseInfo getLicenseInfo(String userId);
 }

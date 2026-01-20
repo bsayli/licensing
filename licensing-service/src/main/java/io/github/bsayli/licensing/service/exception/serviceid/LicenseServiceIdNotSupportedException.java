@@ -5,11 +5,11 @@ import io.github.bsayli.licensing.common.exception.ServiceException;
 
 public class LicenseServiceIdNotSupportedException extends ServiceException {
 
-  public LicenseServiceIdNotSupportedException(String serviceId) {
-    super(ServiceErrorCode.LICENSE_SERVICE_ID_NOT_SUPPORTED, serviceId);
-  }
+    public LicenseServiceIdNotSupportedException(String serviceId) {
+        super(ServiceErrorCode.LICENSE_SERVICE_ID_NOT_SUPPORTED, serviceId);
+    }
 
-  public LicenseServiceIdNotSupportedException(Throwable cause, String serviceId) {
-    super(ServiceErrorCode.LICENSE_SERVICE_ID_NOT_SUPPORTED, cause, serviceId);
-  }
+    public LicenseServiceIdNotSupportedException(Throwable cause, String serviceId) {
+        super(ServiceErrorCode.LICENSE_SERVICE_ID_NOT_SUPPORTED, cause, serviceId);
+    }
 }

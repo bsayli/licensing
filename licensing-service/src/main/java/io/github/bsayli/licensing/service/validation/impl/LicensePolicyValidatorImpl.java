@@ -9,58 +9,59 @@ import io.github.bsayli.licensing.service.exception.license.LicenseInactiveExcep
 import io.github.bsayli.licensing.service.exception.license.LicenseUsageLimitExceededException;
 import io.github.bsayli.licensing.service.validation.LicensePolicyValidator;
 import io.github.bsayli.licensing.service.validation.LicenseServicePolicyValidator;
-import java.time.LocalDateTime;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class LicensePolicyValidatorImpl implements LicensePolicyValidator {
 
-  private final LicenseServicePolicyValidator servicePolicyValidator;
+    private final LicenseServicePolicyValidator servicePolicyValidator;
 
-  public LicensePolicyValidatorImpl(LicenseServicePolicyValidator servicePolicyValidator) {
-    this.servicePolicyValidator = servicePolicyValidator;
-  }
-
-  @Override
-  public void assertValid(LicenseInfo licenseInfo, IssueAccessRequest request) {
-    assertNotExpired(licenseInfo);
-    assertActive(licenseInfo);
-    assertWithinUsageLimit(licenseInfo, request.instanceId());
-    servicePolicyValidator.assertValid(licenseInfo, request);
-  }
-
-  @Override
-  public void assertValid(LicenseInfo licenseInfo, ValidateAccessRequest request) {
-    assertNotExpired(licenseInfo);
-    assertActive(licenseInfo);
-    assertWithinUsageLimit(licenseInfo, request.instanceId());
-    servicePolicyValidator.assertValid(licenseInfo, request);
-  }
-
-  @Override
-  public boolean isInstanceIdMissing(String instanceId, List<String> instanceIds) {
-    return CollectionUtils.isEmpty(instanceIds) || !instanceIds.contains(instanceId);
-  }
-
-  private void assertNotExpired(LicenseInfo info) {
-    if (LocalDateTime.now().isAfter(info.expirationDate())) {
-      throw new LicenseExpiredException();
+    public LicensePolicyValidatorImpl(LicenseServicePolicyValidator servicePolicyValidator) {
+        this.servicePolicyValidator = servicePolicyValidator;
     }
-  }
 
-  private void assertActive(LicenseInfo info) {
-    LicenseStatus status = info.licenseStatus();
-    if (status == null || !status.isActive()) {
-      throw new LicenseInactiveException();
+    @Override
+    public void assertValid(LicenseInfo licenseInfo, IssueAccessRequest request) {
+        assertNotExpired(licenseInfo);
+        assertActive(licenseInfo);
+        assertWithinUsageLimit(licenseInfo, request.instanceId());
+        servicePolicyValidator.assertValid(licenseInfo, request);
     }
-  }
 
-  private void assertWithinUsageLimit(LicenseInfo info, String instanceId) {
-    boolean within = info.remainingUsageCount() > 0;
-    if (!within && isInstanceIdMissing(instanceId, info.instanceIds())) {
-      throw new LicenseUsageLimitExceededException(info.maxCount());
+    @Override
+    public void assertValid(LicenseInfo licenseInfo, ValidateAccessRequest request) {
+        assertNotExpired(licenseInfo);
+        assertActive(licenseInfo);
+        assertWithinUsageLimit(licenseInfo, request.instanceId());
+        servicePolicyValidator.assertValid(licenseInfo, request);
     }
-  }
+
+    @Override
+    public boolean isInstanceIdMissing(String instanceId, List<String> instanceIds) {
+        return CollectionUtils.isEmpty(instanceIds) || !instanceIds.contains(instanceId);
+    }
+
+    private void assertNotExpired(LicenseInfo info) {
+        if (LocalDateTime.now().isAfter(info.expirationDate())) {
+            throw new LicenseExpiredException();
+        }
+    }
+
+    private void assertActive(LicenseInfo info) {
+        LicenseStatus status = info.licenseStatus();
+        if (status == null || !status.isActive()) {
+            throw new LicenseInactiveException();
+        }
+    }
+
+    private void assertWithinUsageLimit(LicenseInfo info, String instanceId) {
+        boolean within = info.remainingUsageCount() > 0;
+        if (!within && isInstanceIdMissing(instanceId, info.instanceIds())) {
+            throw new LicenseUsageLimitExceededException(info.maxCount());
+        }
+    }
 }

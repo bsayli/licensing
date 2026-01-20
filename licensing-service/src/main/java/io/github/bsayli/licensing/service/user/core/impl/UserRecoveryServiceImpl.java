@@ -11,21 +11,21 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserRecoveryServiceImpl implements UserRecoveryService {
 
-  private final UserCacheManagementService cache;
+    private final UserCacheManagementService cache;
 
-  public UserRecoveryServiceImpl(UserCacheManagementService cache) {
-    this.cache = cache;
-  }
-
-  @Override
-  public LicenseInfo recoverUser(String userId, ProcessingException cause) {
-    if (ConnectionExceptionPredicate.isConnectionBasedException.test(cause)) {
-      LicenseInfo cached = cache.getOffline(userId);
-      if (cached != null) {
-        return cached;
-      }
-      throw new LicenseServiceInternalException(cause, "Offline cache miss for user " + userId);
+    public UserRecoveryServiceImpl(UserCacheManagementService cache) {
+        this.cache = cache;
     }
-    throw new LicenseServiceInternalException(cause);
-  }
+
+    @Override
+    public LicenseInfo recoverUser(String userId, ProcessingException cause) {
+        if (ConnectionExceptionPredicate.isConnectionBasedException.test(cause)) {
+            LicenseInfo cached = cache.getOffline(userId);
+            if (cached != null) {
+                return cached;
+            }
+            throw new LicenseServiceInternalException(cause, "Offline cache miss for user " + userId);
+        }
+        throw new LicenseServiceInternalException(cause);
+    }
 }

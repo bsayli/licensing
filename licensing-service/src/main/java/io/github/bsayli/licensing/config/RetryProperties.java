@@ -4,5 +4,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "retry")
 public record RetryProperties(Spec userService, Spec userServiceAsync) {
-  public record Spec(int maxAttempts, long initialDelay, long multiplier, long maxDelay) {}
+    public record Spec(int maxAttempts, long initialDelay, long multiplier, long maxDelay) {
+    }
 }

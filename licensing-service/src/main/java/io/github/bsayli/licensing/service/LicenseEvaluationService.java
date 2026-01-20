@@ -6,7 +6,7 @@ import io.github.bsayli.licensing.domain.model.LicenseInfo;
 
 public interface LicenseEvaluationService {
 
-  LicenseInfo evaluateLicense(IssueAccessRequest request, String userId);
+    LicenseInfo evaluateLicense(IssueAccessRequest request, String userId);
 
-  LicenseInfo evaluateLicense(ValidateAccessRequest request, String userId);
+    LicenseInfo evaluateLicense(ValidateAccessRequest request, String userId);
 }

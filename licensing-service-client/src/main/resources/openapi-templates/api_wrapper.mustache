@@ -1,3 +1,10 @@
-public class {{classname}}
-    extends io.github.bsayli.licensing.client.common.contract.ApiClientResponse<{{vendorExtensions.x-api-wrapper-datatype}}> {
+import {{apiContractEnvelope}}.ServiceResponse;
+{{#vendorExtensions.x-data-container}}
+import {{apiContractPage}}.{{vendorExtensions.x-data-container}};
+{{/vendorExtensions.x-data-container}}
+
+{{#vendorExtensions.x-class-extra-annotation}}
+{{{vendorExtensions.x-class-extra-annotation}}}
+{{/vendorExtensions.x-class-extra-annotation}}
+public class {{classname}} extends ServiceResponse<{{#vendorExtensions.x-data-container}}{{vendorExtensions.x-data-container}}<{{vendorExtensions.x-data-item}}>{{/vendorExtensions.x-data-container}}{{^vendorExtensions.x-data-container}}{{vendorExtensions.x-api-wrapper-datatype}}{{/vendorExtensions.x-data-container}}> {
 }

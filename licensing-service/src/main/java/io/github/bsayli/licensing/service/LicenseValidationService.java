@@ -6,7 +6,7 @@ import io.github.bsayli.licensing.domain.result.LicenseValidationResult;
 
 public interface LicenseValidationService {
 
-  LicenseValidationResult validateLicense(IssueAccessRequest request);
+    LicenseValidationResult validateLicense(IssueAccessRequest request);
 
-  LicenseValidationResult validateLicense(ValidateAccessRequest request, String token);
+    LicenseValidationResult validateLicense(ValidateAccessRequest request, String token);
 }

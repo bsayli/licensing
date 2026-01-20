@@ -4,9 +4,9 @@ import io.github.bsayli.licensing.service.exception.license.LicenseInvalidExcept
 
 public interface UserIdEncryptor {
 
-  String extractAndDecryptUserId(String licenseKey) throws LicenseInvalidException;
+    String extractAndDecryptUserId(String licenseKey) throws LicenseInvalidException;
 
-  String encrypt(String userId) throws LicenseInvalidException;
+    String encrypt(String userId) throws LicenseInvalidException;
 
-  String decrypt(String userId) throws LicenseInvalidException;
+    String decrypt(String userId) throws LicenseInvalidException;
 }

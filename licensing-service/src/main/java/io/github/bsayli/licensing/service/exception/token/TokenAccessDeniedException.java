@@ -5,11 +5,11 @@ import io.github.bsayli.licensing.common.exception.ServiceException;
 
 public class TokenAccessDeniedException extends ServiceException {
 
-  public TokenAccessDeniedException(Object... args) {
-    super(ServiceErrorCode.TOKEN_INVALID_ACCESS, args);
-  }
+    public TokenAccessDeniedException(Object... args) {
+        super(ServiceErrorCode.TOKEN_INVALID_ACCESS, args);
+    }
 
-  public TokenAccessDeniedException(Throwable cause, Object... args) {
-    super(ServiceErrorCode.TOKEN_INVALID_ACCESS, cause, args);
-  }
+    public TokenAccessDeniedException(Throwable cause, Object... args) {
+        super(ServiceErrorCode.TOKEN_INVALID_ACCESS, cause, args);
+    }
 }

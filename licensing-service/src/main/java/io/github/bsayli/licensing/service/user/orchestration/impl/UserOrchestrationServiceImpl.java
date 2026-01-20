@@ -9,33 +9,33 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserOrchestrationServiceImpl implements UserOrchestrationService {
 
-  private final UserService userService;
-  private final UserCacheManagementService userCacheManagementService;
+    private final UserService userService;
+    private final UserCacheManagementService userCacheManagementService;
 
-  public UserOrchestrationServiceImpl(
-      UserService userService, UserCacheManagementService userCacheManagementService) {
-    this.userService = userService;
-    this.userCacheManagementService = userCacheManagementService;
-  }
-
-  @Override
-  public LicenseInfo getLicenseInfo(String userId) {
-    LicenseInfo offline = userCacheManagementService.getOffline(userId);
-    if (offline != null) {
-      if (userCacheManagementService.isOnlineMissing(userId)) {
-        userCacheManagementService.refreshAsync(userId);
-      }
-      return offline;
+    public UserOrchestrationServiceImpl(
+            UserService userService, UserCacheManagementService userCacheManagementService) {
+        this.userService = userService;
+        this.userCacheManagementService = userCacheManagementService;
     }
 
-    LicenseInfo online = userService.getUser(userId);
-    userCacheManagementService.putOffline(userId, online);
-    return online;
-  }
+    @Override
+    public LicenseInfo getLicenseInfo(String userId) {
+        LicenseInfo offline = userCacheManagementService.getOffline(userId);
+        if (offline != null) {
+            if (userCacheManagementService.isOnlineMissing(userId)) {
+                userCacheManagementService.refreshAsync(userId);
+            }
+            return offline;
+        }
 
-  @Override
-  public void recordUsage(String userId, String instanceId) {
-    LicenseInfo updated = userService.updateLicenseUsage(userId, instanceId);
-    userCacheManagementService.putBoth(userId, updated);
-  }
+        LicenseInfo online = userService.getUser(userId);
+        userCacheManagementService.putOffline(userId, online);
+        return online;
+    }
+
+    @Override
+    public void recordUsage(String userId, String instanceId) {
+        LicenseInfo updated = userService.updateLicenseUsage(userId, instanceId);
+        userCacheManagementService.putBoth(userId, updated);
+    }
 }

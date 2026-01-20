@@ -4,5 +4,5 @@ import io.github.bsayli.licensing.domain.model.LicenseInfo;
 import jakarta.ws.rs.ProcessingException;
 
 public interface UserRecoveryService {
-  LicenseInfo recoverUser(String userId, ProcessingException cause);
+    LicenseInfo recoverUser(String userId, ProcessingException cause);
 }

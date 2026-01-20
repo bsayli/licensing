@@ -14,7 +14,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableRetry
 public class LicensingServiceApplication {
 
-  public static void main(String[] args) {
-    SpringApplication.run(LicensingServiceApplication.class, args);
-  }
+    public static void main(String[] args) {
+        SpringApplication.run(LicensingServiceApplication.class, args);
+    }
 }

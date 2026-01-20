@@ -6,7 +6,7 @@ import io.github.bsayli.licensing.service.exception.security.SignatureInvalidExc
 
 public interface SignatureValidator {
 
-  void validate(IssueAccessRequest request) throws SignatureInvalidException;
+    void validate(IssueAccessRequest request) throws SignatureInvalidException;
 
-  void validate(ValidateAccessRequest request, String token) throws SignatureInvalidException;
+    void validate(ValidateAccessRequest request, String token) throws SignatureInvalidException;
 }

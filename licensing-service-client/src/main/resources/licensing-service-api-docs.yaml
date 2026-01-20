@@ -1,13 +1,13 @@
 openapi: 3.1.0
 info:
   title: Licensing Service API
-  description: Licensing Service type-safe generic API responses with OpenAPI
-  version: 1.0.1
+  description: Licensing Service API with type-safe generic responses using OpenAPI
+  version: 2.0.0
 servers:
   - url: http://localhost:8081/licensing-service
-    description: Licensing Service URL
+    description: Local service URL
 security:
-  - basicAuth: [ ]
+  - basicAuth: []
 paths:
   /v1/licenses/access:
     post:
@@ -26,7 +26,31 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ApiResponseLicenseAccessResponse"
+                $ref: "#/components/schemas/ServiceResponseLicenseAccessResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "405":
+          description: Method Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
   /v1/licenses/access/validate:
     post:
       tags:
@@ -53,7 +77,31 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ApiResponseLicenseAccessResponse"
+                $ref: "#/components/schemas/ServiceResponseLicenseAccessResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "405":
+          description: Method Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
 components:
   schemas:
     IssueAccessRequest:
@@ -89,22 +137,6 @@ components:
         - serviceId
         - serviceVersion
         - signature
-    ApiError:
-      type: object
-      properties:
-        errorCode:
-          type: string
-        message:
-          type: string
-    ApiResponseLicenseAccessResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-        - type: object
-          properties:
-            data:
-              $ref: "#/components/schemas/LicenseAccessResponse"
-      x-api-wrapper: true
-      x-api-wrapper-datatype: LicenseAccessResponse
     LicenseAccessResponse:
       type: object
       properties:
@@ -116,6 +148,35 @@ components:
             - TOKEN_ACTIVE
         licenseToken:
           type: string
+    Meta:
+      type: object
+      properties:
+        serverTime:
+          type: string
+          format: date-time
+        sort:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sort"
+    ServiceResponseLicenseAccessResponse:
+      allOf:
+        - $ref: "#/components/schemas/ServiceResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/LicenseAccessResponse"
+      x-api-wrapper: true
+      x-api-wrapper-datatype: LicenseAccessResponse
+    Sort:
+      type: object
+      properties:
+        field:
+          type: string
+        direction:
+          type: string
+          enum:
+            - asc
+            - desc
     ValidateAccessRequest:
       type: object
       properties:
@@ -144,42 +205,78 @@ components:
         - serviceId
         - serviceVersion
         - signature
-    ApiResponse:
+    ErrorItem:
       type: object
+      additionalProperties: false
+      description: Standard error item structure.
       properties:
+        code:
+          type: string
+          description: Short application-specific error code.
+        message:
+          type: string
+          description: Human-readable error message.
+        field:
+          type: string
+          description: Field name when error is field-specific.
+        resource:
+          type: string
+          description: Domain resource name if applicable.
+        id:
+          type: string
+          description: Resource identifier if applicable.
+      required:
+        - code
+        - message
+    ProblemDetail:
+      type: object
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          format: uri
+          description: Problem type as a URI.
+        title:
+          type: string
+          description: "Short, human-readable summary of the problem type."
         status:
           type: integer
           format: int32
-        message:
+          description: HTTP status code for this problem.
+        detail:
           type: string
-        errors:
-          type: array
-          items:
-            type: object
-            properties:
-              errorCode:
-                type: string
-              message:
-                type: string
-    ApiResponseVoid:
+          description: Human-readable explanation specific to this occurrence.
+        instance:
+          type: string
+          format: uri
+          description: URI that identifies this specific occurrence.
+        errorCode:
+          type: string
+          description: Application-specific error code.
+        extensions:
+          type: object
+          additionalProperties: false
+          description: Additional problem metadata.
+          properties:
+            errors:
+              type: array
+              description: List of error items (field-level or domain-specific).
+              items:
+                $ref: "#/components/schemas/ErrorItem"
+    ServiceResponse:
       type: object
       properties:
-        status:
-          type: integer
-          format: int32
-        message:
-          type: string
         data:
           type: object
-        errors:
-          type: array
-          items:
-            type: object
-            properties:
-              errorCode:
-                type: string
-              message:
-                type: string
+        meta:
+          $ref: "#/components/schemas/Meta"
+    ServiceResponseVoid:
+      type: object
+      properties:
+        data:
+          type: object
+        meta:
+          $ref: "#/components/schemas/Meta"
   securitySchemes:
     basicAuth:
       type: http

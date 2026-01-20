@@ -15,6 +15,9 @@ management:
         enabled: true
 
 spring:
+  mvc:
+    problemdetails:
+      enabled: true
   application:
     name: licensing-service
   profiles:
@@ -71,6 +74,10 @@ app:
   openapi:
     version: @project.version@
     base-url: "http://localhost:${server.port}${server.servlet.context-path:}"
+    wrapper:
+    # Optional: extra annotation for generated client models
+    # class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)"
+
 
 license:
   jwt:

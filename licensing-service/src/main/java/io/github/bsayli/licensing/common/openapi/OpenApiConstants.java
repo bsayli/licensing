@@ -1,10 +1,11 @@
 package io.github.bsayli.licensing.common.openapi;
 
 public final class OpenApiConstants {
-  public static final String TITLE = "Licensing Service API";
-  public static final String DESCRIPTION =
-      "Licensing Service type-safe generic API responses with OpenAPI";
-  public static final String SERVER_DESCRIPTION = "Licensing Service URL";
+    public static final String TITLE = "Licensing Service API";
+    public static final String DESCRIPTION =
+            "Licensing Service API with type-safe generic responses using OpenAPI";
+    public static final String SERVER_DESCRIPTION = "Local service URL";
 
-  private OpenApiConstants() {}
+    private OpenApiConstants() {
+    }
 }

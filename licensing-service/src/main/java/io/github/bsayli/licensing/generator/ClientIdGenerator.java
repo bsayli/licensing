@@ -6,9 +6,9 @@ import io.github.bsayli.licensing.domain.model.ClientInfo;
 
 public interface ClientIdGenerator {
 
-  String getClientId(IssueAccessRequest request);
+    String getClientId(IssueAccessRequest request);
 
-  String getClientId(ValidateAccessRequest request);
+    String getClientId(ValidateAccessRequest request);
 
-  String getClientId(ClientInfo clientInfo);
+    String getClientId(ClientInfo clientInfo);
 }

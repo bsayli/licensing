@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(RetryProperties.class)
 public class RetryConfig {
 
-  @Bean("retryProperties")
-  public RetryProperties retryPropertiesBean(RetryProperties props) {
-    return props;
-  }
+    @Bean("retryProperties")
+    public RetryProperties retryPropertiesBean(RetryProperties props) {
+        return props;
+    }
 }
