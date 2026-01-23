@@ -76,8 +76,7 @@ public class SpringHttpExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ProblemDetail handleMethodNotSupported(
             HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
-
-        String method = Optional.of(ex.getMethod()).orElse(FALLBACK_UNKNOWN);
+        String method = ex.getMethod();
 
         ProblemDetail pd =
                 baseProblem(
@@ -104,9 +103,7 @@ public class SpringHttpExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ProblemDetail handleMissingParam(
             MissingServletRequestParameterException ex, HttpServletRequest req) {
-
-        String param = Optional.of(ex.getParameterName()).orElse(FALLBACK_UNKNOWN);
-
+        String param = ex.getParameterName();
         ProblemDetail pd = buildBadRequestParamProblem(req);
 
         attachErrors(
@@ -125,7 +122,7 @@ public class SpringHttpExceptionHandler {
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ProblemDetail handleMissingHeader(MissingRequestHeaderException ex, HttpServletRequest req) {
-        String header = Optional.ofNullable(ex.getHeaderName()).orElse(FALLBACK_UNKNOWN);
+        String header = ex.getHeaderName();
 
         ProblemDetail pd = buildBadRequestParamProblem(req);
 
@@ -145,8 +142,7 @@ public class SpringHttpExceptionHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ProblemDetail handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest req) {
-
-        String paramName = Optional.of(ex.getName()).orElse(FALLBACK_UNKNOWN);
+        String paramName = ex.getName();
         String expected =
                 Optional.ofNullable(ex.getRequiredType()).map(Class::getSimpleName).orElse(FALLBACK_UNKNOWN);
 

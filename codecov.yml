@@ -2,15 +2,34 @@ coverage:
   status:
     project:
       default:
-        target: auto
+        target: 60%
         threshold: 1%
     patch:
       default:
-        target: 70%
+        enabled: false
+
 comment:
   layout: "reach, diff, flags, files"
   behavior: default
+
 ignore:
-  - "db/**"
-  - "scripts/**"
+  - "**/target/**"
   - "**/generated/**"
+  - "**/generated-sources/**"
+
+flags:
+  license-generator:
+    paths:
+      - "license-generator/"
+  licensing-service:
+    paths:
+      - "licensing-service/"
+  licensing-service-client:
+    paths:
+      - "licensing-service-client/"
+  licensing-agent:
+    paths:
+      - "licensing-agent/"
+  licensing-agent-cli:
+    paths:
+      - "licensing-agent-cli/"

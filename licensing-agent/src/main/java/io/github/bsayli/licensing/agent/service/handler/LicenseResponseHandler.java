@@ -3,7 +3,6 @@ package io.github.bsayli.licensing.agent.service.handler;
 import io.github.bsayli.apicontract.envelope.ServiceResponse;
 import io.github.bsayli.licensing.agent.common.exception.LicensingSdkRemoteServiceException;
 import io.github.bsayli.licensing.agent.common.i18n.LocalizedMessageResolver;
-import io.github.bsayli.licensing.client.common.problem.ApiClientException;
 import io.github.bsayli.licensing.client.common.problem.ApiProblemException;
 import io.github.bsayli.licensing.client.generated.dto.ErrorItem;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
@@ -29,6 +28,8 @@ public class LicenseResponseHandler {
     private static final String FALLBACK_DETAIL_NO_PAYLOAD = "no-payload";
     private static final String FALLBACK_DETAIL_EMPTY_TOKEN = "empty-token";
 
+    private static final HttpStatus FALLBACK_HTTP = HttpStatus.INTERNAL_SERVER_ERROR;
+
     private final LocalizedMessageResolver messages;
 
     public LicenseResponseHandler(LocalizedMessageResolver messages) {
@@ -37,38 +38,27 @@ public class LicenseResponseHandler {
 
     public String extractTokenOrThrow(ServiceResponse<LicenseAccessResponse> resp) {
         String token = safeToken(resp);
-        if (token == null) {
-            String top = messages.getMessage(KEY_TOP_EMPTY_TOKEN);
-            if (top == null || top.isBlank()) top = FALLBACK_TOP_REMOTE_FAILED;
+        if (token != null) return token;
 
-            String d = messages.getMessage(KEY_DETAIL_EMPTY_TOKEN);
-            if (d == null || d.isBlank()) d = FALLBACK_DETAIL_EMPTY_TOKEN;
+        String top = msgOrFallback(KEY_TOP_EMPTY_TOKEN, FALLBACK_TOP_REMOTE_FAILED);
+        String d = msgOrFallback(KEY_DETAIL_EMPTY_TOKEN, FALLBACK_DETAIL_EMPTY_TOKEN);
 
-            throw new LicensingSdkRemoteServiceException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    CODE_EMPTY_TOKEN,
-                    top,
-                    List.of(d));
-        }
-        return token;
+        throw new LicensingSdkRemoteServiceException(
+                FALLBACK_HTTP,
+                CODE_EMPTY_TOKEN,
+                top,
+                List.of(d));
     }
 
     public String extractTokenIfPresent(ServiceResponse<LicenseAccessResponse> resp) {
         return safeToken(resp);
     }
 
-    public LicensingSdkRemoteServiceException mapRemoteFailure(ApiClientException ex) {
-        ApiProblemException pe = ex.getProblem();
-
-        HttpStatus http = resolveHttp(pe);
-        String code = resolveErrorCode(pe);
-
-        String top = messages.getMessage(KEY_TOP_REMOTE_FAILED);
-        if (top == null || top.isBlank()) {
-            top = FALLBACK_TOP_REMOTE_FAILED;
-        }
-
-        List<String> details = resolveDetails(pe);
+    public LicensingSdkRemoteServiceException mapRemoteFailure(ApiProblemException ex) {
+        HttpStatus http = resolveHttp(ex);
+        String code = resolveErrorCode(ex);
+        String top = msgOrFallback(KEY_TOP_REMOTE_FAILED, FALLBACK_TOP_REMOTE_FAILED);
+        List<String> details = resolveDetails(ex);
 
         return new LicensingSdkRemoteServiceException(http, code, top, details);
     }
@@ -81,57 +71,47 @@ public class LicenseResponseHandler {
         return (t == null || t.isBlank()) ? null : t;
     }
 
-    private HttpStatus resolveHttp(ApiProblemException pe) {
-        if (pe == null) return HttpStatus.INTERNAL_SERVER_ERROR;
-        HttpStatus h = HttpStatus.resolve(pe.getStatus());
-        return (h != null) ? h : HttpStatus.INTERNAL_SERVER_ERROR;
+    private HttpStatus resolveHttp(ApiProblemException ex) {
+        if (ex == null) return FALLBACK_HTTP;
+        HttpStatus h = HttpStatus.resolve(ex.getStatus());
+        return (h != null) ? h : FALLBACK_HTTP;
     }
 
-    private String resolveErrorCode(ApiProblemException pe) {
-        if (pe == null) return CODE_REMOTE_ERROR;
+    private String resolveErrorCode(ApiProblemException ex) {
+        if (ex == null) return CODE_REMOTE_ERROR;
 
-        String c = pe.getErrorCode();
+        String c = ex.getErrorCode();
         if (c != null && !c.isBlank()) return c.trim();
 
-        ProblemDetail pd = pe.getProblem();
+        ProblemDetail pd = ex.getProblem();
         String pdCode = (pd != null) ? pd.getErrorCode() : null;
         if (pdCode != null && !pdCode.isBlank()) return pdCode.trim();
 
         return CODE_REMOTE_ERROR;
     }
 
-    private List<String> resolveDetails(ApiProblemException pe) {
-        String fallback = messages.getMessage(KEY_DETAIL_NO_PAYLOAD);
-        if (fallback == null || fallback.isBlank()) {
-            fallback = FALLBACK_DETAIL_NO_PAYLOAD;
-        }
+    private List<String> resolveDetails(ApiProblemException ex) {
+        String fallback = msgOrFallback(KEY_DETAIL_NO_PAYLOAD, FALLBACK_DETAIL_NO_PAYLOAD);
 
-        if (pe == null) {
-            return List.of(fallback);
-        }
+        if (ex == null) return List.of(fallback);
 
-        if (pe.hasErrors()) {
+        if (ex.hasErrors()) {
             List<String> errors =
-                    pe.getErrors().stream()
+                    ex.getErrors().stream()
                             .map(this::formatError)
-                            .filter(s -> !s.isBlank())
+                            .filter(s -> s != null && !s.isBlank())
                             .toList();
-
             return errors.isEmpty() ? List.of(fallback) : errors;
         }
 
-        ProblemDetail pd = pe.getProblem();
-        if (pd == null) {
-            return List.of(fallback);
-        }
+        ProblemDetail pd = ex.getProblem();
+        if (pd == null) return List.of(fallback);
 
-        if (pd.getDetail() != null && !pd.getDetail().isBlank()) {
-            return List.of(pd.getDetail().trim());
-        }
+        String d = pd.getDetail();
+        if (d != null && !d.isBlank()) return List.of(d.trim());
 
-        if (pd.getTitle() != null && !pd.getTitle().isBlank()) {
-            return List.of(pd.getTitle().trim());
-        }
+        String t = pd.getTitle();
+        if (t != null && !t.isBlank()) return List.of(t.trim());
 
         return List.of(fallback);
     }
@@ -143,6 +123,12 @@ public class LicenseResponseHandler {
         if (code.isBlank()) return msg;
         if (msg.isBlank()) return code;
         return code + SEP + msg;
+    }
+
+    private String msgOrFallback(String key, String fallback) {
+        String s = messages.getMessage(key);
+        if (s == null || s.isBlank()) return fallback;
+        return s;
     }
 
     private String safe(String s) {

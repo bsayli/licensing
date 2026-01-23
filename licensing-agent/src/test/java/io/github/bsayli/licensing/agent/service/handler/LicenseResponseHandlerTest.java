@@ -3,7 +3,11 @@ package io.github.bsayli.licensing.agent.service.handler;
 import io.github.bsayli.apicontract.envelope.ServiceResponse;
 import io.github.bsayli.licensing.agent.common.exception.LicensingSdkRemoteServiceException;
 import io.github.bsayli.licensing.agent.common.i18n.LocalizedMessageResolver;
+import io.github.bsayli.licensing.client.common.problem.ApiProblemException;
+import io.github.bsayli.licensing.client.generated.dto.ErrorItem;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
+import io.github.bsayli.licensing.client.generated.dto.ProblemDetail;
+import io.github.bsayli.licensing.client.generated.dto.ProblemDetailExtensions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -13,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
+import java.net.URI;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,8 +29,10 @@ import static org.mockito.Mockito.when;
 @DisplayName("Unit Test: LicenseResponseHandler")
 class LicenseResponseHandlerTest {
 
-    @Mock private LocalizedMessageResolver messages;
-    @InjectMocks private LicenseResponseHandler handler;
+    @Mock
+    private LocalizedMessageResolver messages;
+    @InjectMocks
+    private LicenseResponseHandler handler;
 
     @Test
     @DisplayName("extractTokenOrThrow -> token present")
@@ -63,6 +70,27 @@ class LicenseResponseHandlerTest {
     }
 
     @Test
+    @DisplayName("extractTokenOrThrow -> blank i18n messages -> fallbacks used")
+    void extractTokenOrThrow_emptyToken_blankMessages_useFallbacks() {
+        when(messages.getMessage("sdk.remote.empty.token.top")).thenReturn("   ");
+        when(messages.getMessage("sdk.remote.empty.token.detail")).thenReturn("");
+
+        @SuppressWarnings("unchecked")
+        ServiceResponse<LicenseAccessResponse> resp = mock(ServiceResponse.class);
+        LicenseAccessResponse data = mock(LicenseAccessResponse.class);
+        when(resp.getData()).thenReturn(data);
+        when(data.getLicenseToken()).thenReturn(null);
+
+        LicensingSdkRemoteServiceException ex =
+                assertThrows(LicensingSdkRemoteServiceException.class, () -> handler.extractTokenOrThrow(resp));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getHttpStatus());
+        assertEquals("EMPTY_TOKEN", ex.getErrorCode());
+        assertEquals("Remote call failed", ex.getTopMessage());
+        assertEquals(List.of("empty-token"), ex.getDetails());
+    }
+
+    @Test
     @DisplayName("extractTokenIfPresent -> no data -> null")
     void extractTokenIfPresent_noData_returnsNull() {
         @SuppressWarnings("unchecked")
@@ -81,9 +109,7 @@ class LicenseResponseHandlerTest {
         when(messages.getMessage("sdk.remote.empty.token.detail")).thenReturn("detail");
 
         LicensingSdkRemoteServiceException ex =
-                assertThrows(
-                        LicensingSdkRemoteServiceException.class,
-                        () -> handler.extractTokenOrThrow(null));
+                assertThrows(LicensingSdkRemoteServiceException.class, () -> handler.extractTokenOrThrow(null));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getHttpStatus());
         assertEquals("EMPTY_TOKEN", ex.getErrorCode());
@@ -106,4 +132,79 @@ class LicenseResponseHandlerTest {
         assertNull(token);
     }
 
+    @Test
+    @DisplayName("mapRemoteFailure -> prefers ApiProblemException.errorCode and formatted errors")
+    void mapRemoteFailure_prefersErrorCode_andFormatsErrors() {
+        when(messages.getMessage("sdk.remote.call.failed")).thenReturn("Top Remote Failed");
+        when(messages.getMessage("sdk.remote.no.payload")).thenReturn("fallback-detail");
+
+        ProblemDetailExtensions ext = new ProblemDetailExtensions();
+
+        ErrorItem e1 = new ErrorItem();
+        e1.setCode("NOT_FOUND");
+        e1.setMessage("Customer missing");
+        ext.addErrorsItem(e1);
+
+        ErrorItem e2 = new ErrorItem();
+        e2.setCode("X");
+        e2.setMessage("Y");
+        ext.addErrorsItem(e2);
+
+        ProblemDetail pd = new ProblemDetail();
+        pd.setType(URI.create("urn:test:problem"));
+        pd.setTitle("upstream title");
+        pd.setDetail("upstream detail");
+        pd.setErrorCode("PD_CODE");
+        pd.setExtensions(ext);
+
+        ApiProblemException ape = new ApiProblemException(pd, 404);
+        LicensingSdkRemoteServiceException mapped = handler.mapRemoteFailure(ape);
+
+        assertEquals(HttpStatus.NOT_FOUND, mapped.getHttpStatus());
+        assertEquals("PD_CODE", mapped.getErrorCode());
+        assertEquals("Top Remote Failed", mapped.getTopMessage());
+        assertEquals(List.of("NOT_FOUND : Customer missing", "X : Y"), mapped.getDetails());
+    }
+
+    @Test
+    @DisplayName("mapRemoteFailure -> no errors -> uses ProblemDetail.detail then title then fallback")
+    void mapRemoteFailure_noErrors_usesDetailThenTitleThenFallback() {
+        when(messages.getMessage("sdk.remote.call.failed")).thenReturn("Top Remote Failed");
+        when(messages.getMessage("sdk.remote.no.payload")).thenReturn("fallback-detail");
+
+        ProblemDetail pd = new ProblemDetail();
+        pd.setErrorCode("E");
+        pd.setDetail("detail-1");
+        ApiProblemException ape1 = new ApiProblemException(pd, 502);
+
+        LicensingSdkRemoteServiceException m1 = handler.mapRemoteFailure(ape1);
+        assertEquals(HttpStatus.BAD_GATEWAY, m1.getHttpStatus());
+        assertEquals(List.of("detail-1"), m1.getDetails());
+
+        ProblemDetail pd2 = new ProblemDetail();
+        pd2.setErrorCode("E");
+        pd2.setTitle("title-1");
+        ApiProblemException ape2 = new ApiProblemException(pd2, 502);
+
+        LicensingSdkRemoteServiceException m2 = handler.mapRemoteFailure(ape2);
+        assertEquals(List.of("title-1"), m2.getDetails());
+
+        ApiProblemException ape3 = new ApiProblemException(null, 502);
+        LicensingSdkRemoteServiceException m3 = handler.mapRemoteFailure(ape3);
+        assertEquals(List.of("fallback-detail"), m3.getDetails());
+    }
+
+    @Test
+    @DisplayName("mapRemoteFailure -> null exception -> fallback http/code/details")
+    void mapRemoteFailure_nullException_fallbacks() {
+        when(messages.getMessage("sdk.remote.call.failed")).thenReturn("Top Remote Failed");
+        when(messages.getMessage("sdk.remote.no.payload")).thenReturn("fallback-detail");
+
+        LicensingSdkRemoteServiceException mapped = handler.mapRemoteFailure(null);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, mapped.getHttpStatus());
+        assertEquals("REMOTE_ERROR", mapped.getErrorCode());
+        assertEquals("Top Remote Failed", mapped.getTopMessage());
+        assertEquals(List.of("fallback-detail"), mapped.getDetails());
+    }
 }

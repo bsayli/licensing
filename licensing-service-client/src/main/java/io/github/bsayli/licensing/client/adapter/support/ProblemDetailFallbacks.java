@@ -27,15 +27,15 @@ final class ProblemDetailFallbacks {
     private static final String ERROR_CODE_UPSTREAM_EMPTY = "UPSTREAM_EMPTY_PROBLEM";
     private static final String ERROR_CODE_UPSTREAM_STATUS_UNAVAILABLE = "UPSTREAM_STATUS_UNAVAILABLE";
 
-    private static final URI TYPE_NON_JSON = URI.create("https://example.com/problems/upstream-non-json");
-    private static final URI TYPE_UNPARSABLE = URI.create("https://example.com/problems/upstream-unparseable");
-    private static final URI TYPE_EMPTY = URI.create("https://example.com/problems/upstream-empty");
-    private static final URI TYPE_STATUS_UNAVAILABLE = URI.create("https://example.com/problems/upstream-status-unavailable");
+    private static final URI TYPE_NON_JSON = URI.create("urn:licensing:problem:upstream-non-json");
+    private static final URI TYPE_UNPARSABLE = URI.create("urn:licensing:problem:upstream-unparsable");
+    private static final URI TYPE_EMPTY = URI.create("urn:licensing:problem:upstream-empty");
+    private static final URI TYPE_STATUS_UNAVAILABLE = URI.create("urn:licensing:problem:upstream-status-unavailable");
 
     private static final String ERROR_ITEM_RESOURCE_UPSTREAM = "upstream";
     private static final String ERROR_ITEM_FIELD_CONTENT_TYPE = "contentType";
-    private static final String ERROR_ITEM_FIELD_BODY_PREVIEW = "bodyPreview";
     private static final String ERROR_ITEM_FIELD_STATUS = "status";
+    private static final String ERROR_ITEM_FIELD_CAUSE = "cause";
 
     private static final String MSG_CONTENT_TYPE_PREFIX = "Upstream Content-Type: ";
     private static final String MSG_STATUS_UNAVAILABLE = "unavailable";
@@ -43,14 +43,14 @@ final class ProblemDetailFallbacks {
     private ProblemDetailFallbacks() {
     }
 
-    static ProblemDetail emptyBody(HttpStatusCode status, MediaType contentType) {
+    static ProblemDetail emptyBody(HttpStatusCode status, MediaType contentType, Throwable bodyReadError) {
         ProblemDetail pd =
                 baseProblem(status, TYPE_EMPTY, TITLE_EMPTY, DETAIL_EMPTY, ERROR_CODE_UPSTREAM_EMPTY);
-        addContextErrors(pd, ERROR_CODE_UPSTREAM_EMPTY, false, contentType, "");
+        addContextErrors(pd, ERROR_CODE_UPSTREAM_EMPTY, false, contentType, bodyReadError);
         return pd;
     }
 
-    static ProblemDetail statusUnavailable(MediaType contentType) {
+    static ProblemDetail statusUnavailable(MediaType contentType, Throwable statusReadError) {
         ProblemDetail pd =
                 baseProblem(
                         STATUS_INTERNAL_SERVER_ERROR,
@@ -58,20 +58,18 @@ final class ProblemDetailFallbacks {
                         TITLE_HTTP_ERROR,
                         DETAIL_STATUS_UNAVAILABLE,
                         ERROR_CODE_UPSTREAM_STATUS_UNAVAILABLE);
-        addContextErrors(pd, ERROR_CODE_UPSTREAM_STATUS_UNAVAILABLE, true, contentType, "");
+        addContextErrors(pd, ERROR_CODE_UPSTREAM_STATUS_UNAVAILABLE, true, contentType, statusReadError);
         return pd;
     }
 
-    static ProblemDetail nonJson(
-            HttpStatusCode status, MediaType contentType, String preview, boolean statusUnavailable) {
+    static ProblemDetail nonJson(HttpStatusCode status, MediaType contentType, boolean statusUnavailable) {
         ProblemDetail pd =
                 baseProblem(status, TYPE_NON_JSON, TITLE_NON_JSON, DETAIL_NON_JSON, ERROR_CODE_UPSTREAM_NON_JSON);
-        addContextErrors(pd, ERROR_CODE_UPSTREAM_NON_JSON, statusUnavailable, contentType, preview);
+        addContextErrors(pd, ERROR_CODE_UPSTREAM_NON_JSON, statusUnavailable, contentType, null);
         return pd;
     }
 
-    static ProblemDetail unparsable(
-            HttpStatusCode status, MediaType contentType, String preview, boolean statusUnavailable) {
+    static ProblemDetail unparsable(HttpStatusCode status, MediaType contentType, boolean statusUnavailable, Throwable parseError) {
         ProblemDetail pd =
                 baseProblem(
                         status,
@@ -79,7 +77,7 @@ final class ProblemDetailFallbacks {
                         TITLE_UNPARSABLE,
                         DETAIL_UNPARSABLE,
                         ERROR_CODE_UPSTREAM_UNPARSABLE);
-        addContextErrors(pd, ERROR_CODE_UPSTREAM_UNPARSABLE, statusUnavailable, contentType, preview);
+        addContextErrors(pd, ERROR_CODE_UPSTREAM_UNPARSABLE, statusUnavailable, contentType, parseError);
         return pd;
     }
 
@@ -96,26 +94,21 @@ final class ProblemDetailFallbacks {
     }
 
     private static void addContextErrors(
-            ProblemDetail pd, String problemCode, boolean statusUnavailable, MediaType contentType, String preview) {
+            ProblemDetail pd, String problemCode, boolean statusUnavailable, MediaType contentType, Throwable cause) {
 
         ProblemDetailExtensions ext = new ProblemDetailExtensions();
 
         String ct = contentType != null ? contentType.toString() : "";
         if (!ct.isBlank()) {
-            ext.addErrorsItem(
-                    errorItem(problemCode, MSG_CONTENT_TYPE_PREFIX + ct, ERROR_ITEM_FIELD_CONTENT_TYPE));
+            ext.addErrorsItem(errorItem(problemCode, MSG_CONTENT_TYPE_PREFIX + ct, ERROR_ITEM_FIELD_CONTENT_TYPE));
         }
 
         if (statusUnavailable) {
-            ext.addErrorsItem(
-                    errorItem(
-                            ERROR_CODE_UPSTREAM_STATUS_UNAVAILABLE,
-                            MSG_STATUS_UNAVAILABLE,
-                            ERROR_ITEM_FIELD_STATUS));
+            ext.addErrorsItem(errorItem(ERROR_CODE_UPSTREAM_STATUS_UNAVAILABLE, MSG_STATUS_UNAVAILABLE, ERROR_ITEM_FIELD_STATUS));
         }
 
-        if (preview != null && !preview.isBlank()) {
-            ext.addErrorsItem(errorItem(problemCode, preview, ERROR_ITEM_FIELD_BODY_PREVIEW));
+        if (cause != null) {
+            ext.addErrorsItem(errorItem(problemCode, cause.getClass().getSimpleName(), ERROR_ITEM_FIELD_CAUSE));
         }
 
         if (ext.getErrors() != null && !ext.getErrors().isEmpty()) {

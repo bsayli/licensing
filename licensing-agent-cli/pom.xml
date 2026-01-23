@@ -11,21 +11,27 @@
 
     <properties>
         <java.version>21</java.version>
-        <picocli.version>4.7.7</picocli.version>
-        <httpclient5-fluent.version>5.5</httpclient5-fluent.version>
-        <jackson-databind.version>2.19.2</jackson-databind.version>
-        <slf4j-api.version>2.0.17</slf4j-api.version>
-        <logback-classic.version>1.5.18</logback-classic.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <junit.jupiter.version>5.13.4</junit.jupiter.version>
-        <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
-        <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
-        <spring-boot-maven-plugin.version>3.5.5</spring-boot-maven-plugin.version>
-        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
-        <mockito-core.version>5.19.0</mockito-core.version>
-        <mockito-inline.version>5.2.0</mockito-inline.version>
-        <mockito-junit-jupiter.version>5.19.0</mockito-junit-jupiter.version>
+        <picocli.version>4.7.7</picocli.version>
+        <httpclient5-fluent.version>5.5</httpclient5-fluent.version>
+        <jackson-databind.version>2.19.4</jackson-databind.version>
+        <slf4j-api.version>2.0.17</slf4j-api.version>
+        <logback-classic.version>1.5.25</logback-classic.version>
+        <junit.jupiter.version>5.14.2</junit.jupiter.version>
+        <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
+
+        <mockito-core.version>5.21.0</mockito-core.version>
+
+        <spring-boot-maven-plugin.version>3.5.10</spring-boot-maven-plugin.version>
+        <maven.compiler.plugin.version>3.14.1</maven.compiler.plugin.version>
+        <maven.resources.plugin.version>3.4.0</maven.resources.plugin.version>
+        <maven.dependency.plugin.version>3.9.0</maven.dependency.plugin.version>
+        <spotless-maven-plugin.version>3.1.0</spotless-maven-plugin.version>
+        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
+
+        <argLine/>
     </properties>
 
     <dependencies>
@@ -77,7 +83,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-            <version>${mockito-junit-jupiter.version}</version>
+            <version>${mockito-core.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -88,8 +94,22 @@
         <plugins>
 
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${maven.dependency.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin.version}</version>
+                <version>${maven.compiler.plugin.version}</version>
                 <configuration>
                     <release>${java.version}</release>
                     <encoding>${project.build.sourceEncoding}</encoding>
@@ -101,8 +121,32 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
-                    <useModulePath>false</useModulePath>
+                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+                    <includes>
+                        <include>**/*Test.java</include>
+                    </includes>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven-failsafe-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>default</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+                            <includes>
+                                <include>**/*IT.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
@@ -116,11 +160,27 @@
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
+
+                    <execution>
+                        <id>prepare-agent-integration</id>
+                        <goals>
+                            <goal>prepare-agent-integration</goal>
+                        </goals>
+                    </execution>
+
                     <execution>
                         <id>report</id>
                         <phase>verify</phase>
                         <goals>
                             <goal>report</goal>
+                        </goals>
+                    </execution>
+
+                    <execution>
+                        <id>report-integration</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report-integration</goal>
                         </goals>
                     </execution>
                 </executions>

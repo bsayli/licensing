@@ -10,7 +10,7 @@ import io.github.bsayli.licensing.agent.service.LicenseOrchestrationService;
 import io.github.bsayli.licensing.agent.service.LicenseTokenCacheService;
 import io.github.bsayli.licensing.agent.service.client.LicenseServiceClient;
 import io.github.bsayli.licensing.agent.service.handler.LicenseResponseHandler;
-import io.github.bsayli.licensing.client.common.problem.ApiClientException;
+import io.github.bsayli.licensing.client.common.problem.ApiProblemException;
 import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
@@ -56,7 +56,7 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
             String token = validateThenMaybeRefreshOrReissue(request, clientId, cached);
             return new LicenseToken(token);
 
-        } catch (ApiClientException e) {
+        } catch (ApiProblemException e) {
             throw responseHandler.mapRemoteFailure(e);
         }
     }
@@ -85,7 +85,7 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 
             return cachedToken;
 
-        } catch (ApiClientException e) {
+        } catch (ApiProblemException e) {
             LicensingSdkRemoteServiceException remote = responseHandler.mapRemoteFailure(e);
             if (CODE_TOKEN_TOO_OLD.equals(remote.getErrorCode())) {
                 return issueAndCacheToken(request, clientId);
@@ -112,7 +112,7 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
             licenseTokenCacheService.put(clientId, token);
             return token;
 
-        } catch (ApiClientException e) {
+        } catch (ApiProblemException e) {
             throw responseHandler.mapRemoteFailure(e);
         }
     }

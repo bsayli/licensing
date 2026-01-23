@@ -6,7 +6,6 @@ import io.github.bsayli.licensing.client.generated.dto.ProblemDetailExtensions;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -40,30 +39,6 @@ public final class ApiProblemException extends RuntimeException implements Seria
         this.errors = resolveErrors(problem);
     }
 
-    public ProblemDetail getProblem() {
-        return problem;
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public String getErrorCode() {
-        return errorCode;
-    }
-
-    public List<ErrorItem> getErrors() {
-        return errors;
-    }
-
-    public boolean hasErrors() {
-        return !errors.isEmpty();
-    }
-
-    public ErrorItem firstErrorOrNull() {
-        return errors.isEmpty() ? null : errors.getFirst();
-    }
-
     private static String resolveErrorCode(ProblemDetail pd) {
         if (pd == null) return "";
         String c = pd.getErrorCode();
@@ -76,7 +51,7 @@ public final class ApiProblemException extends RuntimeException implements Seria
         if (ext == null) return List.of();
         List<ErrorItem> list = ext.getErrors();
         if (list == null || list.isEmpty()) return List.of();
-        return Collections.unmodifiableList(List.copyOf(list));
+        return List.copyOf(list);
     }
 
     private static String buildMessage(ProblemDetail pd, int status) {
@@ -115,5 +90,29 @@ public final class ApiProblemException extends RuntimeException implements Seria
 
     private static void tag(StringBuilder sb, String key, String value) {
         if (value != null && !value.isBlank()) sb.append(" [").append(key).append('=').append(value).append(']');
+    }
+
+    public ProblemDetail getProblem() {
+        return problem;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public String getErrorCode() {
+        return errorCode;
+    }
+
+    public List<ErrorItem> getErrors() {
+        return errors;
+    }
+
+    public boolean hasErrors() {
+        return !errors.isEmpty();
+    }
+
+    public ErrorItem firstErrorOrNull() {
+        return errors.isEmpty() ? null : errors.getFirst();
     }
 }

@@ -3,90 +3,85 @@ name: Build & Test
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
   pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   build:
+    name: Build & Test
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: "21"
+          distribution: "temurin"
           cache: maven
 
-      - name: Build & run tests with coverage
-        run: mvn -B -q -ntp clean verify -Pcoverage-aggregate
+      - name: Build all modules (tests + coverage)
+        run: mvn -B -q -ntp clean verify
 
-      - name: List coverage dir (debug)
-        run: |
-          ls -la target/site || true
-          ls -la target/site/jacoco-aggregate || true
-          # Modül raporlarını da göster:
-          find . -path '*/target/site/jacoco' -maxdepth 3 -type d -print || true
-
-      - name: Compute coverage from JaCoCo XML
-        id: cov
-        run: |
-          python3 - << 'PY'
-          import xml.etree.ElementTree as ET
-          from pathlib import Path
-          p = Path("target/site/jacoco-aggregate/jacoco.xml")
-          percent = "0.00"; covered = "0"; missed = "0"
-          if p.exists():
-            root = ET.parse(p).getroot()
-            cov = mis = 0
-            for c in root.iter("counter"):
-              if c.attrib.get("type") == "LINE":
-                cov += int(c.attrib.get("covered", "0"))
-                mis += int(c.attrib.get("missed", "0"))
-            tot = cov + mis
-            if tot > 0:
-              percent = f"{(cov * 100.0 / tot):.2f}"
-              covered = str(cov)
-              missed = str(mis)
-          with open("$GITHUB_OUTPUT", "a") as f:
-            f.write(f"percent={percent}\n")
-            f.write(f"covered={covered}\n")
-            f.write(f"missed={missed}\n")
-          PY
-
-      - name: Add job summary with coverage info
-        run: |
-          echo "### JaCoCo Report ✅" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Lines**: ${{ steps.cov.outputs.percent }}%  (covered: ${{ steps.cov.outputs.covered }}, missed: ${{ steps.cov.outputs.missed }})" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Report: \`target/site/jacoco-aggregate/jacoco.xml\`" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Comment coverage on PR
-        if: ${{ github.event_name == 'pull_request' }}
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: coverage
-          message: |
-            **Coverage** (lines): **${{ steps.cov.outputs.percent }}%**
-            - Covered: ${{ steps.cov.outputs.covered }}
-            - Missed: ${{ steps.cov.outputs.missed }}
-            - JaCoCo report path: `target/site/jacoco-aggregate/jacoco.xml`
-
-      - name: Upload to Codecov
+      - name: Upload coverage (license-generator)
         uses: codecov/codecov-action@v4
         with:
-          files: target/site/jacoco-aggregate/jacoco.xml
-          flags: unittests
-          name: codecov-coverage
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: |
+            license-generator/target/site/jacoco*/jacoco.xml
+          flags: license-generator
+          name: license-generator
           fail_ci_if_error: false
 
-      - name: Upload coverage report (artifact)
-        uses: actions/upload-artifact@v4
+      - name: Upload coverage (licensing-service)
+        uses: codecov/codecov-action@v4
         with:
-          name: jacoco-aggregate-report
-          path: target/site/jacoco-aggregate
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: |
+            licensing-service/target/site/jacoco*/jacoco.xml
+          flags: licensing-service
+          name: licensing-service
+          fail_ci_if_error: false
+
+      - name: Upload coverage (licensing-service-client)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: |
+            licensing-service-client/target/site/jacoco*/jacoco.xml
+          flags: licensing-service-client
+          name: licensing-service-client
+          fail_ci_if_error: false
+
+      - name: Upload coverage (licensing-agent)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: |
+            licensing-agent/target/site/jacoco*/jacoco.xml
+          flags: licensing-agent
+          name: licensing-agent
+          fail_ci_if_error: false
+
+      - name: Upload coverage (licensing-agent-cli)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: |
+            licensing-agent-cli/target/site/jacoco*/jacoco.xml
+          flags: licensing-agent-cli
+          name: licensing-agent-cli
+          fail_ci_if_error: false

@@ -9,7 +9,7 @@ import io.github.bsayli.licensing.agent.generator.SignatureGenerator;
 import io.github.bsayli.licensing.agent.service.LicenseTokenCacheService;
 import io.github.bsayli.licensing.agent.service.client.LicenseServiceClient;
 import io.github.bsayli.licensing.agent.service.handler.LicenseResponseHandler;
-import io.github.bsayli.licensing.client.common.problem.ApiClientException;
+import io.github.bsayli.licensing.client.common.problem.ApiProblemException;
 import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
@@ -151,15 +151,15 @@ class LicenseOrchestrationServiceImplTest {
     }
 
     @Test
-    @DisplayName("Cache hit + validate throws ApiClientException -> mapped; TOKEN_TOO_OLD -> fallback issue + cache")
-    void cacheHit_validate_apiClientException_tooOld_fallbackIssue() {
+    @DisplayName("Cache hit + validate throws ApiProblemException -> mapped; TOKEN_TOO_OLD -> fallback issue + cache")
+    void cacheHit_validate_apiProblemException_tooOld_fallbackIssue() {
         when(clientIdGenerator.getClientId(sdkReq)).thenReturn("cid");
         when(cache.get("cid")).thenReturn("jwt-very-old");
 
         when(signatureGenerator.generateForValidate(eq("jwt-very-old"), any(ValidateAccessRequest.class)))
                 .thenReturn("vsig");
 
-        ApiClientException validateFail = mock(ApiClientException.class);
+        ApiProblemException validateFail = mock(ApiProblemException.class);
 
         LicensingSdkRemoteServiceException tooOld =
                 new LicensingSdkRemoteServiceException(
@@ -186,14 +186,14 @@ class LicenseOrchestrationServiceImplTest {
     }
 
     @Test
-    @DisplayName("Cache miss + issue throws ApiClientException -> mapped and thrown")
-    void cacheMiss_issue_apiClientException_mappedAndThrown() {
+    @DisplayName("Cache miss + issue throws ApiProblemException -> mapped and thrown")
+    void cacheMiss_issue_apiProblemException_mappedAndThrown() {
         when(clientIdGenerator.getClientId(sdkReq)).thenReturn("cid");
         when(cache.get("cid")).thenReturn(null);
 
         when(signatureGenerator.generateForIssue(any(IssueAccessRequest.class))).thenReturn("sig");
 
-        ApiClientException issueFail = mock(ApiClientException.class);
+        ApiProblemException issueFail = mock(ApiProblemException.class);
 
         LicensingSdkRemoteServiceException remote =
                 new LicensingSdkRemoteServiceException(
@@ -210,15 +210,15 @@ class LicenseOrchestrationServiceImplTest {
     }
 
     @Test
-    @DisplayName("Cache hit + validate throws ApiClientException -> mapped and thrown (not too old)")
-    void cacheHit_validate_apiClientException_mappedAndThrown() {
+    @DisplayName("Cache hit + validate throws ApiProblemException -> mapped and thrown (not too old)")
+    void cacheHit_validate_apiProblemException_mappedAndThrown() {
         when(clientIdGenerator.getClientId(sdkReq)).thenReturn("cid");
         when(cache.get("cid")).thenReturn("jwt-old");
 
         when(signatureGenerator.generateForValidate(eq("jwt-old"), any(ValidateAccessRequest.class)))
                 .thenReturn("vsig");
 
-        ApiClientException validateFail = mock(ApiClientException.class);
+        ApiProblemException validateFail = mock(ApiProblemException.class);
 
         LicensingSdkRemoteServiceException remote =
                 new LicensingSdkRemoteServiceException(
