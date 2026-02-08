@@ -18,7 +18,7 @@ spring:
 server:
   port: 0
   servlet:
-    context-path: /licensing-service-sdk
+    context-path: /licensing-agent
   error:
     include-message: always
     include-binding-errors: always
@@ -42,12 +42,13 @@ caching:
     licenseTokenTTL: 30m
 
 licensing:
-  sdk:
+  agent:
     api:
       basic:
-        username: "testSdkUser"
-        password: "testSdkPass"
-        realm: "LicensingServiceSDK-Test"
+      basic:
+        username: "testAgentUser"
+        password: "testAgentPass"
+        realm: "LicensingAgent-Test"
 
 licensing-service-api:
   base-url: "http://localhost:8081/licensing-service"

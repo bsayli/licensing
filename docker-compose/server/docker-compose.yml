@@ -1,3 +1,5 @@
+name: licensing
+
 networks:
   license_network:
     name: license_network
@@ -31,7 +33,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:8.2.1-bookworm
+    image: redis:8.2.3-bookworm
     container_name: licensing-redis
     networks: [ license_network ]
     ports:
@@ -51,50 +53,42 @@ services:
     restart: unless-stopped
 
   licensing-service:
-    build: ./../../licensing-service
-    image: licensing-service:1.0.1
+    build:
+      context: ./../../licensing-service
+      dockerfile: Dockerfile
+    image: licensing-service:2.0.0
     container_name: licensing-service
     networks: [ license_network ]
     depends_on:
       keycloak:
-        condition: service_healthy
+        condition: service_started
       redis:
-        condition: service_healthy
+        condition: service_started
     ports:
       - "8081:8081"
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      APP_PORT: 8081
       KEYCLOAK_SERVER_URL: http://keycloak:8080
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-RedBar9182_}
-    healthcheck:
-      test: [ "CMD", "curl", "-fsS", "http://127.0.0.1:8081/licensing-service/actuator/health" ]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 20s
     restart: unless-stopped
 
-  licensing-service-sdk:
+  licensing-agent:
     build:
       context: ./../..
-      dockerfile: licensing-service-sdk/Dockerfile
-    image: licensing-service-sdk:1.0.1
-    container_name: licensing-service-sdk
+      dockerfile: licensing-agent/Dockerfile
+    image: licensing-agent:2.0.0
+    container_name: licensing-agent
     networks: [ license_network ]
     depends_on:
       licensing-service:
-        condition: service_healthy
+        condition: service_started
     ports:
       - "8082:8082"
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      APP_PORT: 8082
       LICENSING_SERVICE_API_BASE_URL: http://licensing-service:8081/licensing-service
-    healthcheck:
-      test: [ "CMD", "curl", "-fsS", "http://127.0.0.1:8082/licensing-service-sdk/actuator/health" ]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 20s
     restart: unless-stopped

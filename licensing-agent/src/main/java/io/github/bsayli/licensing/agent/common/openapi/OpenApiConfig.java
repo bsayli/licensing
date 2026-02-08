@@ -10,34 +10,37 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import static io.github.bsayli.licensing.agent.common.openapi.OpenApiConstants.*;
-
 @Configuration
 public class OpenApiConfig {
+
+    @Value("${app.openapi.version:${project.version:unknown}}")
+    private String version;
 
     @Value("${app.openapi.base-url:}")
     private String baseUrl;
 
-    @Value("${app.openapi.version:}")
-    private String version;
-
     @Bean
-    public OpenAPI licensingServiceSdkOpenAPI() {
+    public OpenAPI licensingServiceOpenAPI() {
         var openapi =
-                new OpenAPI().info(new Info().title(TITLE).version(version).description(DESCRIPTION));
-
-        if (openapi.getComponents() == null) {
-            openapi.components(new Components());
-        }
+                new OpenAPI()
+                        .components(new Components())
+                        .info(
+                                new Info()
+                                        .title(OpenApiConstants.TITLE)
+                                        .version(version)
+                                        .description(OpenApiConstants.DESCRIPTION));
 
         if (baseUrl != null && !baseUrl.isBlank()) {
-            openapi.addServersItem(new Server().url(baseUrl).description(SERVER_DESCRIPTION));
+            openapi.addServersItem(
+                    new Server().url(baseUrl).description(OpenApiConstants.SERVER_DESCRIPTION));
         }
 
         openapi
                 .getComponents()
                 .addSecuritySchemes(
-                        "basicAuth", new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("basic"));
+                        "basicAuth",
+                        new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("basic"));
+
         openapi.addSecurityItem(new SecurityRequirement().addList("basicAuth"));
 
         return openapi;

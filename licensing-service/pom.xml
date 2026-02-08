@@ -29,6 +29,7 @@
         <embedded-redis.version>1.4.3</embedded-redis.version>
         <jedis.version>7.2.1</jedis.version>
         <api-contract.version>0.7.4</api-contract.version>
+        <assertj-core.version>3.27.7</assertj-core.version>
         <argLine/>
     </properties>
     <dependencies>
@@ -132,6 +133,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj-core.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
@@ -160,6 +168,7 @@
     </dependencies>
 
     <build>
+        <finalName>licensing-service</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

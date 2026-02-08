@@ -3,7 +3,7 @@ package io.github.bsayli.licensing.agent.service.impl;
 import io.github.bsayli.apicontract.envelope.ServiceResponse;
 import io.github.bsayli.licensing.agent.api.dto.LicenseAccessRequest;
 import io.github.bsayli.licensing.agent.api.dto.LicenseToken;
-import io.github.bsayli.licensing.agent.common.exception.LicensingSdkRemoteServiceException;
+import io.github.bsayli.licensing.agent.common.exception.LicensingAgentRemoteServiceException;
 import io.github.bsayli.licensing.agent.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.agent.generator.SignatureGenerator;
 import io.github.bsayli.licensing.agent.service.LicenseTokenCacheService;
@@ -54,17 +54,17 @@ class LicenseOrchestrationServiceImplTest {
     @Captor
     private ArgumentCaptor<ValidateAccessRequest> validateReqCaptor;
 
-    private LicenseAccessRequest sdkReq;
+    private LicenseAccessRequest accessRequest;
 
     @BeforeEach
     void setUp() {
-        sdkReq = new LicenseAccessRequest("LK_x".repeat(50), "crm~host1~aa:bb", "chk", "crm", "1.5.0");
+        accessRequest = new LicenseAccessRequest("LK_x".repeat(50), "crm~host1~aa:bb", "chk", "crm", "1.5.0");
     }
 
     @Test
     @DisplayName("Cache miss -> issue + cache + return token")
     void cacheMiss_issueAndCache() {
-        when(clientIdGenerator.getClientId(sdkReq)).thenReturn("cid");
+        when(clientIdGenerator.getClientId(accessRequest)).thenReturn("cid");
         when(cache.get("cid")).thenReturn(null);
 
         when(signatureGenerator.generateForIssue(any(IssueAccessRequest.class))).thenReturn("sig");
@@ -74,7 +74,7 @@ class LicenseOrchestrationServiceImplTest {
         when(licenseServiceClient.issueAccess(any(IssueAccessRequest.class))).thenReturn(resp);
         when(responseHandler.extractTokenOrThrow(resp)).thenReturn("jwt-1");
 
-        LicenseToken token = service.getLicenseToken(sdkReq);
+        LicenseToken token = service.getLicenseToken(accessRequest);
 
         assertNotNull(token);
         assertEquals("jwt-1", token.licenseToken());
@@ -96,7 +96,7 @@ class LicenseOrchestrationServiceImplTest {
     @Test
     @DisplayName("Cache hit + validate OK (no refresh token) -> return cached")
     void cacheHit_validate_noRefresh_returnsCached() {
-        when(clientIdGenerator.getClientId(sdkReq)).thenReturn("cid");
+        when(clientIdGenerator.getClientId(accessRequest)).thenReturn("cid");
         when(cache.get("cid")).thenReturn("jwt-old");
 
         when(signatureGenerator.generateForValidate(eq("jwt-old"), any(ValidateAccessRequest.class)))
@@ -109,7 +109,7 @@ class LicenseOrchestrationServiceImplTest {
 
         when(responseHandler.extractTokenIfPresent(vResp)).thenReturn(null);
 
-        LicenseToken token = service.getLicenseToken(sdkReq);
+        LicenseToken token = service.getLicenseToken(accessRequest);
 
         assertNotNull(token);
         assertEquals("jwt-old", token.licenseToken());
@@ -130,7 +130,7 @@ class LicenseOrchestrationServiceImplTest {
     @Test
     @DisplayName("Cache hit + validate returns refreshed token -> cache update + return new")
     void cacheHit_validate_refreshed() {
-        when(clientIdGenerator.getClientId(sdkReq)).thenReturn("cid");
+        when(clientIdGenerator.getClientId(accessRequest)).thenReturn("cid");
         when(cache.get("cid")).thenReturn("jwt-old");
 
         when(signatureGenerator.generateForValidate(eq("jwt-old"), any(ValidateAccessRequest.class)))
@@ -143,7 +143,7 @@ class LicenseOrchestrationServiceImplTest {
 
         when(responseHandler.extractTokenIfPresent(vResp)).thenReturn("jwt-new");
 
-        LicenseToken token = service.getLicenseToken(sdkReq);
+        LicenseToken token = service.getLicenseToken(accessRequest);
 
         assertEquals("jwt-new", token.licenseToken());
         verify(cache).put("cid", "jwt-new");
@@ -153,7 +153,7 @@ class LicenseOrchestrationServiceImplTest {
     @Test
     @DisplayName("Cache hit + validate throws ApiProblemException -> mapped; TOKEN_TOO_OLD -> fallback issue + cache")
     void cacheHit_validate_apiProblemException_tooOld_fallbackIssue() {
-        when(clientIdGenerator.getClientId(sdkReq)).thenReturn("cid");
+        when(clientIdGenerator.getClientId(accessRequest)).thenReturn("cid");
         when(cache.get("cid")).thenReturn("jwt-very-old");
 
         when(signatureGenerator.generateForValidate(eq("jwt-very-old"), any(ValidateAccessRequest.class)))
@@ -161,8 +161,8 @@ class LicenseOrchestrationServiceImplTest {
 
         ApiProblemException validateFail = mock(ApiProblemException.class);
 
-        LicensingSdkRemoteServiceException tooOld =
-                new LicensingSdkRemoteServiceException(
+        LicensingAgentRemoteServiceException tooOld =
+                new LicensingAgentRemoteServiceException(
                         HttpStatus.UNAUTHORIZED, "TOKEN_IS_TOO_OLD_FOR_REFRESH", "top", List.of("d"));
 
         when(responseHandler.mapRemoteFailure(validateFail)).thenReturn(tooOld);
@@ -177,7 +177,7 @@ class LicenseOrchestrationServiceImplTest {
         when(licenseServiceClient.issueAccess(any(IssueAccessRequest.class))).thenReturn(iResp);
         when(responseHandler.extractTokenOrThrow(iResp)).thenReturn("jwt-new");
 
-        LicenseToken token = service.getLicenseToken(sdkReq);
+        LicenseToken token = service.getLicenseToken(accessRequest);
 
         assertEquals("jwt-new", token.licenseToken());
         verify(cache).put("cid", "jwt-new");
@@ -188,23 +188,23 @@ class LicenseOrchestrationServiceImplTest {
     @Test
     @DisplayName("Cache miss + issue throws ApiProblemException -> mapped and thrown")
     void cacheMiss_issue_apiProblemException_mappedAndThrown() {
-        when(clientIdGenerator.getClientId(sdkReq)).thenReturn("cid");
+        when(clientIdGenerator.getClientId(accessRequest)).thenReturn("cid");
         when(cache.get("cid")).thenReturn(null);
 
         when(signatureGenerator.generateForIssue(any(IssueAccessRequest.class))).thenReturn("sig");
 
         ApiProblemException issueFail = mock(ApiProblemException.class);
 
-        LicensingSdkRemoteServiceException remote =
-                new LicensingSdkRemoteServiceException(
+        LicensingAgentRemoteServiceException remote =
+                new LicensingAgentRemoteServiceException(
                         HttpStatus.BAD_GATEWAY, "REMOTE_ERROR", "top", List.of("d"));
 
         when(responseHandler.mapRemoteFailure(issueFail)).thenReturn(remote);
 
         when(licenseServiceClient.issueAccess(any(IssueAccessRequest.class))).thenThrow(issueFail);
 
-        LicensingSdkRemoteServiceException thrown =
-                assertThrows(LicensingSdkRemoteServiceException.class, () -> service.getLicenseToken(sdkReq));
+        LicensingAgentRemoteServiceException thrown =
+                assertThrows(LicensingAgentRemoteServiceException.class, () -> service.getLicenseToken(accessRequest));
 
         assertSame(remote, thrown);
     }
@@ -212,7 +212,7 @@ class LicenseOrchestrationServiceImplTest {
     @Test
     @DisplayName("Cache hit + validate throws ApiProblemException -> mapped and thrown (not too old)")
     void cacheHit_validate_apiProblemException_mappedAndThrown() {
-        when(clientIdGenerator.getClientId(sdkReq)).thenReturn("cid");
+        when(clientIdGenerator.getClientId(accessRequest)).thenReturn("cid");
         when(cache.get("cid")).thenReturn("jwt-old");
 
         when(signatureGenerator.generateForValidate(eq("jwt-old"), any(ValidateAccessRequest.class)))
@@ -220,8 +220,8 @@ class LicenseOrchestrationServiceImplTest {
 
         ApiProblemException validateFail = mock(ApiProblemException.class);
 
-        LicensingSdkRemoteServiceException remote =
-                new LicensingSdkRemoteServiceException(
+        LicensingAgentRemoteServiceException remote =
+                new LicensingAgentRemoteServiceException(
                         HttpStatus.BAD_REQUEST, "SOME_CODE", "top", List.of("d"));
 
         when(responseHandler.mapRemoteFailure(validateFail)).thenReturn(remote);
@@ -229,8 +229,8 @@ class LicenseOrchestrationServiceImplTest {
         when(licenseServiceClient.validateAccess(eq("jwt-old"), any(ValidateAccessRequest.class)))
                 .thenThrow(validateFail);
 
-        LicensingSdkRemoteServiceException thrown =
-                assertThrows(LicensingSdkRemoteServiceException.class, () -> service.getLicenseToken(sdkReq));
+        LicensingAgentRemoteServiceException thrown =
+                assertThrows(LicensingAgentRemoteServiceException.class, () -> service.getLicenseToken(accessRequest));
 
         assertSame(remote, thrown);
         verify(licenseServiceClient, never()).issueAccess(any());

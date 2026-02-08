@@ -1,5 +1,6 @@
 networks:
   license_network:
+    name: license_network
     driver: bridge
 
 services:
@@ -29,7 +30,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:8.2.1-bookworm
+    image: redis:8.2.3-bookworm
     container_name: licensing-redis
     networks: [ license_network ]
     ports:
@@ -41,7 +42,7 @@ services:
       --requirepass ${REDIS_PASSWORD:-RedBar9182_}
       --appendonly no
     healthcheck:
-      test: [ "CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-RedBar9182_} ping | grep PONG" ]
+      test: [ "CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-RedBar9182_} ping | grep -q PONG" ]
       interval: 10s
       timeout: 3s
       retries: 5

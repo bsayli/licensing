@@ -44,8 +44,6 @@ public class ApplicationExceptionHandler {
     private static final String KEY_SERVER_INTERNAL_ERROR = "server.internal.error";
     private static final String KEY_USER_OPERATION_FAILED = "user.operation.failed";
 
-    private static final String FALLBACK_RESOURCE_NOT_FOUND = "Resource not found.";
-
     private static final String LOG_SERVICE_EXCEPTION =
             "Service exception handled. statusCode={}, code={}, messageKey={} ";
     private static final String LOG_REPOSITORY_EXCEPTION =
@@ -109,18 +107,6 @@ public class ApplicationExceptionHandler {
                         mr.getMessage(KEY_PROBLEM_DETAIL_INTERNAL_ERROR)));
 
         return Map.copyOf(m);
-    }
-
-    @ExceptionHandler(NoSuchElementException.class)
-    public ProblemDetail handleNotFound(NoSuchElementException ex, HttpServletRequest req) {
-        ProblemDescriptor desc = problemNotFound();
-
-        ProblemDetail pd =
-                baseProblem(type(desc.typeSlug()), HttpStatus.NOT_FOUND, desc.title(), desc.detail(), req);
-
-        String msg = Optional.ofNullable(ex.getMessage()).orElse(FALLBACK_RESOURCE_NOT_FOUND);
-        attachErrors(pd, NOT_FOUND, List.of(error(NOT_FOUND, msg, null, null, null)));
-        return pd;
     }
 
     @ExceptionHandler(ServiceException.class)
@@ -227,13 +213,6 @@ public class ApplicationExceptionHandler {
 
         attachErrors(pd, INTERNAL_ERROR, List.of(error(INTERNAL_ERROR, detail, null, null, null)));
         return pd;
-    }
-
-    private ProblemDescriptor problemNotFound() {
-        return new ProblemDescriptor(
-                TYPE_NOT_FOUND,
-                messageResolver.getMessage(KEY_PROBLEM_TITLE_NOT_FOUND),
-                messageResolver.getMessage(KEY_PROBLEM_DETAIL_NOT_FOUND));
     }
 
     private ProblemDescriptor problemInternalError() {

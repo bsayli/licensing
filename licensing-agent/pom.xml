@@ -25,6 +25,7 @@
         <licensing-service-client.version>2.0.0</licensing-service-client.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <api-contract.version>0.7.4</api-contract.version>
+        <assertj-core.version>3.27.7</assertj-core.version>
         <argLine/>
     </properties>
 
@@ -90,6 +91,14 @@
         </dependency>
 
         <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj-core.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+
+        <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
@@ -98,6 +107,7 @@
     </dependencies>
 
     <build>
+        <finalName>licensing-agent</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.agent.service.handler;
 
 import io.github.bsayli.apicontract.envelope.ServiceResponse;
-import io.github.bsayli.licensing.agent.common.exception.LicensingSdkRemoteServiceException;
+import io.github.bsayli.licensing.agent.common.exception.LicensingAgentRemoteServiceException;
 import io.github.bsayli.licensing.agent.common.i18n.LocalizedMessageResolver;
 import io.github.bsayli.licensing.client.common.problem.ApiProblemException;
 import io.github.bsayli.licensing.client.generated.dto.ErrorItem;
@@ -19,10 +19,10 @@ public class LicenseResponseHandler {
     private static final String CODE_EMPTY_TOKEN = "EMPTY_TOKEN";
     private static final String SEP = " : ";
 
-    private static final String KEY_TOP_REMOTE_FAILED = "sdk.remote.call.failed";
-    private static final String KEY_TOP_EMPTY_TOKEN = "sdk.remote.empty.token.top";
-    private static final String KEY_DETAIL_EMPTY_TOKEN = "sdk.remote.empty.token.detail";
-    private static final String KEY_DETAIL_NO_PAYLOAD = "sdk.remote.no.payload";
+    private static final String KEY_TOP_REMOTE_FAILED = "agent.remote.call.failed";
+    private static final String KEY_TOP_EMPTY_TOKEN = "agent.remote.empty.token.top";
+    private static final String KEY_DETAIL_EMPTY_TOKEN = "agent.remote.empty.token.detail";
+    private static final String KEY_DETAIL_NO_PAYLOAD = "agent.remote.no.payload";
 
     private static final String FALLBACK_TOP_REMOTE_FAILED = "Remote call failed";
     private static final String FALLBACK_DETAIL_NO_PAYLOAD = "no-payload";
@@ -43,7 +43,7 @@ public class LicenseResponseHandler {
         String top = msgOrFallback(KEY_TOP_EMPTY_TOKEN, FALLBACK_TOP_REMOTE_FAILED);
         String d = msgOrFallback(KEY_DETAIL_EMPTY_TOKEN, FALLBACK_DETAIL_EMPTY_TOKEN);
 
-        throw new LicensingSdkRemoteServiceException(
+        throw new LicensingAgentRemoteServiceException(
                 FALLBACK_HTTP,
                 CODE_EMPTY_TOKEN,
                 top,
@@ -54,13 +54,13 @@ public class LicenseResponseHandler {
         return safeToken(resp);
     }
 
-    public LicensingSdkRemoteServiceException mapRemoteFailure(ApiProblemException ex) {
+    public LicensingAgentRemoteServiceException mapRemoteFailure(ApiProblemException ex) {
         HttpStatus http = resolveHttp(ex);
         String code = resolveErrorCode(ex);
         String top = msgOrFallback(KEY_TOP_REMOTE_FAILED, FALLBACK_TOP_REMOTE_FAILED);
         List<String> details = resolveDetails(ex);
 
-        return new LicensingSdkRemoteServiceException(http, code, top, details);
+        return new LicensingAgentRemoteServiceException(http, code, top, details);
     }
 
     private String safeToken(ServiceResponse<LicenseAccessResponse> resp) {

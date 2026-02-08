@@ -3,7 +3,7 @@ package io.github.bsayli.licensing.agent.service.impl;
 import io.github.bsayli.apicontract.envelope.ServiceResponse;
 import io.github.bsayli.licensing.agent.api.dto.LicenseAccessRequest;
 import io.github.bsayli.licensing.agent.api.dto.LicenseToken;
-import io.github.bsayli.licensing.agent.common.exception.LicensingSdkRemoteServiceException;
+import io.github.bsayli.licensing.agent.common.exception.LicensingAgentRemoteServiceException;
 import io.github.bsayli.licensing.agent.generator.ClientIdGenerator;
 import io.github.bsayli.licensing.agent.generator.SignatureGenerator;
 import io.github.bsayli.licensing.agent.service.LicenseOrchestrationService;
@@ -16,8 +16,6 @@ import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.Objects;
-
 @Service
 public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationService {
 
@@ -29,17 +27,12 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
     private final SignatureGenerator signatureGenerator;
     private final LicenseResponseHandler responseHandler;
 
-    public LicenseOrchestrationServiceImpl(
-            LicenseServiceClient licenseServiceClient,
-            LicenseTokenCacheService licenseTokenCacheService,
-            ClientIdGenerator clientIdGenerator,
-            SignatureGenerator signatureGenerator,
-            LicenseResponseHandler responseHandler) {
-        this.licenseServiceClient = Objects.requireNonNull(licenseServiceClient);
-        this.licenseTokenCacheService = Objects.requireNonNull(licenseTokenCacheService);
-        this.clientIdGenerator = Objects.requireNonNull(clientIdGenerator);
-        this.signatureGenerator = Objects.requireNonNull(signatureGenerator);
-        this.responseHandler = Objects.requireNonNull(responseHandler);
+    public LicenseOrchestrationServiceImpl(LicenseServiceClient licenseServiceClient, LicenseTokenCacheService licenseTokenCacheService, ClientIdGenerator clientIdGenerator, SignatureGenerator signatureGenerator, LicenseResponseHandler responseHandler) {
+        this.licenseServiceClient = licenseServiceClient;
+        this.licenseTokenCacheService = licenseTokenCacheService;
+        this.clientIdGenerator = clientIdGenerator;
+        this.signatureGenerator = signatureGenerator;
+        this.responseHandler = responseHandler;
     }
 
     @Override
@@ -86,7 +79,7 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
             return cachedToken;
 
         } catch (ApiProblemException e) {
-            LicensingSdkRemoteServiceException remote = responseHandler.mapRemoteFailure(e);
+            LicensingAgentRemoteServiceException remote = responseHandler.mapRemoteFailure(e);
             if (CODE_TOKEN_TOO_OLD.equals(remote.getErrorCode())) {
                 return issueAndCacheToken(request, clientId);
             }

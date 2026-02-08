@@ -4,14 +4,14 @@ import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
-public class LicensingSdkRemoteServiceException extends LicensingSdkException {
+public class LicensingAgentRemoteServiceException extends LicensingAgentException {
 
     private final HttpStatus httpStatus;
     private final String errorCode;
     private final String topMessage;
     private final transient List<String> details;
 
-    public LicensingSdkRemoteServiceException(
+    public LicensingAgentRemoteServiceException(
             HttpStatus httpStatus, String errorCode, String topMessage, List<String> details) {
         super(topMessage);
         this.httpStatus = httpStatus;

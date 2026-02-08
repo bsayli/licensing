@@ -21,8 +21,6 @@ public class TestControllerMocksConfig {
         // =========================================================
         // LICENSE API - SUCCESS / TOP-LEVEL MESSAGES (NON-ERROR)
         // =========================================================
-        Mockito.when(mr.getMessage("license.validation.success"))
-                .thenReturn("License is valid");
         Mockito.when(mr.getMessage("license.key.valid"))
                 .thenReturn("License key is valid");
         Mockito.when(mr.getMessage("license.token.valid"))

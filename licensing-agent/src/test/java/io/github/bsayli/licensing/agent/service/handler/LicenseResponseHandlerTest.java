@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.agent.service.handler;
 
 import io.github.bsayli.apicontract.envelope.ServiceResponse;
-import io.github.bsayli.licensing.agent.common.exception.LicensingSdkRemoteServiceException;
+import io.github.bsayli.licensing.agent.common.exception.LicensingAgentRemoteServiceException;
 import io.github.bsayli.licensing.agent.common.i18n.LocalizedMessageResolver;
 import io.github.bsayli.licensing.client.common.problem.ApiProblemException;
 import io.github.bsayli.licensing.client.generated.dto.ErrorItem;
@@ -51,8 +51,8 @@ class LicenseResponseHandlerTest {
     @Test
     @DisplayName("extractTokenOrThrow -> empty token -> EMPTY_TOKEN")
     void extractTokenOrThrow_emptyToken_throws() {
-        when(messages.getMessage("sdk.remote.empty.token.top")).thenReturn("top");
-        when(messages.getMessage("sdk.remote.empty.token.detail")).thenReturn("detail");
+        when(messages.getMessage("agent.remote.empty.token.top")).thenReturn("top");
+        when(messages.getMessage("agent.remote.empty.token.detail")).thenReturn("detail");
 
         @SuppressWarnings("unchecked")
         ServiceResponse<LicenseAccessResponse> resp = mock(ServiceResponse.class);
@@ -60,8 +60,8 @@ class LicenseResponseHandlerTest {
         when(resp.getData()).thenReturn(data);
         when(data.getLicenseToken()).thenReturn("  ");
 
-        LicensingSdkRemoteServiceException ex =
-                assertThrows(LicensingSdkRemoteServiceException.class, () -> handler.extractTokenOrThrow(resp));
+        LicensingAgentRemoteServiceException ex =
+                assertThrows(LicensingAgentRemoteServiceException.class, () -> handler.extractTokenOrThrow(resp));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getHttpStatus());
         assertEquals("EMPTY_TOKEN", ex.getErrorCode());
@@ -72,8 +72,8 @@ class LicenseResponseHandlerTest {
     @Test
     @DisplayName("extractTokenOrThrow -> blank i18n messages -> fallbacks used")
     void extractTokenOrThrow_emptyToken_blankMessages_useFallbacks() {
-        when(messages.getMessage("sdk.remote.empty.token.top")).thenReturn("   ");
-        when(messages.getMessage("sdk.remote.empty.token.detail")).thenReturn("");
+        when(messages.getMessage("agent.remote.empty.token.top")).thenReturn("   ");
+        when(messages.getMessage("agent.remote.empty.token.detail")).thenReturn("");
 
         @SuppressWarnings("unchecked")
         ServiceResponse<LicenseAccessResponse> resp = mock(ServiceResponse.class);
@@ -81,8 +81,8 @@ class LicenseResponseHandlerTest {
         when(resp.getData()).thenReturn(data);
         when(data.getLicenseToken()).thenReturn(null);
 
-        LicensingSdkRemoteServiceException ex =
-                assertThrows(LicensingSdkRemoteServiceException.class, () -> handler.extractTokenOrThrow(resp));
+        LicensingAgentRemoteServiceException ex =
+                assertThrows(LicensingAgentRemoteServiceException.class, () -> handler.extractTokenOrThrow(resp));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getHttpStatus());
         assertEquals("EMPTY_TOKEN", ex.getErrorCode());
@@ -105,11 +105,11 @@ class LicenseResponseHandlerTest {
     @Test
     @DisplayName("extractTokenOrThrow -> null response -> EMPTY_TOKEN")
     void extractTokenOrThrow_nullResponse_throws() {
-        when(messages.getMessage("sdk.remote.empty.token.top")).thenReturn("top");
-        when(messages.getMessage("sdk.remote.empty.token.detail")).thenReturn("detail");
+        when(messages.getMessage("agent.remote.empty.token.top")).thenReturn("top");
+        when(messages.getMessage("agent.remote.empty.token.detail")).thenReturn("detail");
 
-        LicensingSdkRemoteServiceException ex =
-                assertThrows(LicensingSdkRemoteServiceException.class, () -> handler.extractTokenOrThrow(null));
+        LicensingAgentRemoteServiceException ex =
+                assertThrows(LicensingAgentRemoteServiceException.class, () -> handler.extractTokenOrThrow(null));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getHttpStatus());
         assertEquals("EMPTY_TOKEN", ex.getErrorCode());
@@ -135,8 +135,8 @@ class LicenseResponseHandlerTest {
     @Test
     @DisplayName("mapRemoteFailure -> prefers ApiProblemException.errorCode and formatted errors")
     void mapRemoteFailure_prefersErrorCode_andFormatsErrors() {
-        when(messages.getMessage("sdk.remote.call.failed")).thenReturn("Top Remote Failed");
-        when(messages.getMessage("sdk.remote.no.payload")).thenReturn("fallback-detail");
+        when(messages.getMessage("agent.remote.call.failed")).thenReturn("Top Remote Failed");
+        when(messages.getMessage("agent.remote.no.payload")).thenReturn("fallback-detail");
 
         ProblemDetailExtensions ext = new ProblemDetailExtensions();
 
@@ -158,7 +158,7 @@ class LicenseResponseHandlerTest {
         pd.setExtensions(ext);
 
         ApiProblemException ape = new ApiProblemException(pd, 404);
-        LicensingSdkRemoteServiceException mapped = handler.mapRemoteFailure(ape);
+        LicensingAgentRemoteServiceException mapped = handler.mapRemoteFailure(ape);
 
         assertEquals(HttpStatus.NOT_FOUND, mapped.getHttpStatus());
         assertEquals("PD_CODE", mapped.getErrorCode());
@@ -169,15 +169,15 @@ class LicenseResponseHandlerTest {
     @Test
     @DisplayName("mapRemoteFailure -> no errors -> uses ProblemDetail.detail then title then fallback")
     void mapRemoteFailure_noErrors_usesDetailThenTitleThenFallback() {
-        when(messages.getMessage("sdk.remote.call.failed")).thenReturn("Top Remote Failed");
-        when(messages.getMessage("sdk.remote.no.payload")).thenReturn("fallback-detail");
+        when(messages.getMessage("agent.remote.call.failed")).thenReturn("Top Remote Failed");
+        when(messages.getMessage("agent.remote.no.payload")).thenReturn("fallback-detail");
 
         ProblemDetail pd = new ProblemDetail();
         pd.setErrorCode("E");
         pd.setDetail("detail-1");
         ApiProblemException ape1 = new ApiProblemException(pd, 502);
 
-        LicensingSdkRemoteServiceException m1 = handler.mapRemoteFailure(ape1);
+        LicensingAgentRemoteServiceException m1 = handler.mapRemoteFailure(ape1);
         assertEquals(HttpStatus.BAD_GATEWAY, m1.getHttpStatus());
         assertEquals(List.of("detail-1"), m1.getDetails());
 
@@ -186,21 +186,21 @@ class LicenseResponseHandlerTest {
         pd2.setTitle("title-1");
         ApiProblemException ape2 = new ApiProblemException(pd2, 502);
 
-        LicensingSdkRemoteServiceException m2 = handler.mapRemoteFailure(ape2);
+        LicensingAgentRemoteServiceException m2 = handler.mapRemoteFailure(ape2);
         assertEquals(List.of("title-1"), m2.getDetails());
 
         ApiProblemException ape3 = new ApiProblemException(null, 502);
-        LicensingSdkRemoteServiceException m3 = handler.mapRemoteFailure(ape3);
+        LicensingAgentRemoteServiceException m3 = handler.mapRemoteFailure(ape3);
         assertEquals(List.of("fallback-detail"), m3.getDetails());
     }
 
     @Test
     @DisplayName("mapRemoteFailure -> null exception -> fallback http/code/details")
     void mapRemoteFailure_nullException_fallbacks() {
-        when(messages.getMessage("sdk.remote.call.failed")).thenReturn("Top Remote Failed");
-        when(messages.getMessage("sdk.remote.no.payload")).thenReturn("fallback-detail");
+        when(messages.getMessage("agent.remote.call.failed")).thenReturn("Top Remote Failed");
+        when(messages.getMessage("agent.remote.no.payload")).thenReturn("fallback-detail");
 
-        LicensingSdkRemoteServiceException mapped = handler.mapRemoteFailure(null);
+        LicensingAgentRemoteServiceException mapped = handler.mapRemoteFailure(null);
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, mapped.getHttpStatus());
         assertEquals("REMOTE_ERROR", mapped.getErrorCode());

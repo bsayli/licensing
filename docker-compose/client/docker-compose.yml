@@ -3,14 +3,14 @@ networks:
     external: true
 
 services:
-  licensing-service-sdk-cli:
-    build: ./../../licensing-service-sdk-cli
-    image: licensing-service-sdk-cli:1.0.1
-    container_name: licensing-service-sdk-cli
+  licensing-agent-cli:
+    build: ./../../licensing-agent-cli
+    image: licensing-agent-cli:2.0.0
+    container_name: licensing-agent-cli
     networks:
       - license_network
     environment:
-      LICENSE_SERVICE_SDK_URL: "http://licensing-service-sdk:8082/licensing-service-sdk"
+      LICENSE_AGENT_URL: "http://licensing-agent:8082/licensing-agent"
       INSTANCE_ID: "licensing-service~demo~00:11:22:33:44:55"
       SERVICE_ID: "crm"
       SERVICE_VERSION: "1.5.0"

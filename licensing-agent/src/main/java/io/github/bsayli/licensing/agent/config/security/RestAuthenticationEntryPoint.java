@@ -21,7 +21,7 @@ public class RestAuthenticationEntryPoint extends BasicAuthenticationEntryPoint 
 
     @PostConstruct
     public void init() {
-        setRealmName(props.realm() != null ? props.realm() : "LicensingServiceSDK");
+        setRealmName(props.realm() != null ? props.realm() : "LicensingAgent");
     }
 
     @Override

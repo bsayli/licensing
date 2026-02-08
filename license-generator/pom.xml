@@ -20,7 +20,7 @@
         <junit.jupiter.version>5.14.2</junit.jupiter.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <system-lambda.version>1.2.1</system-lambda.version>
-        <maven.dependency.plugin.version>3.9.0</maven.dependency.plugin.version>
+        <maven-dependency-plugin.version>3.9.0</maven-dependency-plugin.version>
         <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
@@ -106,7 +106,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>${maven.dependency.plugin.version}</version>
+                <version>${maven-dependency-plugin.version}</version>
                 <executions>
                     <execution>
                         <goals>
