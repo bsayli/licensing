@@ -2,7 +2,7 @@ package io.github.bsayli.licensing.client.adapter.support;
 
 import io.github.bsayli.licensing.client.generated.dto.ErrorItem;
 import io.github.bsayli.licensing.client.generated.dto.ProblemDetail;
-import io.github.bsayli.licensing.client.generated.dto.ProblemDetailExtensions;
+import io.github.bsayli.licensing.client.generated.dto.ProblemExtensions;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 
@@ -27,10 +27,17 @@ final class ProblemDetailFallbacks {
     private static final String ERROR_CODE_UPSTREAM_EMPTY = "UPSTREAM_EMPTY_PROBLEM";
     private static final String ERROR_CODE_UPSTREAM_STATUS_UNAVAILABLE = "UPSTREAM_STATUS_UNAVAILABLE";
 
-    private static final URI TYPE_NON_JSON = URI.create("urn:licensing:problem:upstream-non-json");
-    private static final URI TYPE_UNPARSABLE = URI.create("urn:licensing:problem:upstream-unparsable");
-    private static final URI TYPE_EMPTY = URI.create("urn:licensing:problem:upstream-empty");
-    private static final URI TYPE_STATUS_UNAVAILABLE = URI.create("urn:licensing:problem:upstream-status-unavailable");
+    private static final URI TYPE_NON_JSON =
+            URI.create("urn:licensing:problem:client-fallback-upstream-non-json");
+
+    private static final URI TYPE_UNPARSABLE =
+            URI.create("urn:licensing:problem:client-fallback-upstream-unparsable");
+
+    private static final URI TYPE_EMPTY =
+            URI.create("urn:licensing:problem:client-fallback-upstream-empty");
+
+    private static final URI TYPE_STATUS_UNAVAILABLE =
+            URI.create("urn:licensing:problem:client-fallback-upstream-status-unavailable");
 
     private static final String ERROR_ITEM_RESOURCE_UPSTREAM = "upstream";
     private static final String ERROR_ITEM_FIELD_CONTENT_TYPE = "contentType";
@@ -96,7 +103,7 @@ final class ProblemDetailFallbacks {
     private static void addContextErrors(
             ProblemDetail pd, String problemCode, boolean statusUnavailable, MediaType contentType, Throwable cause) {
 
-        ProblemDetailExtensions ext = new ProblemDetailExtensions();
+        ProblemExtensions ext = new ProblemExtensions();
 
         String ct = contentType != null ? contentType.toString() : "";
         if (!ct.isBlank()) {

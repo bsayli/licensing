@@ -14,17 +14,17 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jjwt.version>0.12.7</jjwt.version>
         <bcprov-jdk18on.version>1.83</bcprov-jdk18on.version>
-        <jackson-databind.version>2.19.4</jackson-databind.version>
-        <logback-classic.version>1.5.25</logback-classic.version>
+        <jackson-databind.version>2.21.1</jackson-databind.version>
+        <logback-classic.version>1.5.32</logback-classic.version>
         <slf4j-api.version>2.0.17</slf4j-api.version>
-        <junit.jupiter.version>5.14.2</junit.jupiter.version>
+        <junit.jupiter.version>5.14.3</junit.jupiter.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <system-lambda.version>1.2.1</system-lambda.version>
-        <maven-dependency-plugin.version>3.9.0</maven-dependency-plugin.version>
-        <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
-        <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
-        <mockito-core.version>5.21.0</mockito-core.version>
+        <maven-dependency-plugin.version>3.10.0</maven-dependency-plugin.version>
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
+        <maven-failsafe-plugin.version>3.5.5</maven-failsafe-plugin.version>
+        <mockito-core.version>5.22.0</mockito-core.version>
         <argLine/>
     </properties>
 
