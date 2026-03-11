@@ -138,23 +138,23 @@ class LicensingServiceClientAdapterIT {
 
     @Test
     @DisplayName("POST /v1/licenses/access -> 404 -> ApiProblemException (ProblemDetail parsed)")
-    void issueAccess_shouldThrowApiProblemException_whenProblemJsonReturned(){
+    void issueAccess_shouldThrowApiProblemException_whenProblemJsonReturned() {
         String body =
                 """
-                {
-                  "type": "urn:licensing:problem:not-found",
-                  "title": "Not found",
-                  "status": 404,
-                  "detail": "License not found.",
-                  "instance": "/licensing-service/v1/licenses/access",
-                  "errorCode": "NOT_FOUND",
-                  "extensions": {
-                    "errors": [
-                      { "code": "NOT_FOUND", "message": "license missing", "resource": "License" }
-                    ]
-                  }
-                }
-                """;
+                        {
+                          "type": "urn:licensing:problem:not-found",
+                          "title": "Not found",
+                          "status": 404,
+                          "detail": "License not found.",
+                          "instance": "/licensing-service/v1/licenses/access",
+                          "errorCode": "NOT_FOUND",
+                          "extensions": {
+                            "errors": [
+                              { "code": "NOT_FOUND", "message": "license missing", "resource": "License" }
+                            ]
+                          }
+                        }
+                        """;
 
         server.enqueue(
                 new MockResponse()

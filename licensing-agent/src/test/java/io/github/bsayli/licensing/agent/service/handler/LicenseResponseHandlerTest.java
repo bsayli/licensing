@@ -7,7 +7,7 @@ import io.github.bsayli.licensing.client.common.problem.ApiProblemException;
 import io.github.bsayli.licensing.client.generated.dto.ErrorItem;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.client.generated.dto.ProblemDetail;
-import io.github.bsayli.licensing.client.generated.dto.ProblemDetailExtensions;
+import io.github.bsayli.licensing.client.generated.dto.ProblemExtensions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -138,7 +138,7 @@ class LicenseResponseHandlerTest {
         when(messages.getMessage("agent.remote.call.failed")).thenReturn("Top Remote Failed");
         when(messages.getMessage("agent.remote.no.payload")).thenReturn("fallback-detail");
 
-        ProblemDetailExtensions ext = new ProblemDetailExtensions();
+        ProblemExtensions ext = new ProblemExtensions();
 
         ErrorItem e1 = new ErrorItem();
         e1.setCode("NOT_FOUND");
