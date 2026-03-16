@@ -78,7 +78,7 @@ public class TestControllerMocksConfig {
         Mockito.when(mr.getMessage("request.method.not_supported", "TRACE"))
                 .thenReturn("HTTP method not supported: TRACE");
         Mockito.when(mr.getMessage("request.endpoint.not_found"))
-                .thenReturn("Endpoint not found.");
+                .thenReturn("Endpoint not found");
 
         Mockito.when(mr.getMessage("service.id.required"))
                 .thenReturn("serviceId is required");

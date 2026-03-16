@@ -18,8 +18,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.client.RestClient;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,13 +61,14 @@ class LicensingServiceClientAdapterIT {
         String body =
                 """
                         {
-                          "status": 200,
-                          "message": "License is valid",
                           "data": {
                             "status": "TOKEN_CREATED",
                             "licenseToken": "jwt-abc"
                           },
-                          "errors": []
+                          "meta": {
+                            "serverTime": "2026-03-16T10:03:55.763658Z",
+                            "sort": []
+                          }
                         }
                         """;
 
@@ -87,6 +93,7 @@ class LicensingServiceClientAdapterIT {
         assertNotNull(resp.getData().getStatus());
         assertEquals("TOKEN_CREATED", resp.getData().getStatus().getValue());
         assertEquals("jwt-abc", resp.getData().getLicenseToken());
+        assertNotNull(resp.getMeta());
 
         RecordedRequest rr = server.takeRequest();
         assertEquals("POST", rr.getMethod());
@@ -99,13 +106,14 @@ class LicensingServiceClientAdapterIT {
         String body =
                 """
                         {
-                          "status": 200,
-                          "message": "License is valid",
                           "data": {
                             "status": "TOKEN_ACTIVE",
                             "licenseToken": null
                           },
-                          "errors": []
+                          "meta": {
+                            "serverTime": "2026-03-16T10:03:55.763658Z",
+                            "sort": []
+                          }
                         }
                         """;
 
@@ -129,6 +137,7 @@ class LicensingServiceClientAdapterIT {
         assertNotNull(resp.getData());
         assertNotNull(resp.getData().getStatus());
         assertEquals("TOKEN_ACTIVE", resp.getData().getStatus().getValue());
+        assertNotNull(resp.getMeta());
 
         RecordedRequest rr = server.takeRequest();
         assertEquals("POST", rr.getMethod());
@@ -137,7 +146,7 @@ class LicensingServiceClientAdapterIT {
     }
 
     @Test
-    @DisplayName("POST /v1/licenses/access -> 404 -> ApiProblemException (ProblemDetail parsed)")
+    @DisplayName("POST /v1/licenses/access -> 404 -> ApiProblemException (Spring ProblemDetail parsed)")
     void issueAccess_shouldThrowApiProblemException_whenProblemJsonReturned() {
         String body =
                 """
@@ -174,11 +183,37 @@ class LicensingServiceClientAdapterIT {
                 assertThrows(ApiProblemException.class, () -> adapter.issueAccess(req));
 
         assertEquals(404, ex.getStatus());
-        assertEquals("NOT_FOUND", ex.getErrorCode());
-        assertTrue(ex.hasErrors());
-        assertNotNull(ex.firstErrorOrNull());
-        assertEquals("NOT_FOUND", ex.firstErrorOrNull().getCode());
-        assertEquals("License", ex.firstErrorOrNull().getResource());
+
+        ProblemDetail pd = ex.getProblem();
+        assertNotNull(pd);
+        assertEquals("Not found", pd.getTitle());
+        assertEquals("License not found.", pd.getDetail());
+        assertNotNull(pd.getProperties());
+
+        Object errorCode = pd.getProperties().get("errorCode");
+        assertEquals("NOT_FOUND", errorCode);
+
+        Object extensions = pd.getProperties().get("extensions");
+        assertInstanceOf(Map.class, extensions);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> extensionsMap = (Map<String, Object>) extensions;
+
+        Object errors = extensionsMap.get("errors");
+        assertInstanceOf(List.class, errors);
+
+        @SuppressWarnings("unchecked")
+        List<Object> errorList = (List<Object>) errors;
+
+        assertEquals(1, errorList.size());
+        assertInstanceOf(Map.class, errorList.getFirst());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> firstError = (Map<String, Object>) errorList.getFirst();
+
+        assertEquals("NOT_FOUND", firstError.get("code"));
+        assertEquals("license missing", firstError.get("message"));
+        assertEquals("License", firstError.get("resource"));
     }
 
     @Test
@@ -202,15 +237,18 @@ class LicensingServiceClientAdapterIT {
                 assertThrows(ApiProblemException.class, () -> adapter.issueAccess(req));
 
         assertEquals(502, ex.getStatus());
-        assertEquals("UPSTREAM_NON_JSON_ERROR", ex.getErrorCode());
-        assertNotNull(ex.getProblem());
-        assertNotNull(ex.getProblem().getType());
-        assertTrue(ex.getProblem().getType().toString().contains("upstream-non-json"));
+
+        ProblemDetail pd = ex.getProblem();
+        assertNotNull(pd);
+        assertNotNull(pd.getType());
+        assertTrue(pd.getType().toString().contains("upstream-non-json"));
+        assertNotNull(pd.getProperties());
+        assertEquals("UPSTREAM_NON_JSON_ERROR", pd.getProperties().get("errorCode"));
     }
 
     @Test
     @DisplayName("POST /v1/licenses/access -> 500 + empty body -> ApiProblemException (fallback: empty-body)")
-    void issueAccess_shouldThrowApiProblemException_whenEmptyBodyReturned() throws Exception {
+    void issueAccess_shouldThrowApiProblemException_whenEmptyBodyReturned() {
         server.enqueue(
                 new MockResponse()
                         .setResponseCode(500)
@@ -229,10 +267,13 @@ class LicensingServiceClientAdapterIT {
                 assertThrows(ApiProblemException.class, () -> adapter.issueAccess(req));
 
         assertEquals(500, ex.getStatus());
-        assertEquals("UPSTREAM_EMPTY_PROBLEM", ex.getErrorCode());
-        assertNotNull(ex.getProblem());
-        assertNotNull(ex.getProblem().getType());
-        assertTrue(ex.getProblem().getType().toString().contains("upstream-empty"));
+
+        ProblemDetail pd = ex.getProblem();
+        assertNotNull(pd);
+        assertNotNull(pd.getType());
+        assertTrue(pd.getType().toString().contains("upstream-empty"));
+        assertNotNull(pd.getProperties());
+        assertEquals("UPSTREAM_EMPTY_PROBLEM", pd.getProperties().get("errorCode"));
     }
 
     @Configuration
@@ -244,8 +285,7 @@ class LicensingServiceClientAdapterIT {
 
         @Bean
         ObjectMapper objectMapper() {
-            return new ObjectMapper();
+            return Jackson2ObjectMapperBuilder.json().build();
         }
-
     }
 }

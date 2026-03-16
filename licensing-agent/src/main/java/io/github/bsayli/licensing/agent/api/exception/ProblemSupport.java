@@ -23,7 +23,7 @@ final class ProblemSupport {
     static final String TYPE_METHOD_NOT_ALLOWED = "method-not-allowed";
     static final String TYPE_SERVICE_ERROR = "service-error";
 
-    private static final String PROBLEM_BASE = "urn:licensing:problem:";
+    private static final String PROBLEM_BASE = "urn:licensing-agent:problem:";
 
     private ProblemSupport() {
     }

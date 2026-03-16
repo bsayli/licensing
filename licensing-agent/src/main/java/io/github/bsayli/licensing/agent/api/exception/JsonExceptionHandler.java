@@ -8,11 +8,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
+import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,9 +23,9 @@ import java.util.Optional;
 import static io.github.bsayli.licensing.agent.api.exception.ProblemSupport.*;
 import static io.github.bsayli.licensing.agent.common.api.ApiConstants.ErrorCode.BAD_REQUEST;
 
-@RestControllerAdvice(basePackages = "io.github.bsayli.licensing.agent.api.controller")
+@RestControllerAdvice
 @Order(2)
-public class JsonExceptionHandler {
+public class JsonExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(JsonExceptionHandler.class);
 
@@ -41,8 +44,46 @@ public class JsonExceptionHandler {
         this.messageResolver = messageResolver;
     }
 
-    @ExceptionHandler(InvalidFormatException.class)
-    public ProblemDetail handleInvalidFormat(InvalidFormatException ex, HttpServletRequest req) {
+    @Override
+    @Nullable
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex,
+            @NonNull HttpHeaders headers,
+            @NonNull HttpStatusCode status,
+            @NonNull WebRequest request) {
+
+        HttpServletRequest req = ((ServletWebRequest) request).getRequest();
+
+        Throwable cause = ex.getCause();
+
+        if (cause instanceof InvalidFormatException invalidFormatException) {
+            return handleInvalidFormat(invalidFormatException, req);
+        }
+
+        if (cause instanceof UnrecognizedPropertyException unrecognizedPropertyException) {
+            return handleUnrecognized(unrecognizedPropertyException, req);
+        }
+
+        String raw = Optional.ofNullable(cause).map(Throwable::getMessage).orElseGet(ex::getMessage);
+        log.warn("Bad request (not readable): {}", raw);
+
+        ProblemDetail pd = buildBadRequestProblem(req);
+
+        attachErrors(
+                pd,
+                BAD_REQUEST,
+                List.of(
+                        error(
+                                BAD_REQUEST,
+                                messageResolver.getMessage(KEY_REQUEST_BODY_INVALID),
+                                null,
+                                null,
+                                null)));
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
+    }
+
+    private ResponseEntity<Object> handleInvalidFormat(InvalidFormatException ex, HttpServletRequest req) {
         String expectedType = expectedTypeName(ex);
         String actualValue = safeValue(ex.getValue());
 
@@ -52,7 +93,10 @@ public class JsonExceptionHandler {
                                 ref ->
                                         error(
                                                 BAD_REQUEST,
-                                                messageResolver.getMessage(KEY_REQUEST_BODY_INVALID_FORMAT, expectedType, actualValue),
+                                                messageResolver.getMessage(
+                                                        KEY_REQUEST_BODY_INVALID_FORMAT,
+                                                        expectedType,
+                                                        actualValue),
                                                 ref.getFieldName(),
                                                 null,
                                                 null))
@@ -64,14 +108,19 @@ public class JsonExceptionHandler {
                 pd,
                 BAD_REQUEST,
                 errors.isEmpty()
-                        ? List.of(error(BAD_REQUEST, messageResolver.getMessage(KEY_REQUEST_BODY_INVALID), null, null, null))
+                        ? List.of(
+                        error(
+                                BAD_REQUEST,
+                                messageResolver.getMessage(KEY_REQUEST_BODY_INVALID),
+                                null,
+                                null,
+                                null))
                         : errors);
 
-        return pd;
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
     }
 
-    @ExceptionHandler(UnrecognizedPropertyException.class)
-    public ProblemDetail handleUnrecognized(UnrecognizedPropertyException ex, HttpServletRequest req) {
+    private ResponseEntity<Object> handleUnrecognized(UnrecognizedPropertyException ex, HttpServletRequest req) {
         String field = ex.getPropertyName();
         log.warn("Unrecognized field: '{}' (known: {})", field, ex.getKnownPropertyIds());
 
@@ -88,22 +137,7 @@ public class JsonExceptionHandler {
                                 null,
                                 null)));
 
-        return pd;
-    }
-
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ProblemDetail handleNotReadable(HttpMessageNotReadableException ex, HttpServletRequest req) {
-        String raw = Optional.ofNullable(ex.getCause()).map(Throwable::getMessage).orElseGet(ex::getMessage);
-        log.warn("Bad request (not readable): {}", raw);
-
-        ProblemDetail pd = buildBadRequestProblem(req);
-
-        attachErrors(
-                pd,
-                BAD_REQUEST,
-                List.of(error(BAD_REQUEST, messageResolver.getMessage(KEY_REQUEST_BODY_INVALID), null, null, null)));
-
-        return pd;
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
     }
 
     private ProblemDetail buildBadRequestProblem(HttpServletRequest req) {
@@ -116,11 +150,16 @@ public class JsonExceptionHandler {
     }
 
     private String expectedTypeName(InvalidFormatException ex) {
-        return Optional.ofNullable(ex.getTargetType()).map(Class::getSimpleName).orElse(FALLBACK_UNKNOWN);
+        return Optional.ofNullable(ex.getTargetType())
+                .map(Class::getSimpleName)
+                .orElse(FALLBACK_UNKNOWN);
     }
 
     private String safeValue(Object v) {
-        if (v == null) return "null";
+        if (v == null) {
+            return "null";
+        }
+
         String s = v.toString();
         return s.isBlank() ? "null" : s;
     }

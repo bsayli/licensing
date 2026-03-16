@@ -75,7 +75,7 @@ class LicenseControllerIT {
     }
 
     @Test
-    @DisplayName("POST /v1/licenses/access -> 400 validation error (MethodArgumentNotValid) (default Spring ProblemDetail)")
+    @DisplayName("POST /v1/licenses/access -> 400 validation error (MethodArgumentNotValid)")
     void obtainToken_validationError_methodArgumentNotValid() throws Exception {
         var bad = new LicenseAccessRequest("x", "short", null, "c", "1");
 
@@ -85,13 +85,16 @@ class LicenseControllerIT {
                                 .content(om.writeValueAsBytes(bad)))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
-                .andExpect(jsonPath("$.type").value("about:blank"))
-                .andExpect(jsonPath("$.title").value("Bad Request"))
+                .andExpect(jsonPath("$.type").value("urn:licensing-agent:problem:validation-failed"))
+                .andExpect(jsonPath("$.title").value("Validation failed"))
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.detail").value("Invalid request content."))
+                .andExpect(jsonPath("$.detail").value("One or more fields are invalid."))
                 .andExpect(jsonPath("$.instance").value("/v1/licenses/access"))
-                .andExpect(jsonPath("$.errorCode").doesNotExist())
-                .andExpect(jsonPath("$.extensions").doesNotExist());
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.extensions").exists())
+                .andExpect(jsonPath("$.extensions.errors").isArray())
+                .andExpect(jsonPath("$.extensions.errors.length()").value(4))
+                .andExpect(jsonPath("$.extensions.errors[0].code").value("VALIDATION_FAILED"));
     }
 
     @Test
@@ -182,7 +185,7 @@ class LicenseControllerIT {
                                 .content(om.writeValueAsBytes(req)))
                 .andExpect(status().isBadGateway())
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
-                .andExpect(jsonPath("$.type").value("urn:licensing:problem:service-error"))
+                .andExpect(jsonPath("$.type").value("urn:licensing-agent:problem:service-error"))
                 .andExpect(jsonPath("$.title").value("License validation failed"))
                 .andExpect(jsonPath("$.status").value(502))
                 .andExpect(jsonPath("$.detail").value("Remote call failed"))

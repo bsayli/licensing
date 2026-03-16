@@ -25,7 +25,7 @@ final class ProblemSupport {
     static final String TYPE_CONFLICT = "conflict";
     static final String TYPE_TOO_MANY_REQUESTS = "too-many-requests";
 
-    private static final String PROBLEM_BASE = "urn:licensing:problem:";
+    private static final String PROBLEM_BASE = "urn:licensing-agent:problem:";
 
     private ProblemSupport() {
     }

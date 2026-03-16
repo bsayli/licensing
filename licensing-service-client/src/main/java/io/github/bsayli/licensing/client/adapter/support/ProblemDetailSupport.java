@@ -1,10 +1,10 @@
 package io.github.bsayli.licensing.client.adapter.support;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.bsayli.licensing.client.generated.dto.ProblemDetail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.client.ClientHttpResponse;
 
 public final class ProblemDetailSupport {

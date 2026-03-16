@@ -16,7 +16,7 @@ import java.util.List;
 import static io.github.bsayli.licensing.agent.api.exception.ProblemSupport.*;
 import static io.github.bsayli.licensing.agent.common.api.ApiConstants.ErrorCode.INTERNAL_ERROR;
 
-@RestControllerAdvice(basePackages = "io.github.bsayli.licensing.agent.api.controller")
+@RestControllerAdvice
 @Order(4)
 public class ApplicationExceptionHandler {
 

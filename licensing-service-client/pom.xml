@@ -38,6 +38,8 @@
         <openapi.templates.effective>${project.build.directory}/effective-templates</openapi.templates.effective>
         <api-contract.version>0.7.7</api-contract.version>
         <jackson.version>2.21.1</jackson.version>
+        <slf4j-api.version>2.0.17</slf4j-api.version>
+        <logback.version>1.5.32</logback.version>
         <argLine/>
     </properties>
 
@@ -81,6 +83,19 @@
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
             <version>${httpclient5.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j-api.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>

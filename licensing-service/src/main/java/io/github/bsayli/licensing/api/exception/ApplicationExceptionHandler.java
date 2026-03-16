@@ -13,13 +13,14 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.*;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
 import static io.github.bsayli.licensing.api.exception.ProblemSupport.*;
 import static io.github.bsayli.licensing.common.api.ApiConstants.ErrorCode.INTERNAL_ERROR;
-import static io.github.bsayli.licensing.common.api.ApiConstants.ErrorCode.NOT_FOUND;
 
-@RestControllerAdvice(basePackages = "io.github.bsayli.licensing.api.controller")
+@RestControllerAdvice
 @Order(4)
 public class ApplicationExceptionHandler {
 

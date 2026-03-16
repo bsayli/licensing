@@ -6,22 +6,26 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
+import org.springframework.http.*;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.List;
 
 import static io.github.bsayli.licensing.api.exception.ProblemSupport.*;
 import static io.github.bsayli.licensing.common.api.ApiConstants.ErrorCode.VALIDATION_FAILED;
 
-@RestControllerAdvice(basePackages = "io.github.bsayli.licensing.api.controller")
+@RestControllerAdvice
 @Order(1)
-public class ValidationExceptionHandler {
+public class ValidationExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final String KEY_PROBLEM_TITLE_VALIDATION_FAILED = "problem.title.validation_failed";
     private static final String KEY_PROBLEM_DETAIL_VALIDATION_FAILED = "problem.detail.validation_failed";
@@ -33,20 +37,33 @@ public class ValidationExceptionHandler {
         this.messageResolver = messageResolver;
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpServletRequest req) {
+    @Override
+    @Nullable
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex,
+            @NonNull HttpHeaders headers,
+            @NonNull HttpStatusCode status,
+            @NonNull WebRequest request) {
+
+        HttpServletRequest req = ((ServletWebRequest) request).getRequest();
+
         List<ErrorItem> errors =
-                ex.getBindingResult().getFieldErrors().stream().map(this::toErrorItem).toList();
+                ex.getBindingResult().getFieldErrors().stream()
+                        .map(this::toErrorItem)
+                        .toList();
 
         ProblemDetail pd = buildValidationProblem(req);
         attachErrors(pd, VALIDATION_FAILED, errors);
-        return pd;
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ProblemDetail handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest req) {
         List<ErrorItem> errors =
-                ex.getConstraintViolations().stream().map(this::toErrorItem).toList();
+                ex.getConstraintViolations().stream()
+                        .map(this::toErrorItem)
+                        .toList();
 
         ProblemDetail pd = buildValidationProblem(req);
         attachErrors(pd, VALIDATION_FAILED, errors);
@@ -55,7 +72,10 @@ public class ValidationExceptionHandler {
 
     @ExceptionHandler(BindException.class)
     public ProblemDetail handleBindException(BindException ex, HttpServletRequest req) {
-        List<ErrorItem> errors = ex.getFieldErrors().stream().map(this::toErrorItem).toList();
+        List<ErrorItem> errors =
+                ex.getFieldErrors().stream()
+                        .map(this::toErrorItem)
+                        .toList();
 
         ProblemDetail pd = buildValidationProblem(req);
         attachErrors(pd, VALIDATION_FAILED, errors);

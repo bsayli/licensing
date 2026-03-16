@@ -1,16 +1,21 @@
 package io.github.bsayli.licensing.client.adapter.support;
 
-import io.github.bsayli.licensing.client.generated.dto.ErrorItem;
-import io.github.bsayli.licensing.client.generated.dto.ProblemDetail;
-import io.github.bsayli.licensing.client.generated.dto.ProblemExtensions;
+import io.github.bsayli.apicontract.error.ErrorItem;
+import io.github.bsayli.apicontract.error.ProblemExtensions;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 final class ProblemDetailFallbacks {
 
     private static final HttpStatusCode STATUS_INTERNAL_SERVER_ERROR = HttpStatusCode.valueOf(500);
+
+    private static final String KEY_ERROR_CODE = "errorCode";
+    private static final String KEY_EXTENSIONS = "extensions";
 
     private static final String TITLE_HTTP_ERROR = "HTTP error";
     private static final String TITLE_NON_JSON = "Non-JSON error response";
@@ -91,44 +96,37 @@ final class ProblemDetailFallbacks {
     private static ProblemDetail baseProblem(
             HttpStatusCode status, URI type, String title, String detail, String errorCode) {
 
-        ProblemDetail pd = new ProblemDetail();
-        pd.setStatus(status.value());
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, detail);
         pd.setType(type);
         pd.setTitle((title != null && !title.isBlank()) ? title : TITLE_HTTP_ERROR);
-        pd.setDetail(detail);
-        pd.setErrorCode(errorCode);
+        pd.setProperty(KEY_ERROR_CODE, errorCode);
         return pd;
     }
 
     private static void addContextErrors(
             ProblemDetail pd, String problemCode, boolean statusUnavailable, MediaType contentType, Throwable cause) {
 
-        ProblemExtensions ext = new ProblemExtensions();
+        List<ErrorItem> errors = new ArrayList<>();
 
         String ct = contentType != null ? contentType.toString() : "";
         if (!ct.isBlank()) {
-            ext.addErrorsItem(errorItem(problemCode, MSG_CONTENT_TYPE_PREFIX + ct, ERROR_ITEM_FIELD_CONTENT_TYPE));
+            errors.add(errorItem(problemCode, MSG_CONTENT_TYPE_PREFIX + ct, ERROR_ITEM_FIELD_CONTENT_TYPE));
         }
 
         if (statusUnavailable) {
-            ext.addErrorsItem(errorItem(ERROR_CODE_UPSTREAM_STATUS_UNAVAILABLE, MSG_STATUS_UNAVAILABLE, ERROR_ITEM_FIELD_STATUS));
+            errors.add(errorItem(ERROR_CODE_UPSTREAM_STATUS_UNAVAILABLE, MSG_STATUS_UNAVAILABLE, ERROR_ITEM_FIELD_STATUS));
         }
 
         if (cause != null) {
-            ext.addErrorsItem(errorItem(problemCode, cause.getClass().getSimpleName(), ERROR_ITEM_FIELD_CAUSE));
+            errors.add(errorItem(problemCode, cause.getClass().getSimpleName(), ERROR_ITEM_FIELD_CAUSE));
         }
 
-        if (ext.getErrors() != null && !ext.getErrors().isEmpty()) {
-            pd.setExtensions(ext);
+        if (!errors.isEmpty()) {
+            pd.setProperty(KEY_EXTENSIONS, ProblemExtensions.ofErrors(List.copyOf(errors)));
         }
     }
 
     private static ErrorItem errorItem(String code, String message, String field) {
-        ErrorItem item = new ErrorItem();
-        item.setCode(code);
-        item.setMessage(message);
-        item.setField(field);
-        item.setResource(ERROR_ITEM_RESOURCE_UPSTREAM);
-        return item;
+        return new ErrorItem(code, message, field, ERROR_ITEM_RESOURCE_UPSTREAM, null);
     }
 }

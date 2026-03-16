@@ -1,13 +1,12 @@
 package io.github.bsayli.licensing.agent.service.handler;
 
 import io.github.bsayli.apicontract.envelope.ServiceResponse;
+import io.github.bsayli.apicontract.error.ErrorItem;
+import io.github.bsayli.apicontract.error.ProblemExtensions;
 import io.github.bsayli.licensing.agent.common.exception.LicensingAgentRemoteServiceException;
 import io.github.bsayli.licensing.agent.common.i18n.LocalizedMessageResolver;
 import io.github.bsayli.licensing.client.common.problem.ApiProblemException;
-import io.github.bsayli.licensing.client.generated.dto.ErrorItem;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
-import io.github.bsayli.licensing.client.generated.dto.ProblemDetail;
-import io.github.bsayli.licensing.client.generated.dto.ProblemExtensions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -16,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 
 import java.net.URI;
 import java.util.List;
@@ -31,6 +31,7 @@ class LicenseResponseHandlerTest {
 
     @Mock
     private LocalizedMessageResolver messages;
+
     @InjectMocks
     private LicenseResponseHandler handler;
 
@@ -40,6 +41,7 @@ class LicenseResponseHandlerTest {
         @SuppressWarnings("unchecked")
         ServiceResponse<LicenseAccessResponse> resp = mock(ServiceResponse.class);
         LicenseAccessResponse data = mock(LicenseAccessResponse.class);
+
         when(resp.getData()).thenReturn(data);
         when(data.getLicenseToken()).thenReturn("jwt-token");
 
@@ -57,6 +59,7 @@ class LicenseResponseHandlerTest {
         @SuppressWarnings("unchecked")
         ServiceResponse<LicenseAccessResponse> resp = mock(ServiceResponse.class);
         LicenseAccessResponse data = mock(LicenseAccessResponse.class);
+
         when(resp.getData()).thenReturn(data);
         when(data.getLicenseToken()).thenReturn("  ");
 
@@ -78,6 +81,7 @@ class LicenseResponseHandlerTest {
         @SuppressWarnings("unchecked")
         ServiceResponse<LicenseAccessResponse> resp = mock(ServiceResponse.class);
         LicenseAccessResponse data = mock(LicenseAccessResponse.class);
+
         when(resp.getData()).thenReturn(data);
         when(data.getLicenseToken()).thenReturn(null);
 
@@ -133,29 +137,21 @@ class LicenseResponseHandlerTest {
     }
 
     @Test
-    @DisplayName("mapRemoteFailure -> prefers ApiProblemException.errorCode and formatted errors")
-    void mapRemoteFailure_prefersErrorCode_andFormatsErrors() {
+    @DisplayName("mapRemoteFailure -> prefers ApiProblemException.errorCode and formats messages")
+    void mapRemoteFailure_prefersErrorCode_andFormatsMessages() {
         when(messages.getMessage("agent.remote.call.failed")).thenReturn("Top Remote Failed");
         when(messages.getMessage("agent.remote.no.payload")).thenReturn("fallback-detail");
 
-        ProblemExtensions ext = new ProblemExtensions();
-
-        ErrorItem e1 = new ErrorItem();
-        e1.setCode("NOT_FOUND");
-        e1.setMessage("Customer missing");
-        ext.addErrorsItem(e1);
-
-        ErrorItem e2 = new ErrorItem();
-        e2.setCode("X");
-        e2.setMessage("Y");
-        ext.addErrorsItem(e2);
-
-        ProblemDetail pd = new ProblemDetail();
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "upstream detail");
         pd.setType(URI.create("urn:test:problem"));
         pd.setTitle("upstream title");
-        pd.setDetail("upstream detail");
-        pd.setErrorCode("PD_CODE");
-        pd.setExtensions(ext);
+        pd.setProperty("errorCode", "PD_CODE");
+        pd.setProperty(
+                "extensions",
+                ProblemExtensions.ofErrors(
+                        List.of(
+                                new ErrorItem("NOT_FOUND", "Customer missing", null, null, null),
+                                new ErrorItem("X", "Y", null, null, null))));
 
         ApiProblemException ape = new ApiProblemException(pd, 404);
         LicensingAgentRemoteServiceException mapped = handler.mapRemoteFailure(ape);
@@ -163,7 +159,7 @@ class LicenseResponseHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND, mapped.getHttpStatus());
         assertEquals("PD_CODE", mapped.getErrorCode());
         assertEquals("Top Remote Failed", mapped.getTopMessage());
-        assertEquals(List.of("NOT_FOUND : Customer missing", "X : Y"), mapped.getDetails());
+        assertEquals(List.of("Customer missing", "Y"), mapped.getDetails());
     }
 
     @Test
@@ -172,18 +168,17 @@ class LicenseResponseHandlerTest {
         when(messages.getMessage("agent.remote.call.failed")).thenReturn("Top Remote Failed");
         when(messages.getMessage("agent.remote.no.payload")).thenReturn("fallback-detail");
 
-        ProblemDetail pd = new ProblemDetail();
-        pd.setErrorCode("E");
-        pd.setDetail("detail-1");
-        ApiProblemException ape1 = new ApiProblemException(pd, 502);
+        ProblemDetail pd1 = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, "detail-1");
+        pd1.setProperty("errorCode", "E");
+        ApiProblemException ape1 = new ApiProblemException(pd1, 502);
 
         LicensingAgentRemoteServiceException m1 = handler.mapRemoteFailure(ape1);
         assertEquals(HttpStatus.BAD_GATEWAY, m1.getHttpStatus());
         assertEquals(List.of("detail-1"), m1.getDetails());
 
-        ProblemDetail pd2 = new ProblemDetail();
-        pd2.setErrorCode("E");
+        ProblemDetail pd2 = ProblemDetail.forStatus(HttpStatus.BAD_GATEWAY);
         pd2.setTitle("title-1");
+        pd2.setProperty("errorCode", "E");
         ApiProblemException ape2 = new ApiProblemException(pd2, 502);
 
         LicensingAgentRemoteServiceException m2 = handler.mapRemoteFailure(ape2);
