@@ -21,7 +21,7 @@ import static io.github.bsayli.licensing.api.exception.ProblemSupport.*;
 import static io.github.bsayli.licensing.common.api.ApiConstants.ErrorCode.INTERNAL_ERROR;
 
 @RestControllerAdvice
-@Order(4)
+@Order(2)
 public class ApplicationExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ApplicationExceptionHandler.class);

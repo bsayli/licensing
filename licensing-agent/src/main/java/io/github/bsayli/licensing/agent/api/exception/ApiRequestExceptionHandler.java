@@ -15,6 +15,7 @@ import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
+import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -104,6 +105,15 @@ public class ApiRequestExceptionHandler extends ResponseEntityExceptionHandler {
                 ex.getConstraintViolations().stream()
                         .map(this::toErrorItem)
                         .toList();
+
+        ProblemDetail pd = buildValidationProblem(req);
+        attachErrors(pd, VALIDATION_FAILED, errors);
+        return pd;
+    }
+
+    @ExceptionHandler(BindException.class)
+    public ProblemDetail handleBindException(BindException ex, HttpServletRequest req) {
+        List<ErrorItem> errors = ex.getFieldErrors().stream().map(this::toErrorItem).toList();
 
         ProblemDetail pd = buildValidationProblem(req);
         attachErrors(pd, VALIDATION_FAILED, errors);
@@ -232,7 +242,7 @@ public class ApiRequestExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     @Nullable
     protected ResponseEntity<Object> handleServletRequestBindingException(
-            ServletRequestBindingException ex,
+            @NonNull ServletRequestBindingException ex,
             @NonNull HttpHeaders headers,
             @NonNull HttpStatusCode status,
             @NonNull WebRequest request) {
