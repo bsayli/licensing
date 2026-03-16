@@ -15,6 +15,9 @@ management:
         enabled: true
 
 spring:
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
   mvc:
     problemdetails:
       enabled: true

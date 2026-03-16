@@ -3,10 +3,8 @@ package io.github.bsayli.licensing.agent.api.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.bsayli.licensing.agent.api.dto.LicenseAccessRequest;
 import io.github.bsayli.licensing.agent.api.dto.LicenseToken;
+import io.github.bsayli.licensing.agent.api.exception.ApiRequestExceptionHandler;
 import io.github.bsayli.licensing.agent.api.exception.ApplicationExceptionHandler;
-import io.github.bsayli.licensing.agent.api.exception.JsonExceptionHandler;
-import io.github.bsayli.licensing.agent.api.exception.SpringHttpExceptionHandler;
-import io.github.bsayli.licensing.agent.api.exception.ValidationExceptionHandler;
 import io.github.bsayli.licensing.agent.common.exception.LicensingAgentRemoteServiceException;
 import io.github.bsayli.licensing.agent.service.LicenseOrchestrationService;
 import io.github.bsayli.licensing.agent.testconfig.TestControllerMocksConfig;
@@ -31,9 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = LicenseController.class)
 @Import({
-        ValidationExceptionHandler.class,
-        JsonExceptionHandler.class,
-        SpringHttpExceptionHandler.class,
+        ApiRequestExceptionHandler.class,
         ApplicationExceptionHandler.class,
         TestWebMvcSecurityConfig.class,
         TestControllerMocksConfig.class
@@ -98,7 +94,7 @@ class LicenseControllerIT {
     }
 
     @Test
-    @DisplayName("POST /v1/licenses/access -> 400 invalid JSON (HttpMessageNotReadable) (default Spring ProblemDetail)")
+    @DisplayName("POST /v1/licenses/access -> 400 invalid JSON (HttpMessageNotReadable)")
     void obtainToken_badJson_notReadable() throws Exception {
         mvc.perform(
                         post("/v1/licenses/access")
@@ -106,18 +102,20 @@ class LicenseControllerIT {
                                 .content("{"))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
-                .andExpect(jsonPath("$.type").value("about:blank"))
-                .andExpect(jsonPath("$.title").value("Bad Request"))
+                .andExpect(jsonPath("$.type").value("urn:licensing-agent:problem:bad-request"))
+                .andExpect(jsonPath("$.title").value("Bad request"))
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.detail").value("Failed to read request"))
+                .andExpect(jsonPath("$.detail").value("Malformed request body."))
                 .andExpect(jsonPath("$.instance").value("/v1/licenses/access"))
-                .andExpect(jsonPath("$.errorCode").doesNotExist())
-                .andExpect(jsonPath("$.extensions").doesNotExist());
+                .andExpect(jsonPath("$.errorCode").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.extensions.errors[0].code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.extensions.errors[0].message").value("Invalid JSON payload."));
     }
 
+
     @Test
-    @DisplayName("POST /v1/licenses/access -> unknown field -> currently 200 (Jackson doesn't fail on unknown properties)")
-    void obtainToken_badJson_unrecognizedField_currentlyOk() throws Exception {
+    @DisplayName("POST /v1/licenses/access -> unknown field -> 400 bad request")
+    void obtainToken_badJson_unrecognizedField_returnsProblemDetail_badRequest() throws Exception {
         String body =
                 """
                 {
@@ -130,34 +128,37 @@ class LicenseControllerIT {
                 }
                 """.formatted("L".repeat(120), "c".repeat(40));
 
-        Mockito.when(service.getLicenseToken(any(LicenseAccessRequest.class)))
-                .thenReturn(new LicenseToken("jwt-token"));
-
         mvc.perform(
                         post("/v1/licenses/access")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body))
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.data.licenseToken").value("jwt-token"))
-                .andExpect(jsonPath("$.meta").exists())
-                .andExpect(jsonPath("$.meta.serverTime").exists())
-                .andExpect(jsonPath("$.meta.sort").isArray());
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+                .andExpect(jsonPath("$.type").value("urn:licensing-agent:problem:bad-request"))
+                .andExpect(jsonPath("$.title").value("Bad request"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail").value("Malformed request body."))
+                .andExpect(jsonPath("$.instance").value("/v1/licenses/access"))
+                .andExpect(jsonPath("$.errorCode").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.extensions.errors[0].code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.extensions.errors[0].message").value("Unrecognized field: 'foo'"))
+                .andExpect(jsonPath("$.extensions.errors[0].field").value("foo"));
     }
 
     @Test
-    @DisplayName("GET /v1/licenses/access -> 405 method not allowed (default Spring ProblemDetail)")
+    @DisplayName("GET /v1/licenses/access -> 405 method not allowed")
     void obtainToken_methodNotAllowed() throws Exception {
         mvc.perform(get("/v1/licenses/access"))
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
-                .andExpect(jsonPath("$.type").value("about:blank"))
-                .andExpect(jsonPath("$.title").value("Method Not Allowed"))
+                .andExpect(jsonPath("$.type").value("urn:licensing-agent:problem:method-not-allowed"))
+                .andExpect(jsonPath("$.title").value("Method not allowed"))
                 .andExpect(jsonPath("$.status").value(405))
-                .andExpect(jsonPath("$.detail").value("Method 'GET' is not supported."))
+                .andExpect(jsonPath("$.detail").value("The request method is not supported for this resource."))
                 .andExpect(jsonPath("$.instance").value("/v1/licenses/access"))
-                .andExpect(jsonPath("$.errorCode").doesNotExist())
-                .andExpect(jsonPath("$.extensions").doesNotExist());
+                .andExpect(jsonPath("$.errorCode").value("METHOD_NOT_ALLOWED"))
+                .andExpect(jsonPath("$.extensions.errors[0].code").value("METHOD_NOT_ALLOWED"))
+                .andExpect(jsonPath("$.extensions.errors[0].message").value("HTTP method not supported: GET"));
     }
 
     @Test
