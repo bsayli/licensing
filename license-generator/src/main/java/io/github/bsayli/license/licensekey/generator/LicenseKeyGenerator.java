@@ -11,35 +11,36 @@ import java.security.SecureRandom;
 import javax.crypto.SecretKey;
 
 public final class LicenseKeyGenerator {
-  private static final byte VERSION_1 = 0x01;
-  private static final byte FLAGS_NONE = 0x00;
-  private static final int SALT_LEN = 16;
-  private static final SecureRandom RNG = new SecureRandom();
+    private static final byte VERSION_1 = 0x01;
+    private static final byte FLAGS_NONE = 0x00;
+    private static final int SALT_LEN = 16;
+    private static final SecureRandom RNG = new SecureRandom();
 
-  private LicenseKeyGenerator() {}
-
-  public static LicenseKeyData generateLicenseKey(String userIdPlain, SecretKey aesKey) {
-    try {
-      byte[] opaque = buildOpaquePayload(userIdPlain, aesKey);
-      String b64url = B64URL_NOPAD_ENC.encodeToString(opaque);
-      return new LicenseKeyData(LICENSE_KEY_PREFIX, b64url);
-    } catch (Exception e) {
-      throw new IllegalStateException("Failed to generate opaque license key", e);
+    private LicenseKeyGenerator() {
     }
-  }
 
-  private static byte[] buildOpaquePayload(String userId, SecretKey aesKey)
-      throws GeneralSecurityException {
-    byte[] salt = new byte[SALT_LEN];
-    RNG.nextBytes(salt);
+    public static LicenseKeyData generateLicenseKey(String userIdPlain, SecretKey aesKey) {
+        try {
+            byte[] opaque = buildOpaquePayload(userIdPlain, aesKey);
+            String b64url = B64URL_NOPAD_ENC.encodeToString(opaque);
+            return new LicenseKeyData(LICENSE_KEY_PREFIX, b64url);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to generate opaque license key", e);
+        }
+    }
 
-    byte[] gcm = UserIdEncrypter.encryptRaw(userId, aesKey); // tek yol
+    private static byte[] buildOpaquePayload(String userId, SecretKey aesKey)
+            throws GeneralSecurityException {
+        byte[] salt = new byte[SALT_LEN];
+        RNG.nextBytes(salt);
 
-    ByteBuffer bb = ByteBuffer.allocate(2 + SALT_LEN + gcm.length);
-    bb.put(VERSION_1);
-    bb.put(FLAGS_NONE);
-    bb.put(salt);
-    bb.put(gcm);
-    return bb.array();
-  }
+        byte[] gcm = UserIdEncrypter.encryptRaw(userId, aesKey); // tek yol
+
+        ByteBuffer bb = ByteBuffer.allocate(2 + SALT_LEN + gcm.length);
+        bb.put(VERSION_1);
+        bb.put(FLAGS_NONE);
+        bb.put(salt);
+        bb.put(gcm);
+        return bb.array();
+    }
 }

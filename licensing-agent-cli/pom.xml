@@ -6,13 +6,14 @@
     <artifactId>licensing-agent-cli</artifactId>
     <version>2.0.0</version>
   
-    <name>licensing-service-sdk-cli</name>
-    <description>Licensing Service Sdk Cli</description>
+    <name>licensing-agent-cli</name>
+    <description>Licensing Agent Cli</description>
 
     <properties>
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <openapi-generics-contract.version>1.0.1</openapi-generics-contract.version>
         <picocli.version>4.7.7</picocli.version>
         <httpclient5-fluent.version>5.5</httpclient5-fluent.version>
         <slf4j-api.version>2.0.17</slf4j-api.version>
@@ -22,15 +23,28 @@
         <jackson-databind.version>2.21.1</jackson-databind.version>
         <mockito-core.version>5.22.0</mockito-core.version>
 
-        <spring-boot-maven-plugin.version>3.5.11</spring-boot-maven-plugin.version>
+        <spring-boot-maven-plugin.version>3.5.14</spring-boot-maven-plugin.version>
         <maven.compiler.plugin.version>3.15.0</maven.compiler.plugin.version>
         <maven.dependency.plugin.version>3.10.0</maven.dependency.plugin.version>
         <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>3.5.5</maven-failsafe-plugin.version>
         <argLine/>
+
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>io.github.blueprint-platform</groupId>
+            <artifactId>openapi-generics-contract</artifactId>
+            <version>${openapi-generics-contract.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson-databind.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>info.picocli</groupId>
@@ -192,7 +206,7 @@
                             <goal>repackage</goal>
                         </goals>
                         <configuration>
-                            <mainClass>io.github.bsayli.licensing.agent.cli.LicenseSdkCli</mainClass>
+                            <mainClass>io.github.bsayli.licensing.agent.cli.LicenseAgentCli</mainClass>
                         </configuration>
                     </execution>
                 </executions>

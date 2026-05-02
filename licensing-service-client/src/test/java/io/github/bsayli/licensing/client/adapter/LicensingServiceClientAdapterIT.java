@@ -1,13 +1,17 @@
 package io.github.bsayli.licensing.client.adapter;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.bsayli.apicontract.envelope.ServiceResponse;
+import io.github.blueprintplatform.openapi.generics.contract.envelope.ServiceResponse;
 import io.github.bsayli.licensing.client.adapter.config.LicensingServiceApiClientConfig;
 import io.github.bsayli.licensing.client.adapter.impl.LicensingServiceClientAdapterImpl;
 import io.github.bsayli.licensing.client.common.problem.ApiProblemException;
 import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
+import java.util.List;
+import java.util.Map;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -22,11 +26,6 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.client.RestClient;
-
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringJUnitConfig(
         classes = {

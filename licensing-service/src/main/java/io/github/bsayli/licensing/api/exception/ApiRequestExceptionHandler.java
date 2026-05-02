@@ -1,12 +1,17 @@
 package io.github.bsayli.licensing.api.exception;
 
+import static io.github.bsayli.licensing.api.exception.ProblemSupport.*;
+import static io.github.bsayli.licensing.common.api.ApiConstants.ErrorCode.*;
+
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
-import io.github.bsayli.apicontract.error.ErrorItem;
+import io.github.blueprintplatform.openapi.generics.contract.error.ErrorItem;
 import io.github.bsayli.licensing.common.i18n.LocalizedMessageResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
@@ -29,12 +34,6 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
-
-import java.util.List;
-import java.util.Optional;
-
-import static io.github.bsayli.licensing.api.exception.ProblemSupport.*;
-import static io.github.bsayli.licensing.common.api.ApiConstants.ErrorCode.*;
 
 @RestControllerAdvice
 @Order(1)

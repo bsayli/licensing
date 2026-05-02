@@ -1,4 +1,4 @@
-# Licensing Service SDK
+# Licensing Service Agent
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
 [![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
@@ -7,9 +7,9 @@
 [![Maven](https://img.shields.io/badge/Maven-3.9-blue?logo=apachemaven)](https://maven.apache.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
 
-A Spring Boot 3 client SDK for integrating with the **Licensing Service**. The SDK handles issuing and validating
+A Spring Boot 3 client Agent for integrating with the **Licensing Service**. The Agent handles issuing and validating
 license **access tokens (JWT/EdDSA)**, manages client‑side caching, signs requests with detached signatures, and
-provides a simple orchestration API for applications. This document describes only the **licensing-service-sdk**
+provides a simple orchestration API for applications. This document describes only the **licensing-agent**
 subproject.
 
 ---
@@ -38,7 +38,7 @@ subproject.
 
 ## Key Capabilities
 
-* **Simplified client SDK** for licensing-service
+* **Simplified client Agent** for licensing-service
 * **License token orchestration** (issue, validate, refresh)
 * **Client-side caching** of tokens (Caffeine)
 * **Detached signature** generation for request integrity
@@ -49,10 +49,10 @@ subproject.
 
 ## High-Level Flow
 
-1. **Application** calls SDK’s `/v1/licenses/access` endpoint with a license key (format:
+1. **Application** calls Agent’s `/v1/licenses/access` endpoint with a license key (format:
    `BSAYLI.<opaquePayloadBase64Url>`).
-2. SDK computes **clientId** (hash of instanceId + service info).
-3. SDK checks **local cache** for a token.
+2. Agent computes **clientId** (hash of instanceId + service info).
+3. Agent checks **local cache** for a token.
 
 * If **cache miss** → calls **Licensing Service /access** to issue a new token.
 * If **cache hit** → calls **Licensing Service /access/validate** with cached token.
@@ -60,9 +60,9 @@ subproject.
 4. **Licensing Service** responds:
 
 * Valid token → `TOKEN_ACTIVE`
-* Refreshed token → `TOKEN_REFRESHED` (SDK updates cache)
+* Refreshed token → `TOKEN_REFRESHED` (Agent updates cache)
 
-5. SDK returns **LicenseToken** to the calling application.
+5. Agent returns **LicenseToken** to the calling application.
 
 ---
 
@@ -71,7 +71,7 @@ subproject.
 Base path (configurable):
 
 ```
-/licensing-service-sdk
+/licensing-agent
 ```
 
 Controller: `LicenseController`
@@ -108,7 +108,7 @@ Controller: `LicenseController`
 **cURL**
 
 ```bash
-curl -u licensingSdkUser:licensingSdkPass \
+curl -u licensingAgentUser:licensingAgentPass \
   -H 'Content-Type: application/json' \
   -d '{
         "licenseKey":"<BSAYLI.<opaquePayloadBase64Url>>",
@@ -117,7 +117,7 @@ curl -u licensingSdkUser:licensingSdkPass \
         "serviceId":"crm",
         "serviceVersion":"1.5.0"
       }' \
-  http://localhost:8082/licensing-service-sdk/v1/licenses/access
+  http://localhost:8082/licensing-agent/v1/licenses/access
 ```
 
 ---
@@ -141,7 +141,7 @@ Response format: `ApiResponse<Void>` with list of `ApiError` entries.
 
 * **HTTP Basic** auth (configurable credentials)
 * **Stateless** sessions
-* SDK signs requests with **EdDSA private key** (detached signature)
+* Agent signs requests with **EdDSA private key** (detached signature)
 
 ---
 
@@ -155,7 +155,7 @@ Response format: `ApiResponse<Void>` with list of `ApiError` entries.
 server:
   port: 8082
   servlet:
-    context-path: /licensing-service-sdk
+    context-path: /licensing-agent
 
 licensing-service-api:
   base-url: "http://localhost:8081/licensing-service"
@@ -186,7 +186,7 @@ signature:
 ## Caching
 
 * `licenseTokens` — local token cache (Caffeine)
-* Default TTL is **65m** so the SDK renews well before server-side JWT expiry (90m ± jitter)
+* Default TTL is **65m** so the Agent renews well before server-side JWT expiry (90m ± jitter)
 
 ---
 
@@ -200,7 +200,7 @@ signature:
 
 ## OpenAPI / Swagger
 
-* Swagger UI: `http://localhost:8082/licensing-service-sdk/swagger-ui.html`
+* Swagger UI: `http://localhost:8082/licensing-agent/swagger-ui.html`
 * JSON: `/v3/api-docs` · YAML: `/v3/api-docs.yaml`
 
 ---
@@ -223,7 +223,7 @@ mvn clean package
 ```bash
 mvn spring-boot:run
 # or
-java -jar target/licensing-service-sdk-1.0.0.jar
+java -jar target/licensing-agent-1.0.0.jar
 ```
 
 ---
@@ -231,8 +231,8 @@ java -jar target/licensing-service-sdk-1.0.0.jar
 ## Project Structure
 
 ```
-licensing-service-sdk/
-├─ src/main/java/io/github/bsayli/licensing/sdk/
+licensing-agent/
+├─ src/main/java/io/github/bsayli/licensing/agent/
 │  ├─ api/(controller, dto, exception)
 │  ├─ cache/(CacheNames.java, CacheConfig)
 │  ├─ common/(api, exception, i18n)
@@ -261,4 +261,4 @@ licensing-service-sdk/
 
 * **[licensing-service](../licensing-service/README.md)** — server component
 * **[license-generator](../license-generator/README.md)** — key & signature tooling
-* **[licensing-service-sdk-cli](../licensing-service-sdk-cli/README.md)** — command-line client demo
+* **[licensing-agent-cli](../licensing-agent-cli/README.md)** — command-line client demo

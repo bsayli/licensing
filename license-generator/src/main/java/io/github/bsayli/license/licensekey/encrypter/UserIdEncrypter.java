@@ -1,6 +1,7 @@
 package io.github.bsayli.license.licensekey.encrypter;
 
-import static io.github.bsayli.license.common.CryptoUtils.*;
+import static io.github.bsayli.license.common.CryptoUtils.aesGcmDecryptRaw;
+import static io.github.bsayli.license.common.CryptoUtils.aesGcmEncryptRaw;
 
 import java.security.GeneralSecurityException;
 import java.security.Security;

@@ -1,6 +1,6 @@
 package io.github.bsayli.licensing.agent.cli.model;
 
-public record LicenseSdkClientProperties(
+public record LicenseAgentClientProperties(
     String baseUrl,
     String appUser,
     String appPass,

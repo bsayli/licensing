@@ -1,14 +1,13 @@
 package io.github.bsayli.licensing.client.common.problem;
 
-import io.github.bsayli.apicontract.error.ErrorItem;
-import io.github.bsayli.apicontract.error.ProblemExtensions;
-import org.springframework.http.ProblemDetail;
-
+import io.github.blueprintplatform.openapi.generics.contract.error.ErrorItem;
+import io.github.blueprintplatform.openapi.generics.contract.error.ProblemExtensions;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.springframework.http.ProblemDetail;
 
 public final class ApiProblemException extends RuntimeException implements Serializable {
 

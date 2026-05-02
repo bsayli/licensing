@@ -1,17 +1,16 @@
 package io.github.bsayli.licensing.agent.service.handler;
 
-import io.github.bsayli.apicontract.envelope.ServiceResponse;
-import io.github.bsayli.apicontract.error.ErrorItem;
+import io.github.blueprintplatform.openapi.generics.contract.envelope.ServiceResponse;
+import io.github.blueprintplatform.openapi.generics.contract.error.ErrorItem;
 import io.github.bsayli.licensing.agent.common.exception.LicensingAgentRemoteServiceException;
 import io.github.bsayli.licensing.agent.common.i18n.LocalizedMessageResolver;
 import io.github.bsayli.licensing.client.common.problem.ApiProblemException;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
+import java.util.List;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Map;
 
 @Component
 public class LicenseResponseHandler {

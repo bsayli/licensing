@@ -110,13 +110,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Sort"
+      x-ignore-model: true
     ServiceResponseLicenseAccessResponse:
-      allOf:
-        - $ref: "#/components/schemas/ServiceResponse"
-        - type: object
-          properties:
-            data:
-              $ref: "#/components/schemas/LicenseAccessResponse"
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/LicenseAccessResponse"
+        meta:
+          $ref: "#/components/schemas/Meta"
       x-api-wrapper: true
       x-api-wrapper-datatype: LicenseAccessResponse
     Sort:
@@ -127,8 +128,9 @@ components:
         direction:
           type: string
           enum:
-            - asc
-            - desc
+            - ASC
+            - DESC
+      x-ignore-model: true
     ValidateAccessRequest:
       type: object
       properties:
@@ -157,20 +159,6 @@ components:
         - serviceId
         - serviceVersion
         - signature
-    ServiceResponse:
-      type: object
-      properties:
-        data:
-          type: object
-        meta:
-          $ref: "#/components/schemas/Meta"
-    ServiceResponseVoid:
-      type: object
-      properties:
-        data:
-          type: object
-        meta:
-          $ref: "#/components/schemas/Meta"
   securitySchemes:
     basicAuth:
       type: http

@@ -1,12 +1,18 @@
 package io.github.bsayli.licensing.agent.service.handler;
 
-import io.github.bsayli.apicontract.envelope.ServiceResponse;
-import io.github.bsayli.apicontract.error.ErrorItem;
-import io.github.bsayli.apicontract.error.ProblemExtensions;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import io.github.blueprintplatform.openapi.generics.contract.envelope.ServiceResponse;
+import io.github.blueprintplatform.openapi.generics.contract.error.ErrorItem;
+import io.github.blueprintplatform.openapi.generics.contract.error.ProblemExtensions;
 import io.github.bsayli.licensing.agent.common.exception.LicensingAgentRemoteServiceException;
 import io.github.bsayli.licensing.agent.common.i18n.LocalizedMessageResolver;
 import io.github.bsayli.licensing.client.common.problem.ApiProblemException;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
+import java.net.URI;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -16,13 +22,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
-
-import java.net.URI;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)

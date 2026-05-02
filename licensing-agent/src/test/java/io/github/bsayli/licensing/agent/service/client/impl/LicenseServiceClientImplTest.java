@@ -1,6 +1,9 @@
 package io.github.bsayli.licensing.agent.service.client.impl;
 
-import io.github.bsayli.apicontract.envelope.ServiceResponse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.*;
+
+import io.github.blueprintplatform.openapi.generics.contract.envelope.ServiceResponse;
 import io.github.bsayli.licensing.client.adapter.LicensingServiceClientAdapter;
 import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
@@ -13,9 +16,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.*;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)

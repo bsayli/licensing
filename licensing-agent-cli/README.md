@@ -1,4 +1,4 @@
-# Licensing Service SDK CLI
+# Licensing Service Agent CLI
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
 [![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
@@ -25,7 +25,7 @@ mvn -q -DskipTests package
 The shaded JAR will be available at:
 
 ```
-target/licensing-service-sdk-cli-<version>.jar
+target/licensing-agent-cli-<version>.jar
 ```
 
 ---
@@ -35,7 +35,7 @@ target/licensing-service-sdk-cli-<version>.jar
 Run with Java 21 or higher:
 
 ```bash
-java -jar target/licensing-service-sdk-cli-<version>.jar \
+java -jar target/licensing-agent-cli-<version>.jar \
   -k <LICENSE_KEY> \
   -s <SERVICE_ID> \
   -v <SERVICE_VERSION> \
@@ -64,7 +64,7 @@ Default values can also be injected from environment variables:
 ## Example
 
 ```bash
-java -jar target/licensing-service-sdk-cli-1.0.1.jar \
+java -jar target/licensing-agent-cli-1.0.1.jar \
   -k 'BSAYLI.AQA3-gCQ66DQsfC0LwnAO8DTjKgad7DhPaOtCf7WG2bFUoK9pmScIhhCf2S-D0j8g4jC7nlFrLDpuM0ezEoDQc79SizxxEIUGN9YUhTNBW7iRQ' \
   -s crm \
   -v 1.5.0 \
@@ -86,25 +86,25 @@ INFO  LicenseSdkClientServiceImpl - Message: License is valid
 The CLI loads properties from `application.properties` (on classpath):
 
 ```properties
-licensing.sdk.server.url=http://localhost:8082/licensing-service-sdk
-licensing.sdk.server.app.user=licensingSdkUser
-licensing.sdk.server.app.pass=licensingSdkPass
-licensing.sdk.api.path=/v1/licenses/access
-licensing.sdk.http.connect-timeout-seconds=40
-licensing.sdk.http.response-timeout-seconds=40
-licensing.sdk.http.retries=3
-licensing.sdk.http.retry-interval-seconds=3
+licensing.agent.server.url=http://localhost:8082/licensing-agent
+licensing.agent.server.app.user=licensingSdkUser
+licensing.agent.server.app.pass=licensingSdkPass
+licensing.agent.api.path=/v1/licenses/access
+licensing.agent.http.connect-timeout-seconds=40
+licensing.agent.http.response-timeout-seconds=40
+licensing.agent.http.retries=3
+licensing.agent.http.retry-interval-seconds=3
 ```
 
 Override via environment variables:
 
 ```
-LICENSE_SERVICE_SDK_URL=http://my-server/licensing-service-sdk
-LICENSE_SERVICE_SDK_CONNECT_TIMEOUT=20
-LICENSE_SERVICE_SDK_RESPONSE_TIMEOUT=20
-LICENSE_SERVICE_SDK_RETRIES=5
-LICENSE_SERVICE_SDK_RETRY_INTERVAL=2
-LICENSE_SERVICE_SDK_API_PATH=/v1/licenses/access
+LICENSE_SERVICE_AGENT_URL=http://my-server/licensing-agent
+LICENSE_SERVICE_AGENT_CONNECT_TIMEOUT=20
+LICENSE_SERVICE_AGENT_RESPONSE_TIMEOUT=20
+LICENSE_SERVICE_AGENT_RETRIES=5
+LICENSE_SERVICE_AGENT_RETRY_INTERVAL=2
+LICENSE_SERVICE_AGENT_API_PATH=/v1/licenses/access
 ```
 
 ---
@@ -133,7 +133,7 @@ LICENSE_SERVICE_SDK_API_PATH=/v1/licenses/access
 
 * **license-generator** → generate keys and signatures
 * **licensing-service** → REST API server for license validation
-* **licensing-service-sdk** → SDK used by this CLI
+* **licensing-agent** → Agent used by this CLI
 
 ---
 

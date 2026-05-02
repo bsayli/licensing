@@ -21,7 +21,7 @@
 
 ---
 
-> **Why this project?** Licensing is often treated as an afterthought in enterprise applications. This project provides a **complete end-to-end licensing framework** built on Spring Boot 3, integrating Keycloak, Redis, and EdDSA to standardize issue/validate flows with a **Service**, **SDK**, and **CLI**.
+> **Why this project?** Licensing is often treated as an afterthought in enterprise applications. This project provides a **complete end-to-end licensing framework** built on Spring Boot 3, integrating Keycloak, Redis, and EdDSA to standardize issue/validate flows with a **Service**, **Agent**, and **CLI**.
 
 ---
 
@@ -68,18 +68,18 @@ This project provides a **complete licensing framework** for applications, combi
 
 * **license-generator**: Java project for license key generation, encryption, and cryptographic tooling.
 * **licensing-service**: Spring Boot application that issues and validates license tokens.
-* **licensing-service-sdk**: Spring Boot application acting as a client SDK (with caching & detached signature) for integrating licensing capabilities into external apps.
-* **licensing-service-sdk-cli**: Command-line tool for testing and interacting with the licensing service.
+* **licensing-agent**: Spring Boot application acting as a client Agent (with caching & detached signature) for integrating licensing capabilities into external apps.
+* **licensing-agent-cli**: Command-line tool for testing and interacting with the licensing service.
 
 ---
 
 ## Repository Structure
 
-| Directory          | Purpose                                                      |
-| ------------------ | ------------------------------------------------------------ |
-| **db**             | Keycloak database backup (`licensing-keycloak.zip`)          |
-| **docker-compose** | Docker Compose files to run servers and client               |
-| **scripts**        | Utility scripts to run the client (`run_license_sdk_cli.sh`) |
+| Directory          | Purpose                                                   |
+| ------------------ |-----------------------------------------------------------|
+| **db**             | Keycloak database backup (`licensing-keycloak.zip`)       |
+| **docker-compose** | Docker Compose files to run servers and client            |
+| **scripts**        | Utility scripts to run the client (`run_licensek_cli.sh`) |
 
 ---
 
@@ -107,7 +107,7 @@ cd licensing/docker-compose/server
 docker-compose up -d
 ```
 
-This starts Keycloak, Licensing Service, and Licensing Service SDK in the background. Wait \~45 seconds for the services to initialize on the first run.
+This starts Keycloak, Licensing Service, and Licensing Service Agent in the background. Wait \~45 seconds for the services to initialize on the first run.
 
 **Optional (local/dev only):** If you want to start only **Keycloak + Redis** separately, you can use `docker-compose.infra.yml`.
 
@@ -123,9 +123,9 @@ docker-compose up
 Logs should confirm validation:
 
 ```text
-licensing-service-sdk-cli | INFO License validated successfully.
-licensing-service-sdk-cli | INFO Token: <JWT_TOKEN>
-licensing-service-sdk-cli | INFO Message: License is valid
+licensing-agent-cli | INFO License validated successfully.
+licensing-agent-cli | INFO Token: <JWT_TOKEN>
+licensing-agent-cli | INFO Message: License is valid
 ```
 
 ---
@@ -133,10 +133,10 @@ licensing-service-sdk-cli | INFO Message: License is valid
 ## Running the License Validation Tool Directly (Optional 1)
 
 ```bash
-cd licensing/licensing-service-sdk-cli
+cd licensing/licensing-agent-cli
 mvn clean package
 cd target
-java -jar licensing-service-sdk-cli-1.0.1.jar -s crm -v 1.5.0 -i "crm~macbook~00:2A:8D:BE:F1:56" -k "BSAYLI.<opaqueB64Url>"
+java -jar licensing-agent-cli-1.0.1.jar -s crm -v 1.5.0 -i "crm~macbook~00:2A:8D:BE:F1:56" -k "BSAYLI.<opaqueB64Url>"
 ```
 
 ---
@@ -145,8 +145,8 @@ java -jar licensing-service-sdk-cli-1.0.1.jar -s crm -v 1.5.0 -i "crm~macbook~00
 
 ```bash
 cd licensing/scripts
-chmod +x run_license_sdk_cli.sh
-./run_license_sdk_cli.sh -s billing -v 2.0.0 -i "billing~macbook~00:2A:8D:BE:F1:56" -k "BSAYLI.<opaqueB64Url>"
+chmod +x run_licensing_agent_cli.sh
+./run_licensing_agent_cli.sh -s billing -v 2.0.0 -i "billing~macbook~00:2A:8D:BE:F1:56" -k "BSAYLI.<opaqueB64Url>"
 ```
 
 ## Notes
@@ -183,9 +183,9 @@ If you found this project useful, please consider giving it a star ⭐ on GitHub
 
 ## Related Modules (Quick View)
 
-| Module                        | Purpose                                    | Documentation                                              |
-| ----------------------------- | ------------------------------------------ | ---------------------------------------------------------- |
-| **licensing-service**         | REST API for issuing and validating tokens | [README](licensing-service/README.md)                      |
-| **licensing-service-sdk**     | Client SDK for integration                 | [README](licensing-service-sdk/README.md)                  |
-| **licensing-service-sdk-cli** | CLI demo client                            | [README](licensing-service-sdk-cli/README.md)              |
-| **license-generator**         | Key & signature tooling                    | [README](license-generator/README.md)                      |
+| Module                  | Purpose                                    | Documentation                           |
+|-------------------------|--------------------------------------------|-----------------------------------------|
+| **licensing-service**   | REST API for issuing and validating tokens | [README](licensing-service/README.md)   |
+| **licensing-agent**     | Client Agent for integration               | [README](licensing-agent/README.md)     |
+| **licensing-agent-cli** | CLI demo client                            | [README](licensing-agent-cli/README.md) |
+| **license-generator**   | Key & signature tooling                    | [README](license-generator/README.md)   |

@@ -13,7 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jjwt.version>0.12.7</jjwt.version>
-        <bcprov-jdk18on.version>1.83</bcprov-jdk18on.version>
+        <bcprov-jdk18on.version>1.84</bcprov-jdk18on.version>
         <jackson-databind.version>2.21.1</jackson-databind.version>
         <logback-classic.version>1.5.32</logback-classic.version>
         <slf4j-api.version>2.0.17</slf4j-api.version>

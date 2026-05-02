@@ -1,19 +1,19 @@
 package io.github.bsayli.licensing.agent.cli;
 
-import io.github.bsayli.licensing.agent.cli.config.LicenseSdkClientConfig;
-import io.github.bsayli.licensing.agent.cli.service.LicenseSdkClientService;
-import io.github.bsayli.licensing.agent.cli.service.impl.LicenseSdkClientServiceImpl;
+import io.github.bsayli.licensing.agent.cli.config.LicenseAgentClientConfig;
+import io.github.bsayli.licensing.agent.cli.service.LicenseAgentClientService;
+import io.github.bsayli.licensing.agent.cli.service.impl.LicenseAgentClientServiceImpl;
 import java.util.concurrent.Callable;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 @Command(
-    name = "licenseSdkCli",
+    name = "licensingAgentCli",
     mixinStandardHelpOptions = true,
     version = "1.0",
-    description = "Licensing Sdk Cli")
-public class LicenseSdkCli implements Callable<Integer> {
+    description = "Licensing Agent Cli")
+public class LicenseAgentCli implements Callable<Integer> {
 
   @Option(
       names = {"-k", "--key"},
@@ -44,15 +44,15 @@ public class LicenseSdkCli implements Callable<Integer> {
   private String instanceId;
 
   public static void main(String[] args) {
-    int exitCode = new CommandLine(new LicenseSdkCli()).execute(args);
+    int exitCode = new CommandLine(new LicenseAgentCli()).execute(args);
     System.exit(exitCode);
   }
 
   @Override
   public Integer call() throws Exception {
-    LicenseSdkClientConfig clientConfig = new LicenseSdkClientConfig();
-    LicenseSdkClientService clientService =
-        new LicenseSdkClientServiceImpl(clientConfig.getClientProperties());
+    LicenseAgentClientConfig clientConfig = new LicenseAgentClientConfig();
+    LicenseAgentClientService clientService =
+        new LicenseAgentClientServiceImpl(clientConfig.getClientProperties());
     return clientService.validateLicense(instanceId, licenseKey, serviceId, serviceVersion);
   }
 }

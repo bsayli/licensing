@@ -30,7 +30,7 @@ java_bin=$(find_java)
 
 # Locate JAR file (pick the latest if multiple exist)
 script_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-jar_file=$(ls -1t "$script_dir"/../licensing-service-sdk-cli/target/licensing-service-sdk-cli-*.jar 2>/dev/null | head -n 1 || true)
+jar_file=$(ls -1t "$script_dir"/../licensing-agent-cli/target/licensing-agent-cli-*.jar 2>/dev/null | head -n 1 || true)
 
 if [[ -z "$jar_file" ]]; then
   echo "❌ JAR file not found. Did you run 'mvn clean package'?" >&2

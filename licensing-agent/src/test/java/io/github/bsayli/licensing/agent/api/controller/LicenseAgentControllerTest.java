@@ -1,10 +1,14 @@
 package io.github.bsayli.licensing.agent.api.controller;
 
-import io.github.bsayli.apicontract.envelope.ServiceResponse;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import io.github.blueprintplatform.openapi.generics.contract.envelope.ServiceResponse;
 import io.github.bsayli.licensing.agent.api.dto.LicenseAccessRequest;
 import io.github.bsayli.licensing.agent.api.dto.LicenseToken;
 import io.github.bsayli.licensing.agent.common.exception.LicensingAgentRemoteServiceException;
 import io.github.bsayli.licensing.agent.service.LicenseOrchestrationService;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -15,21 +19,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Unit Test: LicenseController")
-class LicenseControllerTest {
+class LicenseAgentControllerTest {
 
     @Mock
     private LicenseOrchestrationService licenseService;
 
     @InjectMocks
-    private LicenseController controller;
+    private LicenseAgentController controller;
 
     @Test
     @DisplayName("POST /v1/licenses/access -> 200 OK + ServiceResponse<LicenseToken>")

@@ -1,6 +1,6 @@
 package io.github.bsayli.licensing.api.controller;
 
-import io.github.bsayli.apicontract.envelope.ServiceResponse;
+import io.github.blueprintplatform.openapi.generics.contract.envelope.ServiceResponse;
 import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.api.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;

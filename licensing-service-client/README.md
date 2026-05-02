@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
 
 A Java **client library** generated from the `licensing-service` OpenAPI definition using custom **generics-aware
-templates**. This module provides a typed SDK for issuing and validating license tokens against the `licensing-service`
+templates**. This module provides a typed Agent for issuing and validating license tokens against the `licensing-service`
 REST API.
 
 ---

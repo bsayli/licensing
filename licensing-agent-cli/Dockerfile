@@ -18,16 +18,16 @@ RUN apt-get update && \
     useradd -r -s /bin/false -d /app appuser && \
     mkdir -p /app/logs && chown -R appuser:appuser /app
 
-LABEL org.opencontainers.image.title="licensing-service-sdk-cli" \
-      org.opencontainers.image.description="CLI for Licensing Service SDK" \
+LABEL org.opencontainers.image.title="licensing-agent-cli" \
+      org.opencontainers.image.description="CLI for Licensing Agent" \
       org.opencontainers.image.version="1.0.1" \
       org.opencontainers.image.source="https://github.com/bsayli/licensing" \
       org.opencontainers.image.licenses="Apache-2.0"
 
-COPY --from=builder --chown=appuser:appuser /app/target/*.jar /app/licensing-service-sdk-cli.jar
+COPY --from=builder --chown=appuser:appuser /app/target/*.jar /app/licensing-agent-cli.jar
 
 USER appuser
 
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -Dfile.encoding=UTF-8"
 
-ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar /app/licensing-service-sdk-cli.jar \"$@\"", "--"]
+ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar /app/licensing-agent-cli.jar \"$@\"", "--"]

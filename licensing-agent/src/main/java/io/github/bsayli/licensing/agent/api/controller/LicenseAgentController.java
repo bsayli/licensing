@@ -1,6 +1,6 @@
 package io.github.bsayli.licensing.agent.api.controller;
 
-import io.github.bsayli.apicontract.envelope.ServiceResponse;
+import io.github.blueprintplatform.openapi.generics.contract.envelope.ServiceResponse;
 import io.github.bsayli.licensing.agent.api.dto.LicenseAccessRequest;
 import io.github.bsayli.licensing.agent.api.dto.LicenseToken;
 import io.github.bsayli.licensing.agent.service.LicenseOrchestrationService;
@@ -16,12 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/v1/licenses")
 @Validated
-public class LicenseController {
+public class LicenseAgentController {
 
     private final LicenseOrchestrationService licenseService;
 
-    public LicenseController(
-            LicenseOrchestrationService licenseService) {
+  public LicenseAgentController(LicenseOrchestrationService licenseService) {
         this.licenseService = licenseService;
     }
 

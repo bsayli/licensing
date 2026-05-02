@@ -1,6 +1,6 @@
 package io.github.bsayli.licensing.agent.service.impl;
 
-import io.github.bsayli.apicontract.envelope.ServiceResponse;
+import io.github.blueprintplatform.openapi.generics.contract.envelope.ServiceResponse;
 import io.github.bsayli.licensing.agent.api.dto.LicenseAccessRequest;
 import io.github.bsayli.licensing.agent.api.dto.LicenseToken;
 import io.github.bsayli.licensing.agent.common.exception.LicensingAgentRemoteServiceException;

@@ -11,87 +11,88 @@ import org.slf4j.LoggerFactory;
 
 public final class SignatureService {
 
-  private static final Logger log = LoggerFactory.getLogger(SignatureService.class);
+    private static final Logger log = LoggerFactory.getLogger(SignatureService.class);
 
-  private static void validateNotBlank(String v, String name) {
-    if (v == null || v.isBlank()) {
-      throw new IllegalArgumentException("--" + name + " must not be blank");
+    private static void validateNotBlank(String v, String name) {
+        if (v == null || v.isBlank()) {
+            throw new IllegalArgumentException("--" + name + " must not be blank");
+        }
     }
-  }
 
-  public SignResult signWithLicenseKey(
-      String serviceId,
-      String serviceVersion,
-      String instanceId,
-      String fullLicenseKey,
-      String privateKeyPkcs8B64)
-      throws GeneralSecurityException, JsonProcessingException {
+    public SignResult signWithLicenseKey(
+            String serviceId,
+            String serviceVersion,
+            String instanceId,
+            String fullLicenseKey,
+            String privateKeyPkcs8B64)
+            throws GeneralSecurityException, JsonProcessingException {
 
-    validateNotBlank(serviceId, "serviceId");
-    validateNotBlank(serviceVersion, "serviceVersion");
-    validateNotBlank(instanceId, "instanceId");
-    validateNotBlank(fullLicenseKey, "licenseKey");
-    validateNotBlank(privateKeyPkcs8B64, "privateKey");
+        validateNotBlank(serviceId, "serviceId");
+        validateNotBlank(serviceVersion, "serviceVersion");
+        validateNotBlank(instanceId, "instanceId");
+        validateNotBlank(fullLicenseKey, "licenseKey");
+        validateNotBlank(privateKeyPkcs8B64, "privateKey");
 
-    String licenseKeyHashB64 = CryptoUtils.base64Sha256(fullLicenseKey);
+        String licenseKeyHashB64 = CryptoUtils.base64Sha256(fullLicenseKey);
 
-    SignatureData data =
-        new SignatureData.Builder()
-            .serviceId(serviceId)
-            .serviceVersion(serviceVersion)
-            .instanceId(instanceId)
-            .encryptedLicenseKeyHash(licenseKeyHashB64)
-            .build();
+        SignatureData data =
+                new SignatureData.Builder()
+                        .serviceId(serviceId)
+                        .serviceVersion(serviceVersion)
+                        .instanceId(instanceId)
+                        .encryptedLicenseKeyHash(licenseKeyHashB64)
+                        .build();
 
-    String signatureB64 = SignatureGenerator.createSignature(data, privateKeyPkcs8B64);
-    String json = data.toJson();
+        String signatureB64 = SignatureGenerator.createSignature(data, privateKeyPkcs8B64);
+        String json = data.toJson();
 
-    log.debug(
-        "Signed (licenseKeyHash) payloadLen={}, sigLen={}", json.length(), signatureB64.length());
-    return new SignResult(json, signatureB64);
-  }
+        log.debug(
+                "Signed (licenseKeyHash) payloadLen={}, sigLen={}", json.length(), signatureB64.length());
+        return new SignResult(json, signatureB64);
+    }
 
-  public SignResult signWithToken(
-      String serviceId,
-      String serviceVersion,
-      String instanceId,
-      String jwtToken,
-      String privateKeyPkcs8B64)
-      throws GeneralSecurityException, JsonProcessingException {
+    public SignResult signWithToken(
+            String serviceId,
+            String serviceVersion,
+            String instanceId,
+            String jwtToken,
+            String privateKeyPkcs8B64)
+            throws GeneralSecurityException, JsonProcessingException {
 
-    validateNotBlank(serviceId, "serviceId");
-    validateNotBlank(serviceVersion, "serviceVersion");
-    validateNotBlank(instanceId, "instanceId");
-    validateNotBlank(jwtToken, "token");
-    validateNotBlank(privateKeyPkcs8B64, "privateKey");
+        validateNotBlank(serviceId, "serviceId");
+        validateNotBlank(serviceVersion, "serviceVersion");
+        validateNotBlank(instanceId, "instanceId");
+        validateNotBlank(jwtToken, "token");
+        validateNotBlank(privateKeyPkcs8B64, "privateKey");
 
-    String tokenHashB64 = CryptoUtils.base64Sha256(jwtToken);
+        String tokenHashB64 = CryptoUtils.base64Sha256(jwtToken);
 
-    SignatureData data =
-        new SignatureData.Builder()
-            .serviceId(serviceId)
-            .serviceVersion(serviceVersion)
-            .instanceId(instanceId)
-            .licenseTokenHash(tokenHashB64)
-            .build();
+        SignatureData data =
+                new SignatureData.Builder()
+                        .serviceId(serviceId)
+                        .serviceVersion(serviceVersion)
+                        .instanceId(instanceId)
+                        .licenseTokenHash(tokenHashB64)
+                        .build();
 
-    String signatureB64 = SignatureGenerator.createSignature(data, privateKeyPkcs8B64);
-    String json = data.toJson();
+        String signatureB64 = SignatureGenerator.createSignature(data, privateKeyPkcs8B64);
+        String json = data.toJson();
 
-    log.debug("Signed (tokenHash) payloadLen={}, sigLen={}", json.length(), signatureB64.length());
-    return new SignResult(json, signatureB64);
-  }
+        log.debug("Signed (tokenHash) payloadLen={}, sigLen={}", json.length(), signatureB64.length());
+        return new SignResult(json, signatureB64);
+    }
 
-  public boolean verify(String publicKeySpkiB64, String jsonPayload, String signatureB64)
-      throws GeneralSecurityException {
+    public boolean verify(String publicKeySpkiB64, String jsonPayload, String signatureB64)
+            throws GeneralSecurityException {
 
-    validateNotBlank(publicKeySpkiB64, "publicKey");
-    validateNotBlank(jsonPayload, "dataJson");
-    validateNotBlank(signatureB64, "signatureB64");
+        validateNotBlank(publicKeySpkiB64, "publicKey");
+        validateNotBlank(jsonPayload, "dataJson");
+        validateNotBlank(signatureB64, "signatureB64");
 
-    SignatureValidator validator = new SignatureValidator(publicKeySpkiB64);
-    return validator.validateSignature(signatureB64, jsonPayload);
-  }
+        SignatureValidator validator = new SignatureValidator(publicKeySpkiB64);
+        return validator.validateSignature(signatureB64, jsonPayload);
+    }
 
-  public record SignResult(String jsonPayload, String signatureB64) {}
+    public record SignResult(String jsonPayload, String signatureB64) {
+    }
 }

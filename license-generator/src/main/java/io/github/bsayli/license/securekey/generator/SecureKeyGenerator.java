@@ -9,11 +9,12 @@ import javax.crypto.SecretKey;
 
 public final class SecureKeyGenerator {
 
-  private SecureKeyGenerator() {}
+    private SecureKeyGenerator() {
+    }
 
-  public static SecretKey generateAesKey(int keySize) throws NoSuchAlgorithmException {
-    KeyGenerator keyGen = KeyGenerator.getInstance(AES_KEY_ALGORITHM);
-    keyGen.init(keySize, RNG);
-    return keyGen.generateKey();
-  }
+    public static SecretKey generateAesKey(int keySize) throws NoSuchAlgorithmException {
+        KeyGenerator keyGen = KeyGenerator.getInstance(AES_KEY_ALGORITHM);
+        keyGen.init(keySize, RNG);
+        return keyGen.generateKey();
+    }
 }

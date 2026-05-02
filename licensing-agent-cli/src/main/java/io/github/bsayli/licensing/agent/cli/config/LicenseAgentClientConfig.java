@@ -1,32 +1,32 @@
 package io.github.bsayli.licensing.agent.cli.config;
 
-import io.github.bsayli.licensing.agent.cli.LicenseSdkCli;
-import io.github.bsayli.licensing.agent.cli.model.LicenseSdkClientProperties;
+import io.github.bsayli.licensing.agent.cli.LicenseAgentCli;
+import io.github.bsayli.licensing.agent.cli.model.LicenseAgentClientProperties;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-public class LicenseSdkClientConfig {
+public class LicenseAgentClientConfig {
 
   private static final String CONFIG_FILE = "application.properties";
 
   // ENV var names
-  private static final String ENV_URL = "LICENSE_SERVICE_SDK_URL";
-  private static final String ENV_CONNECT = "LICENSE_SERVICE_SDK_CONNECT_TIMEOUT";
-  private static final String ENV_RESPONSE = "LICENSE_SERVICE_SDK_RESPONSE_TIMEOUT";
-  private static final String ENV_RETRIES = "LICENSE_SERVICE_SDK_RETRIES";
-  private static final String ENV_RETRY_INT = "LICENSE_SERVICE_SDK_RETRY_INTERVAL";
-  private static final String ENV_PATH = "LICENSE_SERVICE_SDK_API_PATH";
+  private static final String ENV_URL = "LICENSE_SERVICE_AGENT_URL";
+  private static final String ENV_CONNECT = "LICENSE_SERVICE_AGENT_CONNECT_TIMEOUT";
+  private static final String ENV_RESPONSE = "LICENSE_SERVICE_AGENT_RESPONSE_TIMEOUT";
+  private static final String ENV_RETRIES = "LICENSE_SERVICE_AGENT_RETRIES";
+  private static final String ENV_RETRY_INT = "LICENSE_SERVICE_AGENT_RETRY_INTERVAL";
+  private static final String ENV_PATH = "LICENSE_SERVICE_AGENT_API_PATH";
 
   // Property keys
-  private static final String P_URL = "licensing.sdk.server.url";
-  private static final String P_USER = "licensing.sdk.server.app.user";
-  private static final String P_PASS = "licensing.sdk.server.app.pass";
-  private static final String P_PATH = "licensing.sdk.api.path";
-  private static final String P_CONNECT = "licensing.sdk.http.connect-timeout-seconds";
-  private static final String P_RESPONSE = "licensing.sdk.http.response-timeout-seconds";
-  private static final String P_RETRIES = "licensing.sdk.http.retries";
-  private static final String P_RETRY_INT = "licensing.sdk.http.retry-interval-seconds";
+  private static final String P_URL = "licensing.agent.server.url";
+  private static final String P_USER = "licensing.agent.server.app.user";
+  private static final String P_PASS = "licensing.agent.server.app.pass";
+  private static final String P_PATH = "licensing.agent.api.path";
+  private static final String P_CONNECT = "licensing.agent.http.connect-timeout-seconds";
+  private static final String P_RESPONSE = "licensing.agent.http.response-timeout-seconds";
+  private static final String P_RETRIES = "licensing.agent.http.retries";
+  private static final String P_RETRY_INT = "licensing.agent.http.retry-interval-seconds";
 
   // Defaults
   private static final int DEF_CONNECT = 40;
@@ -50,10 +50,10 @@ public class LicenseSdkClientConfig {
     }
   }
 
-  public LicenseSdkClientProperties getClientProperties() throws IOException {
+  public LicenseAgentClientProperties getClientProperties() throws IOException {
     Properties properties = new Properties();
     try (InputStream input =
-        LicenseSdkCli.class.getClassLoader().getResourceAsStream(CONFIG_FILE)) {
+        LicenseAgentCli.class.getClassLoader().getResourceAsStream(CONFIG_FILE)) {
       if (input != null) {
         properties.load(input);
       }
@@ -88,7 +88,7 @@ public class LicenseSdkClientConfig {
       apiPath = DEF_PATH;
     }
 
-    return new LicenseSdkClientProperties(
+    return new LicenseAgentClientProperties(
         baseUrl,
         appUser,
         appPass,

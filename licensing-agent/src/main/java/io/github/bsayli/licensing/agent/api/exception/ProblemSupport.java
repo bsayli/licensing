@@ -1,15 +1,14 @@
 package io.github.bsayli.licensing.agent.api.exception;
 
-import io.github.bsayli.apicontract.error.ErrorItem;
-import io.github.bsayli.apicontract.error.ProblemExtensions;
+import io.github.blueprintplatform.openapi.generics.contract.error.ErrorItem;
+import io.github.blueprintplatform.openapi.generics.contract.error.ProblemExtensions;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
-import org.springframework.web.util.UriComponentsBuilder;
-
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import org.springframework.web.util.UriComponentsBuilder;
 
 final class ProblemSupport {
 

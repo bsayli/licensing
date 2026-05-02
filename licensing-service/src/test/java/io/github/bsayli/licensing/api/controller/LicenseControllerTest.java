@@ -1,6 +1,9 @@
 package io.github.bsayli.licensing.api.controller;
 
-import io.github.bsayli.apicontract.envelope.ServiceResponse;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import io.github.blueprintplatform.openapi.generics.contract.envelope.ServiceResponse;
 import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.api.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
@@ -14,9 +17,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)

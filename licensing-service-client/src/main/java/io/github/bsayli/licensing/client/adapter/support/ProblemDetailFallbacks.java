@@ -1,14 +1,13 @@
 package io.github.bsayli.licensing.client.adapter.support;
 
-import io.github.bsayli.apicontract.error.ErrorItem;
-import io.github.bsayli.apicontract.error.ProblemExtensions;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
-import org.springframework.http.ProblemDetail;
-
+import io.github.blueprintplatform.openapi.generics.contract.error.ErrorItem;
+import io.github.blueprintplatform.openapi.generics.contract.error.ProblemExtensions;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 
 final class ProblemDetailFallbacks {
 

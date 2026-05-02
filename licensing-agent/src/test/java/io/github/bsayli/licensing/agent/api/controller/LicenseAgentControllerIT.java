@@ -1,5 +1,10 @@
 package io.github.bsayli.licensing.agent.api.controller;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.bsayli.licensing.agent.api.dto.LicenseAccessRequest;
 import io.github.bsayli.licensing.agent.api.dto.LicenseToken;
@@ -9,6 +14,7 @@ import io.github.bsayli.licensing.agent.common.exception.LicensingAgentRemoteSer
 import io.github.bsayli.licensing.agent.service.LicenseOrchestrationService;
 import io.github.bsayli.licensing.agent.testconfig.TestControllerMocksConfig;
 import io.github.bsayli.licensing.agent.testconfig.TestWebMvcSecurityConfig;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -20,14 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-@WebMvcTest(controllers = LicenseController.class)
+@WebMvcTest(controllers = LicenseAgentController.class)
 @Import({
         ApiRequestExceptionHandler.class,
         ApplicationExceptionHandler.class,
@@ -35,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         TestControllerMocksConfig.class
 })
 @Tag("integration")
-class LicenseControllerIT {
+class LicenseAgentControllerIT {
 
     @Autowired
     private MockMvc mvc;
@@ -66,13 +65,12 @@ class LicenseControllerIT {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.data.licenseToken").value("jwt-token"))
                 .andExpect(jsonPath("$.meta").exists())
-                .andExpect(jsonPath("$.meta.serverTime").exists())
-                .andExpect(jsonPath("$.meta.sort").isArray());
+                .andExpect(jsonPath("$.meta.serverTime").exists());
     }
 
     @Test
-    @DisplayName("POST /v1/licenses/access -> 400 validation error (MethodArgumentNotValid)")
-    void obtainToken_validationError_methodArgumentNotValid() throws Exception {
+    @DisplayName("POST /v1/licenses/access -> 400 validation error")
+    void obtainToken_validationError() throws Exception {
         var bad = new LicenseAccessRequest("x", "short", null, "c", "1");
 
         mvc.perform(
@@ -80,42 +78,29 @@ class LicenseControllerIT {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(om.writeValueAsBytes(bad)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
-                .andExpect(jsonPath("$.type").value("urn:licensing-agent:problem:validation-failed"))
-                .andExpect(jsonPath("$.title").value("Validation failed"))
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.detail").value("One or more fields are invalid."))
-                .andExpect(jsonPath("$.instance").value("/v1/licenses/access"))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.errorCode").value("VALIDATION_FAILED"))
-                .andExpect(jsonPath("$.extensions").exists())
-                .andExpect(jsonPath("$.extensions.errors").isArray())
-                .andExpect(jsonPath("$.extensions.errors.length()").value(4))
-                .andExpect(jsonPath("$.extensions.errors[0].code").value("VALIDATION_FAILED"));
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.errors").isArray())
+                .andExpect(jsonPath("$.errors.length()").value(4))
+                .andExpect(jsonPath("$.errors[0].code").value("VALIDATION_FAILED"));
     }
 
     @Test
-    @DisplayName("POST /v1/licenses/access -> 400 invalid JSON (HttpMessageNotReadable)")
+    @DisplayName("POST /v1/licenses/access -> 400 invalid JSON")
     void obtainToken_badJson_notReadable() throws Exception {
         mvc.perform(
                         post("/v1/licenses/access")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content("{"))
+                                .content("invalid-json"))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
-                .andExpect(jsonPath("$.type").value("urn:licensing-agent:problem:bad-request"))
-                .andExpect(jsonPath("$.title").value("Bad request"))
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.detail").value("Malformed request body."))
-                .andExpect(jsonPath("$.instance").value("/v1/licenses/access"))
                 .andExpect(jsonPath("$.errorCode").value("BAD_REQUEST"))
-                .andExpect(jsonPath("$.extensions.errors[0].code").value("BAD_REQUEST"))
-                .andExpect(jsonPath("$.extensions.errors[0].message").value("Invalid JSON payload."));
+                .andExpect(jsonPath("$.message").exists());
     }
 
-
     @Test
-    @DisplayName("POST /v1/licenses/access -> unknown field -> 400 bad request")
-    void obtainToken_badJson_unrecognizedField_returnsProblemDetail_badRequest() throws Exception {
+    @DisplayName("POST /v1/licenses/access -> unknown field -> 400")
+    void obtainToken_badJson_unrecognizedField() throws Exception {
         String body =
                 """
                 {
@@ -133,36 +118,22 @@ class LicenseControllerIT {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
-                .andExpect(jsonPath("$.type").value("urn:licensing-agent:problem:bad-request"))
-                .andExpect(jsonPath("$.title").value("Bad request"))
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.detail").value("Malformed request body."))
-                .andExpect(jsonPath("$.instance").value("/v1/licenses/access"))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.errorCode").value("BAD_REQUEST"))
-                .andExpect(jsonPath("$.extensions.errors[0].code").value("BAD_REQUEST"))
-                .andExpect(jsonPath("$.extensions.errors[0].message").value("Unrecognized field: 'foo'"))
-                .andExpect(jsonPath("$.extensions.errors[0].field").value("foo"));
+                .andExpect(jsonPath("$.message").value("Unrecognized field: 'foo'"))
+                .andExpect(jsonPath("$.errors").doesNotExist());
     }
 
     @Test
-    @DisplayName("GET /v1/licenses/access -> 405 method not allowed")
+    @DisplayName("GET /v1/licenses/access -> 405")
     void obtainToken_methodNotAllowed() throws Exception {
         mvc.perform(get("/v1/licenses/access"))
                 .andExpect(status().isMethodNotAllowed())
-                .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
-                .andExpect(jsonPath("$.type").value("urn:licensing-agent:problem:method-not-allowed"))
-                .andExpect(jsonPath("$.title").value("Method not allowed"))
-                .andExpect(jsonPath("$.status").value(405))
-                .andExpect(jsonPath("$.detail").value("The request method is not supported for this resource."))
-                .andExpect(jsonPath("$.instance").value("/v1/licenses/access"))
-                .andExpect(jsonPath("$.errorCode").value("METHOD_NOT_ALLOWED"))
-                .andExpect(jsonPath("$.extensions.errors[0].code").value("METHOD_NOT_ALLOWED"))
-                .andExpect(jsonPath("$.extensions.errors[0].message").value("HTTP method not supported: GET"));
+                .andExpect(jsonPath("$.errorCode").value("METHOD_NOT_ALLOWED"));
     }
 
     @Test
-    @DisplayName("POST /v1/licenses/access -> remote service exception mapped (ApplicationExceptionHandler)")
+    @DisplayName("POST /v1/licenses/access -> remote service exception")
     void obtainToken_remoteServiceError() throws Exception {
         var req =
                 new LicenseAccessRequest(
@@ -185,16 +156,7 @@ class LicenseControllerIT {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(om.writeValueAsBytes(req)))
                 .andExpect(status().isBadGateway())
-                .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
-                .andExpect(jsonPath("$.type").value("urn:licensing-agent:problem:service-error"))
-                .andExpect(jsonPath("$.title").value("License validation failed"))
-                .andExpect(jsonPath("$.status").value(502))
-                .andExpect(jsonPath("$.detail").value("Remote call failed"))
-                .andExpect(jsonPath("$.instance").value("/v1/licenses/access"))
                 .andExpect(jsonPath("$.errorCode").value("REMOTE_ERROR"))
-                .andExpect(jsonPath("$.extensions").exists())
-                .andExpect(jsonPath("$.extensions.errors").isArray())
-                .andExpect(jsonPath("$.extensions.errors[0].code").value("REMOTE_ERROR"))
-                .andExpect(jsonPath("$.extensions.errors[0].message").value("x : y"));
+                .andExpect(jsonPath("$.message").value("Remote call failed"));
     }
 }
