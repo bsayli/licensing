@@ -1,4 +1,4 @@
-package io.github.bsayli.licensing.agent.config;
+package io.github.bsayli.licensing.agent.cache;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.beans.factory.annotation.Qualifier;

@@ -1,4 +1,4 @@
-# Licensing Service Agent
+# Licensing Service Agent (2.0.0 – Contract-First)
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
 [![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
@@ -7,84 +7,84 @@
 [![Maven](https://img.shields.io/badge/Maven-3.9-blue?logo=apachemaven)](https://maven.apache.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
 
-A Spring Boot 3 client Agent for integrating with the **Licensing Service**. The Agent handles issuing and validating
-license **access tokens (JWT/EdDSA)**, manages client‑side caching, signs requests with detached signatures, and
-provides a simple orchestration API for applications. This document describes only the **licensing-agent**
-subproject.
+A Spring Boot 3 **Agent** that integrates client applications with the **Licensing Service** using a **contract-first architecture**.
 
----
+This version adopts:
 
-## Table of Contents
+* **`ServiceResponse<T>`** as the canonical success contract
+* **RFC 9457 Problem Details** internally
+* **`LicenseAgentErrorResponse`** as the public error envelope (no ProblemDetail leakage)
 
-* [Key Capabilities](#key-capabilities)
-* [High-Level Flow](#high-level-flow)
-* [API](#api)
-
-    * [Obtain License Token](#obtain-license-token)
-* [Validation & Errors](#validation--errors)
-* [Security](#security)
-* [Configuration](#configuration)
-
-    * [YAML reference](#yaml-reference)
-    * [Environment variables](#environment-variables)
-* [Caching](#caching)
-* [JWT & Signatures](#jwt--signatures)
-* [OpenAPI / Swagger](#openapi--swagger)
-* [Build & Run](#build--run)
-* [Project Structure](#project-structure)
-* [Troubleshooting](#troubleshooting)
+The Agent is responsible for **token orchestration**, not business validation.
 
 ---
 
 ## Key Capabilities
 
-* **Simplified client Agent** for licensing-service
-* **License token orchestration** (issue, validate, refresh)
-* **Client-side caching** of tokens (Caffeine)
-* **Detached signature** generation for request integrity
-* **Error handling & i18n** (localized messages)
-* **Swagger/OpenAPI** documentation included
+* Contract-first integration with licensing-service
+* Token orchestration (issue / validate / refresh / re-issue)
+* Client-side token caching (Caffeine)
+* Detached signature generation (EdDSA / Ed25519)
+* Clear boundary: transport → orchestration → contract mapping
+* Framework-agnostic public error model
+
+---
+
+## Architectural Position
+
+```
+Client App → Agent → Licensing Service
+```
+
+* **Licensing Service** = source of truth (license validation, policy)
+* **Agent** = orchestration + caching + signature + contract boundary
+* **Client App** = simple integration (no protocol knowledge)
 
 ---
 
 ## High-Level Flow
 
-1. **Application** calls Agent’s `/v1/licenses/access` endpoint with a license key (format:
-   `BSAYLI.<opaquePayloadBase64Url>`).
-2. Agent computes **clientId** (hash of instanceId + service info).
-3. Agent checks **local cache** for a token.
+1. Application calls Agent `/v1/licenses/access`
+2. Agent computes `clientId`
+3. Agent checks cache
 
-* If **cache miss** → calls **Licensing Service /access** to issue a new token.
-* If **cache hit** → calls **Licensing Service /access/validate** with cached token.
+### Cache MISS
 
-4. **Licensing Service** responds:
+→ call licensing-service `/access`
+→ receive token
+→ cache + return
 
-* Valid token → `TOKEN_ACTIVE`
-* Refreshed token → `TOKEN_REFRESHED` (Agent updates cache)
+### Cache HIT
 
-5. Agent returns **LicenseToken** to the calling application.
+→ call licensing-service `/access/validate`
+
+Response cases:
+
+* TOKEN_ACTIVE → return cached token
+* TOKEN_REFRESHED → update cache
+* TOKEN_TOO_OLD → re-issue token
 
 ---
 
 ## API
 
-Base path (configurable):
+Base path:
 
 ```
 /licensing-agent
 ```
 
-Controller: `LicenseController`
+Controller: `LicenseAgentController`
 
 ### Obtain License Token
 
 `POST /v1/licenses/access`
 
-**Request Body** — `LicenseAccessRequest`
+#### Request
 
 ```json
 {
-  "licenseKey": "<BSAYLI.<opaquePayloadBase64Url>>",
+  "licenseKey": "<BSAYLI.<opaque>>",
   "instanceId": "crm~host123~00:AA:BB:CC:DD:EE",
   "checksum": "<optional>",
   "serviceId": "crm",
@@ -92,64 +92,84 @@ Controller: `LicenseController`
 }
 ```
 
-**Response** — `ApiResponse<LicenseToken>`
+#### Response (SUCCESS)
 
 ```json
 {
-  "status": 200,
-  "message": "License is valid",
   "data": {
     "licenseToken": "<JWT>"
-  },
-  "errors": []
+  }
 }
 ```
 
-**cURL**
+> Wrapped by `ServiceResponse<LicenseToken>`
 
-```bash
-curl -u licensingAgentUser:licensingAgentPass \
-  -H 'Content-Type: application/json' \
-  -d '{
-        "licenseKey":"<BSAYLI.<opaquePayloadBase64Url>>",
-        "instanceId":"crm~host123~00:AA:BB:CC:DD:EE",
-        "checksum":"<OPTIONAL>",
-        "serviceId":"crm",
-        "serviceVersion":"1.5.0"
-      }' \
-  http://localhost:8082/licensing-agent/v1/licenses/access
+---
+
+## Error Model
+
+Agent **does NOT expose ProblemDetail**.
+
+Instead:
+
+```json
+{
+  "errorCode": "BAD_REQUEST",
+  "message": "Unrecognized field: 'foo'",
+  "errors": [
+    {
+      "code": "VALIDATION_ERROR",
+      "message": "...",
+      "field": "..."
+    }
+  ]
+}
 ```
 
----
+### Key Principle
 
-## Validation & Errors
-
-* **Bean Validation** on DTOs (`@NotBlank`, `@Size`, etc.)
-* **Global advice** (`LicenseControllerAdvice`) standardizes error output
-* Domain & transport errors are mapped to error codes:
-
-    * `INVALID_PARAMETER`
-    * `TRANSPORT_ERROR`
-    * `REMOTE_ERROR`
-    * `EMPTY_TOKEN`
-
-Response format: `ApiResponse<Void>` with list of `ApiError` entries.
+* Internal → ProblemDetail (rich, extensible)
+* External → `LicenseAgentErrorResponse` (stable, client-safe)
 
 ---
 
-## Security
+## Contract Model
 
-* **HTTP Basic** auth (configurable credentials)
-* **Stateless** sessions
-* Agent signs requests with **EdDSA private key** (detached signature)
+### Success
+
+* `ServiceResponse<T>`
+
+### Error
+
+* `LicenseAgentErrorResponse`
+
+### Why?
+
+* Prevent framework leakage
+* Keep public contract stable
+* Allow internal evolution (ProblemDetail, extensions)
+
+---
+
+## Core Orchestration Logic
+
+The Agent:
+
+1. Generates signature
+2. Calls remote service via generated client
+3. Interprets `ServiceResponse`
+4. Maps `ApiProblemException` → domain error
+5. Decides:
+
+  * return cached
+  * refresh
+  * re-issue
 
 ---
 
 ## Configuration
 
-### YAML reference
-
-`src/main/resources/application.yml` (snippet)
+### application.yml (simplified)
 
 ```yaml
 server:
@@ -157,73 +177,56 @@ server:
   servlet:
     context-path: /licensing-agent
 
+spring:
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+
 licensing-service-api:
-  base-url: "http://localhost:8081/licensing-service"
+  base-url: http://localhost:8081/licensing-service
   basic:
     username: licensingUser
     password: licensingPass
-  connect-timeout-seconds: 10
-  read-timeout-seconds: 15
 
 caching:
   spring:
-    licenseTokenTTL: 65m  # refreshes well before server expiry (server ~90m + jitter)
+    licenseTokenTTL: 90m
 
 signature:
   private:
-    key: "<Base64-PKCS8-PrivateKey>"
+    key: <Base64 PKCS8 Ed25519 key>
 ```
 
-### Environment variables
+---
 
-* `SERVER_PORT`, `SERVER_SERVLET_CONTEXT_PATH`
-* `LICENSING_SERVICE_API_BASE_URL`, `LICENSING_SERVICE_API_BASIC_USERNAME`, `LICENSING_SERVICE_API_BASIC_PASSWORD`
-* `CACHING_SPRING_LICENSETOKENTTL`
-* `SIGNATURE_PRIVATE_KEY` (Base64 PKCS#8 Ed25519 private key used to create detached signatures)
+## Caching Strategy
+
+* Key: `clientId`
+* Store: `licenseToken`
+* TTL < server expiration (pre-refresh window)
 
 ---
 
-## Caching
+## Security
 
-* `licenseTokens` — local token cache (Caffeine)
-* Default TTL is **65m** so the Agent renews well before server-side JWT expiry (90m ± jitter)
-
----
-
-## JWT & Signatures
-
-* **Algorithm**: EdDSA (Ed25519)
-* **Detached signature** generation for issue/validate requests
-* **ClientId** computed via SHA‑256 hash (instanceId + serviceId + serviceVersion + checksum)
+* HTTP Basic (Agent API)
+* Detached signature (Agent → Service)
+* No session state
 
 ---
 
-## OpenAPI / Swagger
+## OpenAPI
 
-* Swagger UI: `http://localhost:8082/licensing-agent/swagger-ui.html`
-* JSON: `/v3/api-docs` · YAML: `/v3/api-docs.yaml`
+* Swagger UI available
+* Contract generated from controller + generics
 
 ---
 
 ## Build & Run
 
-### Prerequisites
-
-* JDK 21
-* Maven 3.x
-
-### Build
-
 ```bash
 mvn clean package
-```
-
-### Run (local)
-
-```bash
 mvn spring-boot:run
-# or
-java -jar target/licensing-agent-1.0.0.jar
 ```
 
 ---
@@ -232,33 +235,46 @@ java -jar target/licensing-agent-1.0.0.jar
 
 ```
 licensing-agent/
-├─ src/main/java/io/github/bsayli/licensing/agent/
-│  ├─ api/(controller, dto, exception)
-│  ├─ cache/(CacheNames.java, CacheConfig)
-│  ├─ common/(api, exception, i18n)
-│  ├─ config/(SecurityConfig)
-│  ├─ generator/(ClientIdGeneratorImpl, SignatureGeneratorImpl)
-│  ├─ service/(impl, client, handler)
-│  └─ ...
-├─ src/main/resources/
-│  ├─ application.yml
-│  └─ messages.properties
-└─ pom.xml
+├─ api/
+├─ service/
+│  ├─ impl/
+│  ├─ client/
+│  ├─ handler/
+├─ generator/
+├─ cache/
+├─ config/
+└─ ...
 ```
 
 ---
 
-## Troubleshooting
+## Migration Note (2.0.0)
 
-* **401 Unauthorized**: wrong Basic Auth credentials or signature mismatch
-* **400 Bad Request**: invalid input, check validation error messages
-* **502 Bad Gateway**: transport error when contacting Licensing Service
-* **Token empty**: ensure Licensing Service is correctly configured
+This version:
+
+* Removes `ApiResponse`
+* Removes direct ProblemDetail exposure
+* Introduces contract-first approach
+* Aligns with openapi-generics ecosystem
 
 ---
 
 ## See Also
 
-* **[licensing-service](../licensing-service/README.md)** — server component
-* **[license-generator](../license-generator/README.md)** — key & signature tooling
-* **[licensing-agent-cli](../licensing-agent-cli/README.md)** — command-line client demo
+* licensing-service
+* licensing-agent-cli
+* openapi-generics
+
+---
+
+## Summary
+
+This Agent is **not just a client**.
+
+It is a:
+
+* protocol boundary
+* contract adapter
+* orchestration layer
+
+between application and licensing domain.

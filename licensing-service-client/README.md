@@ -1,4 +1,4 @@
-# Licensing Service Client
+# Licensing Service Client (2.0.0 – Contract-First, Generated)
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
 [![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
@@ -6,100 +6,189 @@
 [![Maven](https://img.shields.io/badge/Maven-3.9-blue?logo=apachemaven)](https://maven.apache.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
 
-A Java **client library** generated from the `licensing-service` OpenAPI definition using custom **generics-aware
-templates**. This module provides a typed Agent for issuing and validating license tokens against the `licensing-service`
-REST API.
+Java **client library** generated from the `licensing-service` OpenAPI using **generics-aware templates** (openapi-generics).
+
+This module is a **transport + contract binding layer** used by `licensing-agent`.
 
 ---
 
-## Key Capabilities
+## Architectural Role
 
-* Typed client API (`LicenseControllerApi`) generated from OpenAPI
-* Integrated with **Spring Boot 3** and `RestClient`
-* Custom connection pool and timeout configuration via `CloseableHttpClient`
-* Unified response envelope using `ApiClientResponse<T>`
-* Supports **issue** and **validate** license access tokens
-* Includes integration tests with **MockWebServer**
+```text
+licensing-agent → licensing-service-client → licensing-service
+```
+
+Responsibilities:
+
+* Bind OpenAPI → typed Java API
+* Enforce **contract-first** alignment (`ServiceResponse<T>`)
+* Provide HTTP client configuration (timeouts, pooling)
+* Normalize error handling into `ApiProblemException`
+
+Non-responsibilities:
+
+* ❌ Business logic
+* ❌ Token orchestration
+* ❌ Caching
 
 ---
 
-## Usage
+## Contract Model
 
-### Maven Dependency
+### Success
 
-Add to your service's `pom.xml`:
+All endpoints return:
 
-```xml
+```text
+ServiceResponse<T>
+```
 
-<dependency>
-    <groupId>io.github.bsayli</groupId>
-    <artifactId>licensing-service-client</artifactId>
-    <version>0.1.0</version>
-</dependency>
+Example:
+
+```json
+{
+  "data": {
+    "status": "TOKEN_ACTIVE",
+    "licenseToken": "<JWT>"
+  },
+  "meta": {
+    "serverTime": "2026-05-02T16:00:00Z",
+    "sort": []
+  }
+}
+```
+
+### Error
+
+HTTP errors are mapped to:
+
+```text
+ApiProblemException
+```
+
+* wraps `ProblemDetail`
+* extracts `errorCode`
+* extracts `ErrorItem[]`
+
+---
+
+## Generated API
+
+Primary entry point:
+
+```java
+LicenseControllerApi
+```
+
+Adapter abstraction (recommended):
+
+```java
+LicensingServiceClientAdapter
 ```
 
 ---
 
-### Configuration
+## Example Usage
 
-`LicensingServiceApiClientConfig` registers all beans:
+### Issue Access
 
-* `CloseableHttpClient` — pooled HTTP client
-* `HttpComponentsClientHttpRequestFactory` — applies timeouts
-* `RestClient` — base REST client with request factory
-* `ApiClient` — OpenAPI generated client
-* `LicenseControllerApi` — typed API interface
+```java
+IssueAccessRequest req = new IssueAccessRequest()
+    .serviceId("crm")
+    .serviceVersion("1.5.0")
+    .instanceId("crm~host~mac")
+    .licenseKey("BSAYLI.<opaque>")
+    .signature("BASE64SIG");
 
-Example properties (application.yml):
+ServiceResponse<LicenseAccessResponse> resp = adapter.issueAccess(req);
+```
+
+### Validate Access
+
+```java
+ValidateAccessRequest req = new ValidateAccessRequest()
+    .serviceId("crm")
+    .serviceVersion("1.5.0")
+    .instanceId("crm~host~mac")
+    .signature("BASE64SIG");
+
+ServiceResponse<LicenseAccessResponse> resp =
+    adapter.validateAccess("<JWT>", req);
+```
+
+---
+
+## Configuration
+
+Defined in `LicensingServiceApiClientConfig`.
+
+### application.yml
 
 ```yaml
 licensing-service-api:
   base-url: http://localhost:8081/licensing-service
-  max-connections-total: 64
-  max-connections-per-route: 16
+  basic:
+    username: licensingUser
+    password: licensingPass
   connect-timeout-seconds: 10
   connection-request-timeout-seconds: 10
   read-timeout-seconds: 15
+  max-connections-total: 64
+  max-connections-per-route: 16
 ```
+
+### Beans
+
+* `CloseableHttpClient` → pooled HTTP client
+* `RestClient` → Spring HTTP abstraction
+* `ApiClient` → OpenAPI generated invoker
+* `LicenseControllerApi` → typed endpoint client
 
 ---
 
-### Example: Issue Access
+## Error Handling
+
+All HTTP error responses are intercepted:
 
 ```java
-IssueAccessRequest req = new IssueAccessRequest()
-        .serviceId("crm")
-        .serviceVersion("1.5.0")
-        .instanceId("crm~host~mac")
-        .licenseKey("BSAYLI.<opaquePayloadBase64Url>")
-        .signature("BASE64SIG");
-
-ApiClientResponse<LicenseAccessResponse> resp = adapter.issueAccess(req);
+throw new ApiProblemException(problemDetail, status)
 ```
 
-### Example: Validate Access
+Features:
 
-```java
-ValidateAccessRequest req = new ValidateAccessRequest()
-        .serviceId("crm")
-        .serviceVersion("1.5.0")
-        .instanceId("crm~host~mac")
-        .signature("BASE64SIG");
+* Extracts `errorCode`
+* Maps nested `errors[]`
+* Provides structured access for upper layers
 
-String jwt = "jwt-123";
-ApiClientResponse<LicenseAccessResponse> resp = adapter.validateAccess(jwt, req);
-```
+---
+
+## HTTP Layer
+
+* Apache HttpClient5 (pooling + timeouts)
+* Retry disabled by default (policy belongs to caller)
+* Basic Auth supported
+
+---
+
+## Code Generation
+
+Configured via Maven plugin:
+
+* generator: `java-generics-contract`
+* input: `licensing-service-api-docs.yaml`
+* output: `generated/api`, `generated/dto`, `generated/invoker`
+
+Generated code is **ephemeral** and should not be manually modified.
 
 ---
 
 ## Testing
 
-Integration tests (`LicensingServiceClientAdapterIT`) run against **MockWebServer** to verify:
+Uses **MockWebServer** for integration tests:
 
-* Request paths and headers (`/v1/licenses/access`, `/v1/licenses/access/validate`)
-* Mapping of JSON responses into typed `LicenseAccessResponse`
-
-Run:
+* verifies request paths
+* verifies headers
+* verifies response mapping
 
 ```bash
 mvn test
@@ -111,33 +200,48 @@ mvn test
 
 ```
 licensing-service-client/
-├─ src/main/java/io/github/bsayli/licensing/client/
-│  ├─ adapter/config/LicensingServiceApiClientConfig.java
-│  ├─ adapter/impl/LicensingServiceClientAdapterImpl.java
-│  ├─ common/(core, contract)
-│  └─ generated/(api, dto, invoker)
-├─ src/test/java/io/github/bsayli/licensing/client/adapter/
-│  └─ LicensingServiceClientAdapterIT.java
+├─ adapter/
+│  ├─ config/
+│  └─ impl/
+├─ common/problem/
+├─ generated/
+│  ├─ api/
+│  ├─ dto/
+│  └─ invoker/
 └─ pom.xml
 ```
 
 ---
 
-## Build
+## Migration Notes (2.0.0)
 
-```bash
-mvn clean package
-```
-
-Produces:
-
-```
-target/licensing-service-client-0.1.0.jar
-```
+* `ApiResponse` → ❌ removed
+* `ApiClientResponse` → ❌ removed
+* `ServiceResponse<T>` → ✅ canonical contract
+* `ProblemDetail` → internal only
+* `ApiProblemException` → unified error abstraction
+* aligned with openapi-generics pipeline
 
 ---
 
-## See Also
+## Design Principles
 
-* [licensing-service](../licensing-service/README.md) — REST service implementation
-* [license-generator](../license-generator/README.md) — CLI utilities for keys and signatures
+* Contract-first (Java → OpenAPI → client)
+* No model drift
+* No framework leakage to consumers
+* Separation of mechanism (client) vs policy (agent)
+
+---
+
+## Related Modules
+
+* licensing-service
+* licensing-agent
+* licensing-agent-cli
+* license-generator
+
+---
+
+## License
+
+MIT License

@@ -1,4 +1,4 @@
-# Licensing Service
+# Licensing Service (v2.0.0 – Contract‑First)
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
@@ -6,126 +6,141 @@
 [![Keycloak](https://img.shields.io/badge/Keycloak-26.x-8A2BE2?logo=keycloak)](https://www.keycloak.org/)
 [![Redis](https://img.shields.io/badge/Redis-8.x-red?logo=redis)](https://redis.io/)
 [![OpenAPI](https://img.shields.io/badge/OpenAPI-3.x-blue?logo=openapiinitiative)](https://www.openapis.org/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
 
-A Spring Boot 3 application that issues and validates license **access tokens (JWT/EdDSA)** for client applications. It
-integrates with **Keycloak** to read per‑user license metadata, provides **detached signature** verification for request
-integrity, and uses **Redis** caches for performance and token/session handling. This document describes only the *
-*licensing-service** subproject.
+---
+
+## ⚠️ Important: v2.0.0 Architectural Shift
+
+This version introduces a **contract‑first architecture** based on `openapi-generics`.
+
+Key changes:
+
+* ❌ Removed legacy `ApiResponse<T>` envelope
+* ✅ Adopted canonical `ServiceResponse<T>` for success responses
+* ✅ Standardized error handling via **RFC 9457 ProblemDetail (internal only)**
+* ✅ Clear separation of boundaries: **Service ↔ Agent ↔ Client**
+
+> This service is **NOT intended to be consumed directly by end clients**.
+> It is a **vendor‑side licensing authority**.
 
 ---
 
-## Table of Contents
+## 🎯 What This Service Is
 
-* [Key Capabilities](#key-capabilities)
-* [High-Level Flow](#high-level-flow)
-* [API](#api)
+`licensing-service` is the **central license authority** operated by the vendor.
 
-    * [Issue Access](#issue-access)
-    * [Validate Access](#validate-access)
-* [Validation & Errors](#validation--errors)
-* [Security](#security)
-* [Configuration](#configuration)
+It is responsible for:
 
-    * [YAML reference](#yaml-reference)
-    * [Environment variables](#environment-variables)
-* [Caching](#caching)
-* [JWT & Crypto](#jwt--crypto)
-* [OpenAPI / Swagger](#openapi--swagger)
-* [Build & Run](#build--run)
-* [Project Structure](#project-structure)
-* [Troubleshooting](#troubleshooting)
+* Validating license ownership and constraints
+* Issuing and validating access tokens (JWT)
+* Enforcing usage limits (instanceId tracking)
+* Managing license lifecycle rules
 
 ---
 
-## Key Capabilities
+## 🧱 System Architecture (v2.0.0)
 
-* **License access issue/validate** via REST
-* **JWT (EdDSA/Ed25519)** signing & verification
-* **Detached signature** validation on requests
-* **Keycloak** as user/license source
-* **Usage accounting** (tracks unique instanceIds)
-* **Token refresh orchestration** (re-issue)
-* **Redis** caches (online/offline user info, sessions)
-* **Internationalized** error messages (messages.properties)
-* **OpenAPI** with schema wrappers (generic `ApiResponse<T>`)
+```text
+Customer Environment
+└─ Product Runtime
+   └─ licensing-agent (boundary layer)
+        ↓
+Vendor Cloud
+└─ licensing-service (this service)
+```
+
+### Why Agent Exists
+
+This service is **not directly exposed to product code**.
+
+Instead:
+
+* `licensing-agent` acts as a **controlled boundary**
+* Handles:
+
+  * caching
+  * token lifecycle
+  * signature orchestration
+  * retry / resilience
+
+> This avoids leaking vendor contract complexity into customer runtime.
 
 ---
 
-## High-Level Flow
+## 🔑 Key Capabilities
 
-1. **Client** calls `POST /v1/licenses/access` with a license key + detached signature.
-2. Service **decrypts** the license key (format **`BSAYLI.<opaqueB64Url>`**) → extracts **userId**.
-3. Service **evaluates license** (Keycloak + policy checks).
-4. Service **issues JWT** and **caches** client session context.
-5. Client later calls `POST /v1/licenses/access/validate` with the JWT + detached signature.
-6. Service verifies signature, JWT validity and **matches request to cached context**.
-
-* If expired *and* cache matches → returns **TOKEN\_REFRESHED** and a new JWT.
+* License validation (Keycloak-backed)
+* JWT issuance (EdDSA / Ed25519)
+* Token refresh orchestration
+* Detached signature verification
+* Usage tracking per instance
+* Redis-backed session + cache layer
+* Internationalized error handling
 
 ---
 
-## API
+## 🔄 High-Level Flow
 
-Base path (configurable):
+### Issue Flow
+
+1. Agent calls `/v1/licenses/access`
+2. License key is decrypted → userId extracted
+3. License is validated (Keycloak + rules)
+4. JWT is issued
+5. Session context cached
+
+### Validate Flow
+
+1. Agent calls `/v1/licenses/access/validate`
+2. JWT + signature verified
+3. Context matched with cache
+4. If needed → token refreshed
+
+---
+
+## 📡 API
+
+Base path:
 
 ```
 /licensing-service
 ```
 
-Controller: `LicenseController`
+---
 
-### Issue Access
+### POST `/v1/licenses/access`
 
-`POST /v1/licenses/access`
-
-**Request Body** — `IssueAccessRequest`
+**Request**
 
 ```json
 {
   "serviceId": "crm",
   "serviceVersion": "1.5.0",
-  "instanceId": "crm~host123~00:AA:BB:CC:DD:EE",
-  "signature": "<Base64 detached signature>",
-  "checksum": "<optional checksum>",
-  "licenseKey": "<BSAYLI.<opaquePayloadBase64Url>>"
+  "instanceId": "crm~host~mac",
+  "signature": "<Base64>",
+  "checksum": "<optional>",
+  "licenseKey": "BSAYLI.<opaque>"
 }
 ```
 
-**Response** — `ApiResponse<LicenseAccessResponse>`
+**Response**
 
 ```json
 {
-  "status": 200,
-  "message": "License is valid",
   "data": {
     "status": "TOKEN_CREATED | TOKEN_ACTIVE | TOKEN_REFRESHED",
     "licenseToken": "<JWT>"
   },
-  "errors": []
+  "meta": {
+    "serverTime": "..."
+  }
 }
 ```
 
-**cURL**
+---
 
-```bash
-curl -u licensingUser:licensingPass \
-  -H 'Content-Type: application/json' \
-  -d '{
-        "serviceId":"crm",
-        "serviceVersion":"1.5.0",
-        "instanceId":"crm~host123~00:AA:BB:CC:DD:EE",
-        "signature":"<BASE64>",
-        "checksum":"<OPTIONAL>",
-        "licenseKey":"<LICENSE_KEY>"
-      }' \
-  http://localhost:8081/licensing-service/v1/licenses/access
-```
-
-### Validate Access
-
-`POST /v1/licenses/access/validate`
+### POST `/v1/licenses/access/validate`
 
 **Headers**
 
@@ -133,243 +148,146 @@ curl -u licensingUser:licensingPass \
 License-Token: <JWT>
 ```
 
-**Request Body** — `ValidateAccessRequest`
+**Request**
 
 ```json
 {
   "serviceId": "crm",
   "serviceVersion": "1.5.0",
-  "instanceId": "crm~host123~00:AA:BB:CC:DD:EE",
-  "signature": "<Base64 detached signature>",
-  "checksum": "<optional checksum>"
+  "instanceId": "crm~host~mac",
+  "signature": "<Base64>",
+  "checksum": "<optional>"
 }
 ```
 
-**Response** — `ApiResponse<LicenseAccessResponse>`
+**Response**
 
 ```json
 {
-  "status": 200,
-  "message": "License is valid",
   "data": {
     "status": "TOKEN_ACTIVE | TOKEN_REFRESHED",
-    "licenseToken": "<NEW_JWT_IF_REFRESHED>"
+    "licenseToken": "<NEW_IF_REFRESHED>"
   },
-  "errors": []
+  "meta": {
+    "serverTime": "..."
+  }
 }
 ```
 
-**cURL**
+---
 
-```bash
-curl -u licensingUser:licensingPass \
-  -H 'Content-Type: application/json' \
-  -H 'License-Token: <JWT>' \
-  -d '{
-        "serviceId":"crm",
-        "serviceVersion":"1.5.0",
-        "instanceId":"crm~host123~00:AA:BB:CC:DD:EE",
-        "signature":"<BASE64>",
-        "checksum":"<OPTIONAL>"
-      }' \
-  http://localhost:8081/licensing-service/v1/licenses/access/validate
-```
+## ❗ Error Model
+
+### Internal
+
+* Uses **RFC 9457 ProblemDetail**
+* Includes structured extensions (`ErrorItem[]`)
+
+### External Boundary
+
+* ProblemDetail is **NOT exposed beyond agent boundary**
+* Agent converts errors into **public error contract**
 
 ---
 
-## Validation & Errors
+## 🔐 Security
 
-* **Bean Validation** on DTOs (`@NotBlank`, `@Size`, etc.) with message keys from `messages.properties`.
-* **Header validation** via `@ValidLicenseToken` composite constraint.
-* **Global advice**: `LicenseControllerAdvice` returns `ApiResponse<Void>` with localized error messages.
-* Domain errors map to `ServiceErrorCode` → HTTP status.
-
-Common error keys (subset):
-
-* `license.not.found`, `license.invalid`, `license.expired`, `license.inactive`
-* `license.usage.limit.exceeded`, `license.service.id.not.supported`, `license.invalid.checksum`
-* `license.service.version.not.supported`, `license.signature.invalid`
-* `license.token.invalid`, `license.token.expired`, `license.token.refreshed`, `license.token.too.old`
+* HTTP Basic authentication
+* Stateless API
+* Detached signature verification
+* JWT validation (EdDSA)
 
 ---
 
-## Security
-
-* **HTTP Basic** auth (single in‑memory user via properties)
-* **Stateless** sessions, CSRF disabled (API only)
-* **Custom 401** JSON via `RestAuthenticationEntryPoint`
-
-Whitelisted endpoints:
-
-```
-/actuator/health, /v3/api-docs/**, /swagger-ui/**, /swagger-ui.html, /v3/api-docs.yaml
-```
-
----
-
-## Configuration
-
-### YAML reference
-
-`src/main/resources/application.yml` (snippet)
+## ⚙️ Configuration
 
 ```yaml
 server:
   port: 8081
   servlet:
     context-path: /licensing-service
-
-licensing.api.basic:
-  username: licensingUser
-  password: licensingPass
-  realm: LicensingService
-
-license:
-  secret.key: 'Base64AESKey'
-  jwt:
-    private.key: 'Base64PKCS8PrivateKey'
-    public.key: 'Base64X509PublicKey'
-  service:
-    ids: [ crm, billing, reporting ]
-    checksum-required: [ crm, billing, reporting ]
-
-userid.secret.key: 'Base64AESKey'
-signature.public.key: 'Base64-encoded DSA/EdDSA public key'
-
-jwt.token:
-  expiration: 60m
-  max.jitter: 2m
-
-caching.spring:
-  clientLicenseInfoTTL: 1h
-  clientLicenseInfoOffLineSupportTTL: 24h
 ```
 
-### Environment variables
-
-All keys can be overridden by environment variables using Spring’s relaxed binding, e.g.:
-
-* `SERVER_PORT`, `SERVER_SERVLET_CONTEXT_PATH`
-* `LICENSING_API_BASIC_USERNAME`, `LICENSING_API_BASIC_PASSWORD`, `LICENSING_API_BASIC_REALM`
-* `LICENSE_SECRET_KEY`, `USERID_SECRET_KEY`
-* `LICENSE_JWT_PRIVATE_KEY`, `LICENSE_JWT_PUBLIC_KEY`
-* `SIGNATURE_PUBLIC_KEY`
-* `JWT_TOKEN_EXPIRATION`, `JWT_TOKEN_MAX_JITTER`
+(See application.yml for full configuration)
 
 ---
 
-## Caching
+## 🧠 Design Principles
 
-Defined in `CacheConfig` (Redis):
+### 1. Contract-First
 
-* `userInfoCache` — online license data (TTL = `caching.spring.clientLicenseInfoTTL`)
-* `userOfflineInfoCache` — offline fallback (TTL = `caching.spring.clientLicenseInfoOffLineSupportTTL`)
-* `activeClients` — session snapshots (`ClientSessionCache`) with bounded TTL (≤ 3h)
+Java → OpenAPI → Client
 
----
+Single source of truth.
 
-## JWT & Crypto
+### 2. Boundary Isolation
 
-* **Algorithm**: EdDSA (Ed25519) via BouncyCastle provider
-* `JwtServiceImpl` signs on issue and verifies on validate
-* **Format pre-check**: base64url parts & `alg` header enforcement
-* **Detached signature** (`SignatureValidator`): validates Base64 signature over canonical JSON payload (
-  `SignatureData`).
-* **AES/GCM** utilities:\*\* `UserIdEncryptorImpl` — encrypt/decrypt user UUIDs.
+* Service = authority
+* Agent = integration boundary
+* Client = consumer
 
-**License key format**
+### 3. No Contract Leakage
 
-* String form: `BSAYLI.<opaqueB64Url>` (Base64URL **without padding**)
-* Opaque bytes layout: `version(1) | flags(1) | salt(16) | gcm( iv(12) || ciphertext || tag(16) )`
-* `UserIdEncryptorImpl` parses the opaque payload and decrypts the `gcm` part to extract `userId`.
+* Internal error model ≠ external contract
 
-> For key generation and signing helpers (AES key, Ed25519 signature/JWT keys, detached signatures), see the *
-*license-generator** subproject.
+### 4. Deterministic Token Lifecycle
+
+* Issue
+* Validate
+* Refresh
 
 ---
 
-## OpenAPI / Swagger
-
-* OpenAPI is customized to wrap responses in a generic `ApiResponse<T>` envelope using `SwaggerResponseCustomizer` and
-  `SwaggerLicensingResponseCustomizer`.
-* UI: `http://localhost:8081/licensing-service/swagger-ui.html`
-* JSON: `/v3/api-docs` · YAML: `/v3/api-docs.yaml`
-
----
-
-## Build & Run
-
-### Prerequisites
-
-* JDK 21
-* Maven 3.x
-
-### Build
+## 🚀 Build & Run
 
 ```bash
 mvn clean package
-```
-
-### Run (local)
-
-```bash
 mvn spring-boot:run
-# or
-java -jar target/licensing-service-1.0.1.jar
-```
-
-### With Docker Compose (from repo root)
-
-```bash
-cd docker-compose/server
-docker-compose up -d
-# wait ~45s on first run
 ```
 
 ---
 
-## Project Structure
+## 📁 Project Structure (Simplified)
 
 ```
-licensing-service/
-├─ src/main/java/io/github/bsayli/licensing/
-│  ├─ api/
-│  │  ├─ controller/LicenseController.java
-│  │  ├─ dto/(IssueAccessRequest, ValidateAccessRequest, LicenseAccessResponse)
-│  │  └─ validation/annotations/ValidLicenseToken.java
-│  ├─ common/(api, exception, i18n, openapi)
-│  ├─ config/(CacheConfig, CryptoProviderConfig, SecretConfig, security/*)
-│  ├─ domain/(model, result)
-│  ├─ repository/user/UserRepositoryImpl.java
-│  ├─ security/(impls: UserIdEncryptorImpl, SignatureValidatorImpl)
-│  ├─ service/
-│  │  ├─ impl/(LicenseOrchestrationServiceImpl, LicenseValidationServiceImpl, ...)
-│  │  ├─ jwt/(impl/JwtServiceImpl)
-│  │  ├─ token/LicenseTokenManager.java
-│  │  ├─ user/(cache, core, orchestration)
-│  │  └─ validation/(impl/*)
-│  └─ ...
-├─ src/main/resources/
-│  ├─ application.yml
-│  └─ messages.properties
-└─ pom.xml
+licensing-service
+├─ api (controller, dto)
+├─ service (orchestration, validation)
+├─ domain (models)
+├─ repository (Keycloak)
+├─ security (crypto, signature)
+├─ config
 ```
 
 ---
 
-## Troubleshooting
+## 🔗 See Also
 
-* **401 Unauthorized**: wrong Basic Auth credentials or missing header.
-* **400 Bad Request**: bean validation errors → check `errors[]` messages.
-* **401 (Token issues)**: `TOKEN_INVALID`, `TOKEN_EXPIRED`, or checksum/version mismatch.
-* **License not found**: ensure Keycloak contains required attributes; realm/client ids match config.
-* **Signature invalid**: ensure detached signature matches canonical JSON payload expected by `SignatureValidatorImpl`.
-* **Clock/Jitter**: token TTL + jitter define expiry; keep client and server clocks in sync.
+* licensing-agent → boundary layer
+* licensing-agent-cli → example client
+* license-generator → key/signature tooling
 
 ---
 
-## See Also
+## 🧭 Migration Note
 
-* **[license-generator](../license-generator/README.md)**: key & signature tooling, CLI examples
-* **[licensing-agent](../licensing-agent/README.md)**: client integration Agent
-* **[licensing-agent-cli](../licensing-agent-cli/README.md)**: runnable demo client  
+v1.x users:
+
+* `ApiResponse<T>` → removed
+* must migrate to:
+
+  * `ServiceResponse<T>`
+  * ProblemDetail error model
+  * Agent-based integration
+
+---
+
+## 📌 Summary
+
+This service is **not a client SDK endpoint**.
+
+It is:
+
+> A centralized, vendor-controlled licensing authority designed to be consumed via an agent boundary in a contract-first ecosystem.
+
+---

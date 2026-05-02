@@ -1,4 +1,4 @@
-# Welcome to the Licensing Project!
+# Licensing Project (2.0.0 – Contract-First)
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
 [![Release](https://img.shields.io/github/v/release/bsayli/licensing?logo=github\&label=release)](https://github.com/bsayli/licensing/releases/latest)
@@ -9,183 +9,250 @@
 [![Redis](https://img.shields.io/badge/Redis-8.x-red?logo=redis)](https://redis.io/)
 [![Maven](https://img.shields.io/badge/Maven-3.9-blue?logo=apachemaven)](https://maven.apache.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://www.docker.com/)
-[![Caffeine](https://img.shields.io/badge/Caffeine-Cache-orange)](https://github.com/ben-manes/caffeine)
 [![JWT](https://img.shields.io/badge/JWT-EdDSA-lightgrey?logo=jsonwebtokens)](https://jwt.io/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 <p align="center">
   <img src="docs/images/social-preview.png" alt="Licensing Project preview" width="720"/>
   <br/>
-  <em>Spring Boot • Keycloak • Redis • EdDSA — Complete licensing framework</em>
+  <em>Spring Boot • Keycloak • Redis • EdDSA • Contract‑First APIs</em>
 </p>
 
 ---
 
-> **Why this project?** Licensing is often treated as an afterthought in enterprise applications. This project provides a **complete end-to-end licensing framework** built on Spring Boot 3, integrating Keycloak, Redis, and EdDSA to standardize issue/validate flows with a **Service**, **Agent**, and **CLI**.
+## Why this project?
+
+Licensing is usually an afterthought. This repository provides a **complete, production‑grade licensing framework** with a **contract‑first architecture**:
+
+* **Service** → canonical source of truth
+* **Generated Client** → contract projection (no drift)
+* **Agent** → orchestration + caching + signatures
+* **CLI** → runnable demo / ops tool
+
+Built with **Spring Boot 3.5**, **Keycloak**, **Redis**, and **Ed25519 (EdDSA)**.
+
+---
+
+## What changed in 2.0.0?
+
+### Contract‑First (OpenAPI Generics)
+
+* **Java contract = source of truth**
+* OpenAPI is a **projection**, not the origin
+* **Generated client** via generics‑aware templates (no model duplication)
+
+### Unified Envelope
+
+* Success: `ServiceResponse<T>`
+* Error (transport): **RFC 9457 ProblemDetail**
+* Error (agent boundary): **AgentErrorResponse (framework‑agnostic)**
+
+### Clean Boundaries
+
+* Service → no framework leakage outside
+* Client → maps ProblemDetail → `ApiProblemException`
+* Agent → maps remote errors → stable public contract
 
 ---
 
 <p align="center">
   <img src="docs/images/licensing_flow.png" alt="Licensing flow diagram" width="860"/>
   <br/>
-  <em>End-to-end license validation flow</em>
+  <em>End‑to‑end flow (contract‑first)</em>
 </p>
 
 ---
 
-## Setting Up the Environment
+## Architecture Overview
 
-1. **Clone the Repository**
-
-```bash
-git clone https://github.com/bsayli/licensing.git
+```
+Application
+   ↓
+Licensing Agent (orchestration)
+   ↓
+Generated Client (contract projection)
+   ↓
+Licensing Service (source of truth)
+   ↓
+Keycloak + Redis
 ```
 
-2. **Extract Keycloak DB**
+### Key ideas
 
-* Get `licensing-keycloak.zip` from `/licensing/db`
-* Copy and extract into your home directory (\$HOME)
+* **Service owns semantics**
+* **Client is generated** (no handwritten drift)
+* **Agent owns orchestration concerns** (retry, cache, signature)
 
 ---
 
-### TL;DR – Quickstart
+## Modules
+
+| Module                       | Purpose                                                |
+| ---------------------------- | ------------------------------------------------------ |
+| **license-generator**        | Key + signature tooling (AES, Ed25519, JWT validation) |
+| **licensing-service**        | Contract‑first REST API (issue / validate)             |
+| **licensing-service-client** | Generated client (OpenAPI generics)                    |
+| **licensing-agent**          | Orchestration layer (cache + signature + retry)        |
+| **licensing-agent-cli**      | CLI demo / ops tool                                    |
+
+---
+
+## TL;DR – Quickstart
 
 ```bash
-cd licensing/docker-compose/server && docker-compose up -d
-# wait ~45s on first run
+cd docker-compose/server && docker-compose up -d
+# wait ~45s
 cd ../client && docker-compose up
 ```
 
+Expected:
+
+```
+License validated successfully
+Token: <JWT>
+```
+
 ---
 
-## Project Purpose
+## Running the System
 
-This project provides a **complete licensing framework** for applications, combining secure key generation, detached digital signatures, and token validation (JWT/EdDSA). It is designed to ensure license authenticity, prevent misuse, and integrate seamlessly with **Keycloak** for user identity and license metadata.
+### Start infrastructure + service + agent
+
+```bash
+cd docker-compose/server
+docker-compose up -d
+```
+
+### Run CLI (docker)
+
+```bash
+cd docker-compose/client
+docker-compose up
+```
 
 ---
 
-## Subprojects
+## Contract Model (2.0.0)
 
-* **license-generator**: Java project for license key generation, encryption, and cryptographic tooling.
-* **licensing-service**: Spring Boot application that issues and validates license tokens.
-* **licensing-agent**: Spring Boot application acting as a client Agent (with caching & detached signature) for integrating licensing capabilities into external apps.
-* **licensing-agent-cli**: Command-line tool for testing and interacting with the licensing service.
+### Success
+
+```json
+{
+  "data": { ... },
+  "meta": {
+    "serverTime": "..."
+  }
+}
+```
+
+### Error (transport)
+
+* RFC 9457 ProblemDetail
+
+### Error (agent public API)
+
+```json
+{
+  "errorCode": "...",
+  "message": "...",
+  "errors": []
+}
+```
+
+---
+
+## Key Features
+
+* JWT (Ed25519) license tokens
+* Detached request signatures
+* Keycloak‑backed license metadata
+* Redis caching (service) + Caffeine (agent)
+* Contract‑first API (no drift)
+* Generated client (type‑safe)
 
 ---
 
 ## Repository Structure
 
-| Directory          | Purpose                                                   |
-| ------------------ |-----------------------------------------------------------|
-| **db**             | Keycloak database backup (`licensing-keycloak.zip`)       |
-| **docker-compose** | Docker Compose files to run servers and client            |
-| **scripts**        | Utility scripts to run the client (`run_licensek_cli.sh`) |
+```
+licensing/
+├─ license-generator/
+├─ licensing-service/
+├─ licensing-service-client/
+├─ licensing-agent/
+├─ licensing-agent-cli/
+├─ docker-compose/
+├─ scripts/
+└─ db/
+```
 
 ---
 
 ## Prerequisites
 
-* Git client installed
-* Docker installed and running
-* Docker Compose installed and running
-* Java (>= 21.x)
-* Maven (>= 3.x)
+* Java 21
+* Maven 3.x
+* Docker + Docker Compose
 
 ---
 
-## Keycloak Configuration
+## Keycloak Setup
 
-This project relies on **Keycloak** to store and manage license metadata.  
-A full step-by-step guide is provided in [KEYCLOAK_CONFIG.md](docs/KEYCLOAK_CONFIG.md).
+See:
 
----
-
-## Running the Licensing Service
-
-```bash
-cd licensing/docker-compose/server
-docker-compose up -d
 ```
-
-This starts Keycloak, Licensing Service, and Licensing Service Agent in the background. Wait \~45 seconds for the services to initialize on the first run.
-
-**Optional (local/dev only):** If you want to start only **Keycloak + Redis** separately, you can use `docker-compose.infra.yml`.
-
----
-
-## Running the License Validation Tool via Docker
-
-```bash
-cd licensing/docker-compose/client
-docker-compose up
-```
-
-Logs should confirm validation:
-
-```text
-licensing-agent-cli | INFO License validated successfully.
-licensing-agent-cli | INFO Token: <JWT_TOKEN>
-licensing-agent-cli | INFO Message: License is valid
+docs/KEYCLOAK_CONFIG.md
 ```
 
 ---
 
-## Running the License Validation Tool Directly (Optional 1)
+## Security Notes
 
-```bash
-cd licensing/licensing-agent-cli
-mvn clean package
-cd target
-java -jar licensing-agent-cli-1.0.1.jar -s crm -v 1.5.0 -i "crm~macbook~00:2A:8D:BE:F1:56" -k "BSAYLI.<opaqueB64Url>"
-```
+* Demo configs include inline secrets → **do not use in production**
+* Recommended: **Vault / secret manager**
 
 ---
 
-## Running the License Validation Tool with Script (Optional 2)
+## Roadmap
 
-```bash
-cd licensing/scripts
-chmod +x run_licensing_agent_cli.sh
-./run_licensing_agent_cli.sh -s billing -v 2.0.0 -i "billing~macbook~00:2A:8D:BE:F1:56" -k "BSAYLI.<opaqueB64Url>"
-```
-
-## Notes
-
-* CLI examples must always be provided **on a single line**.
-* If parameters contain spaces or special characters, they should be enclosed in quotes (`"..."`).
+* Vault integration (secrets)
+* License lifecycle APIs (Keycloak management)
+* Advanced policy controls
 
 ---
 
-## Security Note
+## Design Principles
 
-Demo configuration files contain inline secrets in `application.yml`. In production, **HashiCorp Vault** or another secret manager should be used. Vault integration is part of the **roadmap**.
-
----
-
-## Feedback & Questions
-
-If you notice any issues in this documentation or have suggestions for improvements, feel free to open an **Issue** or a **Discussion**.
+* Contract‑first, not code‑first
+* No framework leakage across boundaries
+* Deterministic client generation
+* Clear separation: mechanism vs policy
 
 ---
 
-## 🗺️ Roadmap
+## Related Docs
 
-* [ ] Move sensitive configs to **HashiCorp Vault** for secure secrets management
-* [ ] Extend **Keycloak integration** to manage licenses (create, update, revoke) via dedicated endpoints
-
----
-
-## ⭐ Support
-
-If you found this project useful, please consider giving it a star ⭐ on GitHub — it helps others discover it too!
+* `licensing-service/README.md`
+* `licensing-service-client/README.md`
+* `licensing-agent/README.md`
+* `licensing-agent-cli/README.md`
+* `license-generator/README.md`
 
 ---
 
-## Related Modules (Quick View)
+## License
 
-| Module                  | Purpose                                    | Documentation                           |
-|-------------------------|--------------------------------------------|-----------------------------------------|
-| **licensing-service**   | REST API for issuing and validating tokens | [README](licensing-service/README.md)   |
-| **licensing-agent**     | Client Agent for integration               | [README](licensing-agent/README.md)     |
-| **licensing-agent-cli** | CLI demo client                            | [README](licensing-agent-cli/README.md) |
-| **license-generator**   | Key & signature tooling                    | [README](license-generator/README.md)   |
+MIT License
+
+---
+
+## Final Note
+
+This repo is not just a demo.
+
+It is a **reference architecture** for:
+
+* contract‑first APIs
+* generated clients
+* clean service/agent separation
+* real‑world licensing systems

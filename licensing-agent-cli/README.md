@@ -1,4 +1,4 @@
-# Licensing Service Agent CLI
+# Licensing Agent CLI (2.0.0 – Contract-First)
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
 [![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
@@ -6,13 +6,88 @@
 [![HttpClient5](https://img.shields.io/badge/Apache%20HttpClient-5.x-black?logo=apache)](https://hc.apache.org/httpcomponents-client-5.0.x/)
 [![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
 
-Command-line client for interacting with the **Licensing Service** using the official SDK.
+Command-line client for calling **licensing-agent**.
 
-This tool is intended for **developers** and **operators** who want to:
+This CLI is a small external consumer of the Agent API. It does **not** talk directly to `licensing-service`.
 
-* Validate licenses against a running `licensing-service`
-* Retrieve JWT license tokens for their service instances
-* Integrate license validation into CI/CD or automation flows
+```text
+CLI → licensing-agent → licensing-service
+```
+
+The CLI is useful for:
+
+* local validation tests
+* operator checks
+* CI/CD smoke validation
+* demonstrating the external Agent contract
+
+---
+
+## Architectural Role
+
+`licensing-agent-cli` is intentionally thin.
+
+It is responsible for:
+
+* collecting runtime inputs
+* calling the Agent endpoint
+* parsing success/error contracts
+* returning process exit codes
+
+It is **not** responsible for:
+
+* license policy evaluation
+* detached signature generation
+* token refresh decisions
+* direct communication with licensing-service
+
+Those responsibilities belong to `licensing-agent`.
+
+---
+
+## Contract Model
+
+### Success Response
+
+The CLI expects:
+
+```text
+ServiceResponse<LicenseToken>
+```
+
+Example:
+
+```json
+{
+  "data": {
+    "licenseToken": "<JWT>"
+  },
+  "meta": {
+    "serverTime": "2026-05-02T16:00:00Z",
+    "sort": []
+  }
+}
+```
+
+### Error Response
+
+The CLI expects:
+
+```text
+LicenseAgentErrorResponse
+```
+
+Example:
+
+```json
+{
+  "errorCode": "BAD_REQUEST",
+  "message": "Invalid request payload.",
+  "errors": null
+}
+```
+
+The CLI does not parse `ProblemDetail`. `ProblemDetail` is internal to the service/agent implementation and is not part of the public CLI-facing contract.
 
 ---
 
@@ -22,17 +97,15 @@ This tool is intended for **developers** and **operators** who want to:
 mvn -q -DskipTests package
 ```
 
-The shaded JAR will be available at:
+The executable JAR is produced under:
 
-```
+```text
 target/licensing-agent-cli-<version>.jar
 ```
 
 ---
 
 ## Usage
-
-Run with Java 21 or higher:
 
 ```bash
 java -jar target/licensing-agent-cli-<version>.jar \
@@ -42,53 +115,56 @@ java -jar target/licensing-agent-cli-<version>.jar \
   -i <INSTANCE_ID>
 ```
 
-### Options
+---
 
-| Flag | Long Option         | Description                                                                  | Required |
-|------|---------------------|------------------------------------------------------------------------------|----------|
-| `-k` | `--key`             | License key string (`BSAYLI.<opaquePayloadBase64Url>`)                       | Yes      |
-| `-s` | `--service-id`      | Service identifier (e.g. `crm`)                                              | Yes      |
-| `-v` | `--service-version` | Service version (e.g. `1.5.0`)                                               | Yes      |
-| `-i` | `--instance-id`     | Unique instance identifier (e.g. `licensing-service~demo~00:11:22:33:44:55`) | Yes      |
-| `-h` | `--help`            | Show help message                                                            | No       |
+## Options
+
+| Flag | Long Option         | Description                                     | Required |
+| ---- | ------------------- | ----------------------------------------------- | -------- |
+| `-k` | `--key`             | License key (`BSAYLI.<opaquePayloadBase64Url>`) | Yes      |
+| `-s` | `--service-id`      | Service identifier, for example `crm`           | Yes      |
+| `-v` | `--service-version` | Service version, for example `1.5.0`            | Yes      |
+| `-i` | `--instance-id`     | Unique runtime instance identifier              | Yes      |
+| `-h` | `--help`            | Show help message                               | No       |
 
 Default values can also be injected from environment variables:
 
-* `LICENSE_KEY`
-* `SERVICE_ID`
-* `SERVICE_VERSION`
-* `INSTANCE_ID`
+```text
+LICENSE_KEY
+SERVICE_ID
+SERVICE_VERSION
+INSTANCE_ID
+```
 
 ---
 
 ## Example
 
 ```bash
-java -jar target/licensing-agent-cli-1.0.1.jar \
-  -k 'BSAYLI.AQA3-gCQ66DQsfC0LwnAO8DTjKgad7DhPaOtCf7WG2bFUoK9pmScIhhCf2S-D0j8g4jC7nlFrLDpuM0ezEoDQc79SizxxEIUGN9YUhTNBW7iRQ' \
+java -jar target/licensing-agent-cli-2.0.0.jar \
+  -k 'BSAYLI.<opaquePayloadBase64Url>' \
   -s crm \
   -v 1.5.0 \
-  -i 'licensing-service~demo~00:11:22:33:44:55'
+  -i 'crm~host123~00:AA:BB:CC:DD:EE'
 ```
 
 Sample output:
 
-```
-INFO  LicenseSdkClientServiceImpl - License validated successfully.
-INFO  LicenseSdkClientServiceImpl - Token: <JWT_TOKEN>
-INFO  LicenseSdkClientServiceImpl - Message: License is valid
+```text
+INFO  LicenseAgentClientServiceImpl - License validated successfully.
+INFO  LicenseAgentClientServiceImpl - Token: <JWT_TOKEN>
 ```
 
 ---
 
 ## Configuration
 
-The CLI loads properties from `application.properties` (on classpath):
+The CLI loads defaults from `application.properties` on the classpath.
 
 ```properties
 licensing.agent.server.url=http://localhost:8082/licensing-agent
-licensing.agent.server.app.user=licensingSdkUser
-licensing.agent.server.app.pass=licensingSdkPass
+licensing.agent.server.app.user=licensingAgentUser
+licensing.agent.server.app.pass=licensingAgentPass
 licensing.agent.api.path=/v1/licenses/access
 licensing.agent.http.connect-timeout-seconds=40
 licensing.agent.http.response-timeout-seconds=40
@@ -96,44 +172,81 @@ licensing.agent.http.retries=3
 licensing.agent.http.retry-interval-seconds=3
 ```
 
-Override via environment variables:
+---
 
+## Environment Overrides
+
+```text
+LICENSE_AGENT_URL
+LICENSE_AGENT_CONNECT_TIMEOUT
+LICENSE_AGENT_RESPONSE_TIMEOUT
+LICENSE_AGENT_RETRIES
+LICENSE_AGENT_RETRY_INTERVAL
+LICENSE_AGENT_API_PATH
 ```
-LICENSE_SERVICE_AGENT_URL=http://my-server/licensing-agent
-LICENSE_SERVICE_AGENT_CONNECT_TIMEOUT=20
-LICENSE_SERVICE_AGENT_RESPONSE_TIMEOUT=20
-LICENSE_SERVICE_AGENT_RETRIES=5
-LICENSE_SERVICE_AGENT_RETRY_INTERVAL=2
-LICENSE_SERVICE_AGENT_API_PATH=/v1/licenses/access
-```
+
+These override the corresponding values from `application.properties`.
 
 ---
 
-## Internals
+## Runtime Flow
 
-* Sends `POST /v1/licenses/access` with JSON body (`LicenseAccessRequest`).
-* Expects `ApiResponse<LicenseToken>` JSON back from the server.
-* Uses Apache HttpClient5 Fluent API with retry strategy.
-* Handles error responses by parsing error `ApiResponse` if JSON is returned.
-* Logs license token and validation messages.
+1. CLI reads command-line arguments.
+2. CLI loads Agent client properties.
+3. CLI builds `LicenseAccessRequest`.
+4. CLI sends `POST /v1/licenses/access` to licensing-agent.
+5. CLI parses:
+
+    * `ServiceResponse<LicenseToken>` on success
+    * `LicenseAgentErrorResponse` on HTTP error
+6. CLI exits with a process code.
 
 ---
 
 ## Exit Codes
 
-| Code | Meaning                                         |
-|------|-------------------------------------------------|
-| `0`  | License validated successfully                  |
-| `1`  | License validation failed (client/server error) |
-| `2`  | CLI usage error                                 |
+| Code | Meaning                                |
+| ---- | -------------------------------------- |
+| `0`  | License token obtained successfully    |
+| `1`  | Validation failed or Agent call failed |
+| `2`  | CLI usage error                        |
 
 ---
 
-## Related Projects
+## Internals
 
-* **license-generator** → generate keys and signatures
-* **licensing-service** → REST API server for license validation
-* **licensing-agent** → Agent used by this CLI
+* Picocli for command-line parsing
+* Apache HttpClient5 Fluent API for HTTP calls
+* Jackson for JSON parsing
+* `JavaTimeModule` for `ServiceResponse.meta.serverTime`
+* Basic Auth for Agent access
+* Retry strategy configured via properties
+
+---
+
+## Important Distinction
+
+This CLI is **not an SDK**.
+
+It is a command-line consumer of the Agent boundary.
+
+The Agent owns:
+
+* request signing
+* token caching
+* refresh/re-issue decisions
+* remote licensing-service communication
+
+The CLI only validates the external contract from the client side.
+
+---
+
+## Related Modules
+
+* `licensing-service` — vendor-side license authority
+* `licensing-service-client` — generated client used by Agent
+* `licensing-agent` — boundary/orchestration layer
+* `license-generator` — key and signature tooling
 
 ---
 
