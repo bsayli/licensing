@@ -56,7 +56,7 @@ Built with **Spring Boot 3.5**, **Keycloak**, **Redis**, and **Ed25519 (EdDSA)**
 ---
 
 <p align="center">
-  <img src="docs/images/licensing_flow.png" alt="Licensing flow diagram" width="860"/>
+  <img src="docs/images/licensing_flow.svg" alt="Licensing flow diagram" width="860"/>
   <br/>
   <em>End‑to‑end flow (contract‑first)</em>
 </p>
