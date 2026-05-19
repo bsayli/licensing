@@ -1,8 +1,13 @@
 FROM maven:3.9.11-eclipse-temurin-21-noble AS builder
 WORKDIR /build
 
+COPY licensing-api-contract/pom.xml licensing-api-contract/pom.xml
 COPY licensing-service-client/pom.xml licensing-service-client/pom.xml
 COPY licensing-service-sdk/pom.xml     licensing-service-sdk/pom.xml
+
+COPY licensing-api-contract/ licensing-api-contract/
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -q -DskipTests -f licensing-api-contract/pom.xml install
 
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -q -DskipTests -f licensing-service-client/pom.xml dependency:go-offline
@@ -29,7 +34,7 @@ RUN apt-get update && \
 
 LABEL org.opencontainers.image.title="licensing-service-sdk" \
       org.opencontainers.image.description="Licensing Service SDK (Spring Boot)" \
-      org.opencontainers.image.version="1.0.1" \
+      org.opencontainers.image.version="1.0.5" \
       org.opencontainers.image.source="https://github.com/bsayli/licensing" \
       org.opencontainers.image.licenses="MIT"
 

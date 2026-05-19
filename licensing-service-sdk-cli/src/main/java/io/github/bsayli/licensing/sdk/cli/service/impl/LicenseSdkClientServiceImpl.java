@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.sdk.cli.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.bsayli.licensing.sdk.cli.model.ApiResponse;
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import io.github.bsayli.licensing.sdk.cli.model.LicenseAccessRequest;
 import io.github.bsayli.licensing.sdk.cli.model.LicenseSdkClientProperties;
 import io.github.bsayli.licensing.sdk.cli.model.LicenseToken;
@@ -121,21 +121,22 @@ public class LicenseSdkClientServiceImpl implements LicenseSdkClientService {
   }
 
   private boolean isSuccess(ApiResponse<LicenseToken> api) {
-    return api.status() == 200 && api.data() != null && api.data().licenseToken() != null;
+    return api.getStatus() == 200 && api.getData() != null && api.getData().licenseToken() != null;
   }
 
   private void logSuccess(ApiResponse<LicenseToken> api) {
     log.info("License validated successfully.");
-    log.info("Token: {}", api.data().licenseToken());
-    if (api.message() != null && !api.message().isBlank()) {
-      log.info("Message: {}", api.message());
+    log.info("Token: {}", api.getData().licenseToken());
+    if (api.getMessage() != null && !api.getMessage().isBlank()) {
+      log.info("Message: {}", api.getMessage());
     }
   }
 
   private void logFailure(ApiResponse<LicenseToken> api) {
-    log.error("License validation failed. status={}, message={}", api.status(), api.message());
-    if (api.errors() != null) {
-      api.errors()
+    log.error(
+        "License validation failed. status={}, message={}", api.getStatus(), api.getMessage());
+    if (api.getErrors() != null) {
+      api.getErrors()
           .forEach(err -> log.error("errorCode={}, message={}", err.errorCode(), err.message()));
     }
   }

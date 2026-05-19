@@ -59,6 +59,8 @@ logging:
     org.springframework.web: INFO
     org.springframework.security: INFO
     io.github.bsayli.licensing: DEBUG
+    io.github.blueprintplatform: DEBUG
+
 
 licensing:
   api:
@@ -71,6 +73,10 @@ app:
   openapi:
     version: @project.version@
     base-url: "http://localhost:${server.port}${server.servlet.context-path:}"
+
+openapi-generics:
+  envelope:
+    type: io.github.bsayli.licensing.contract.api.ApiResponse
 
 license:
   jwt:

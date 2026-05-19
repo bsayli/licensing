@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.sdk.service.handler;
 
-import io.github.bsayli.licensing.client.common.contract.ApiClientResponse;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import io.github.bsayli.licensing.sdk.common.exception.LicensingSdkRemoteServiceException;
 import io.github.bsayli.licensing.sdk.common.i18n.LocalizedMessageResolver;
 import java.util.List;
@@ -27,16 +27,16 @@ public class LicenseResponseHandler {
     this.messages = messages;
   }
 
-  private <T> void requireOk(ApiClientResponse<T> resp) {
+  private <T> void requireOk(ApiResponse<T> resp) {
     if (isOk(resp)) return;
     throw buildRemoteException(resp);
   }
 
-  private <T> boolean isOk(ApiClientResponse<T> resp) {
-    return resp != null && resp.getStatus() != null && resp.getStatus() == HTTP_OK;
+  private <T> boolean isOk(ApiResponse<T> resp) {
+    return resp != null && resp.getStatus() == HTTP_OK;
   }
 
-  public String extractTokenOrThrow(ApiClientResponse<LicenseAccessResponse> resp) {
+  public String extractTokenOrThrow(ApiResponse<LicenseAccessResponse> resp) {
     requireOk(resp);
     String token = safeToken(resp);
     if (token == null) {
@@ -49,19 +49,19 @@ public class LicenseResponseHandler {
     return token;
   }
 
-  public String extractTokenIfPresentOrThrow(ApiClientResponse<LicenseAccessResponse> resp) {
+  public String extractTokenIfPresentOrThrow(ApiResponse<LicenseAccessResponse> resp) {
     requireOk(resp);
     return safeToken(resp);
   }
 
-  private String safeToken(ApiClientResponse<LicenseAccessResponse> resp) {
+  private String safeToken(ApiResponse<LicenseAccessResponse> resp) {
     var data = resp.getData();
     if (data == null) return null;
     String t = data.getLicenseToken();
     return (t == null || t.isBlank()) ? null : t;
   }
 
-  private <T> LicensingSdkRemoteServiceException buildRemoteException(ApiClientResponse<T> resp) {
+  private <T> LicensingSdkRemoteServiceException buildRemoteException(ApiResponse<T> resp) {
     HttpStatus status = resolveStatus(resp);
     String top = resolveTopMessage(resp);
     String errorCode = resolveErrorCode(resp);
@@ -69,18 +69,18 @@ public class LicenseResponseHandler {
     return new LicensingSdkRemoteServiceException(status, errorCode, top, details);
   }
 
-  private <T> HttpStatus resolveStatus(ApiClientResponse<T> resp) {
-    if (resp == null || resp.getStatus() == null) return HttpStatus.INTERNAL_SERVER_ERROR;
+  private <T> HttpStatus resolveStatus(ApiResponse<T> resp) {
+    if (resp == null) return HttpStatus.INTERNAL_SERVER_ERROR;
     return HttpStatus.valueOf(resp.getStatus());
   }
 
-  private <T> String resolveTopMessage(ApiClientResponse<T> resp) {
+  private <T> String resolveTopMessage(ApiResponse<T> resp) {
     if (resp == null) return messages.getMessage(KEY_TOP_REMOTE_FAILED);
     String msg = resp.getMessage();
     return (msg == null || msg.isBlank()) ? messages.getMessage(KEY_TOP_REMOTE_FAILED) : msg;
   }
 
-  private <T> String resolveErrorCode(ApiClientResponse<T> resp) {
+  private <T> String resolveErrorCode(ApiResponse<T> resp) {
     if (resp == null || resp.getErrors() == null || resp.getErrors().isEmpty()) {
       return CODE_REMOTE_ERROR;
     }
@@ -89,7 +89,7 @@ public class LicenseResponseHandler {
     return (code == null || code.isBlank()) ? CODE_REMOTE_ERROR : code;
   }
 
-  private <T> List<String> resolveDetails(ApiClientResponse<T> resp) {
+  private <T> List<String> resolveDetails(ApiResponse<T> resp) {
     if (resp == null || resp.getErrors() == null || resp.getErrors().isEmpty()) {
       return List.of(messages.getMessage(KEY_DETAIL_NO_PAYLOAD));
     }

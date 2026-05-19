@@ -6,8 +6,8 @@ import static org.mockito.Mockito.*;
 import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.api.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
-import io.github.bsayli.licensing.common.api.ApiResponse;
 import io.github.bsayli.licensing.common.i18n.LocalizedMessageResolver;
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import io.github.bsayli.licensing.service.LicenseOrchestrationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -43,11 +43,11 @@ class LicenseControllerTest {
 
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertNotNull(resp.getBody());
-    assertEquals(200, resp.getBody().status());
-    assertEquals("License is valid", resp.getBody().message());
-    assertNotNull(resp.getBody().data());
-    assertEquals("jwt-token", resp.getBody().data().licenseToken());
-    assertTrue(resp.getBody().errors().isEmpty());
+    assertEquals(200, resp.getBody().getStatus());
+    assertEquals("License is valid", resp.getBody().getMessage());
+    assertNotNull(resp.getBody().getData());
+    assertEquals("jwt-token", resp.getBody().getData().licenseToken());
+    assertTrue(resp.getBody().getErrors().isEmpty());
 
     verify(service).issueAccess(req);
     verify(messageResolver).getMessage("license.validation.success");
@@ -68,11 +68,11 @@ class LicenseControllerTest {
 
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertNotNull(resp.getBody());
-    assertEquals(200, resp.getBody().status());
-    assertEquals("License is valid", resp.getBody().message());
-    assertNotNull(resp.getBody().data());
-    assertEquals("new-jwt", resp.getBody().data().licenseToken());
-    assertTrue(resp.getBody().errors().isEmpty());
+    assertEquals(200, resp.getBody().getStatus());
+    assertEquals("License is valid", resp.getBody().getMessage());
+    assertNotNull(resp.getBody().getData());
+    assertEquals("new-jwt", resp.getBody().getData().licenseToken());
+    assertTrue(resp.getBody().getErrors().isEmpty());
 
     verify(service).validateAccess(req, token);
     verify(messageResolver).getMessage("license.validation.success");
@@ -93,9 +93,9 @@ class LicenseControllerTest {
 
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertNotNull(resp.getBody());
-    assertEquals("License is valid", resp.getBody().message());
-    assertNotNull(resp.getBody().data());
-    assertNull(resp.getBody().data().licenseToken());
+    assertEquals("License is valid", resp.getBody().getMessage());
+    assertNotNull(resp.getBody().getData());
+    assertNull(resp.getBody().getData().licenseToken());
 
     verify(service).validateAccess(req, token);
     verify(messageResolver).getMessage("license.validation.success");

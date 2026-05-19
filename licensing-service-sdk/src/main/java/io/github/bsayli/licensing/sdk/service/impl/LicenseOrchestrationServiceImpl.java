@@ -1,10 +1,10 @@
 package io.github.bsayli.licensing.sdk.service.impl;
 
-import io.github.bsayli.licensing.client.common.contract.ApiClientResponse;
 import io.github.bsayli.licensing.client.common.exception.ApiClientException;
 import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import io.github.bsayli.licensing.sdk.api.dto.LicenseAccessRequest;
 import io.github.bsayli.licensing.sdk.api.dto.LicenseToken;
 import io.github.bsayli.licensing.sdk.common.exception.LicensingSdkHttpTransportException;
@@ -77,7 +77,7 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
 
     validateReq.setSignature(signatureGenerator.generateForValidate(cachedToken, validateReq));
 
-    ApiClientResponse<LicenseAccessResponse> vResp =
+    ApiResponse<LicenseAccessResponse> vResp =
         licenseServiceClient.validateAccess(cachedToken, validateReq);
 
     try {
@@ -107,7 +107,7 @@ public class LicenseOrchestrationServiceImpl implements LicenseOrchestrationServ
     String signature = signatureGenerator.generateForIssue(issueReq);
     issueReq.setSignature(signature);
 
-    ApiClientResponse<LicenseAccessResponse> resp = licenseServiceClient.issueAccess(issueReq);
+    ApiResponse<LicenseAccessResponse> resp = licenseServiceClient.issueAccess(issueReq);
     String token = responseHandler.extractTokenOrThrow(resp);
 
     licenseTokenCacheService.put(clientId, token);

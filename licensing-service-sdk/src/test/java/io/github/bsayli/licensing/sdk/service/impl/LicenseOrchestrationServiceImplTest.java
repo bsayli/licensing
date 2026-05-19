@@ -3,11 +3,11 @@ package io.github.bsayli.licensing.sdk.service.impl;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import io.github.bsayli.licensing.client.common.contract.ApiClientResponse;
 import io.github.bsayli.licensing.client.common.exception.ApiClientException;
 import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import io.github.bsayli.licensing.sdk.api.dto.LicenseAccessRequest;
 import io.github.bsayli.licensing.sdk.api.dto.LicenseToken;
 import io.github.bsayli.licensing.sdk.common.exception.LicensingSdkHttpTransportException;
@@ -61,7 +61,7 @@ class LicenseOrchestrationServiceImplTest {
     when(cache.get("cid")).thenReturn(null);
     when(signatureGenerator.generateForIssue(any(IssueAccessRequest.class))).thenReturn("sig");
     @SuppressWarnings("unchecked")
-    ApiClientResponse<LicenseAccessResponse> resp = mock(ApiClientResponse.class);
+    ApiResponse<LicenseAccessResponse> resp = mock(ApiResponse.class);
     when(licenseServiceClient.issueAccess(any(IssueAccessRequest.class))).thenReturn(resp);
     when(responseHandler.extractTokenOrThrow(resp)).thenReturn("jwt-1");
 
@@ -86,7 +86,7 @@ class LicenseOrchestrationServiceImplTest {
     when(signatureGenerator.generateForValidate(eq("jwt-old"), any(ValidateAccessRequest.class)))
         .thenReturn("vsig");
     @SuppressWarnings("unchecked")
-    ApiClientResponse<LicenseAccessResponse> vResp = mock(ApiClientResponse.class);
+    ApiResponse<LicenseAccessResponse> vResp = mock(ApiResponse.class);
     when(licenseServiceClient.validateAccess(eq("jwt-old"), any(ValidateAccessRequest.class)))
         .thenReturn(vResp);
     when(responseHandler.extractTokenIfPresentOrThrow(vResp)).thenReturn(null);
@@ -110,7 +110,7 @@ class LicenseOrchestrationServiceImplTest {
     when(signatureGenerator.generateForValidate(eq("jwt-old"), any(ValidateAccessRequest.class)))
         .thenReturn("vsig");
     @SuppressWarnings("unchecked")
-    ApiClientResponse<LicenseAccessResponse> vResp = mock(ApiClientResponse.class);
+    ApiResponse<LicenseAccessResponse> vResp = mock(ApiResponse.class);
     when(licenseServiceClient.validateAccess(eq("jwt-old"), any(ValidateAccessRequest.class)))
         .thenReturn(vResp);
     when(responseHandler.extractTokenIfPresentOrThrow(vResp)).thenReturn("jwt-new");
@@ -130,7 +130,7 @@ class LicenseOrchestrationServiceImplTest {
             eq("jwt-very-old"), any(ValidateAccessRequest.class)))
         .thenReturn("vsig");
     @SuppressWarnings("unchecked")
-    ApiClientResponse<LicenseAccessResponse> vResp = mock(ApiClientResponse.class);
+    ApiResponse<LicenseAccessResponse> vResp = mock(ApiResponse.class);
     when(licenseServiceClient.validateAccess(eq("jwt-very-old"), any(ValidateAccessRequest.class)))
         .thenReturn(vResp);
     LicensingSdkRemoteServiceException tooOld =
@@ -139,7 +139,7 @@ class LicenseOrchestrationServiceImplTest {
     when(responseHandler.extractTokenIfPresentOrThrow(vResp)).thenThrow(tooOld);
 
     @SuppressWarnings("unchecked")
-    ApiClientResponse<LicenseAccessResponse> iResp = mock(ApiClientResponse.class);
+    ApiResponse<LicenseAccessResponse> iResp = mock(ApiResponse.class);
     when(signatureGenerator.generateForIssue(any(IssueAccessRequest.class))).thenReturn("sig");
     when(licenseServiceClient.issueAccess(any(IssueAccessRequest.class))).thenReturn(iResp);
     when(responseHandler.extractTokenOrThrow(iResp)).thenReturn("jwt-new");

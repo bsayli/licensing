@@ -1,8 +1,8 @@
 package io.github.bsayli.licensing.sdk.api.controller;
 
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import io.github.bsayli.licensing.sdk.api.dto.LicenseAccessRequest;
 import io.github.bsayli.licensing.sdk.api.dto.LicenseToken;
-import io.github.bsayli.licensing.sdk.common.api.ApiResponse;
 import io.github.bsayli.licensing.sdk.common.i18n.LocalizedMessageResolver;
 import io.github.bsayli.licensing.sdk.service.LicenseOrchestrationService;
 import jakarta.validation.Valid;
@@ -32,6 +32,7 @@ public class LicenseController {
     LicenseToken token = licenseService.getLicenseToken(request);
 
     String msg = messageResolver.getMessage("license.validation.success");
-    return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.of(HttpStatus.OK, msg, token));
+    return ResponseEntity.status(HttpStatus.OK)
+        .body(ApiResponse.of(HttpStatus.OK.value(), msg, token));
   }
 }

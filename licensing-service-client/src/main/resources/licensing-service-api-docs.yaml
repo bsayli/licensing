@@ -2,12 +2,12 @@ openapi: 3.1.0
 info:
   title: Licensing Service API
   description: Licensing Service type-safe generic API responses with OpenAPI
-  version: 1.0.1
+  version: 1.0.5
 servers:
   - url: http://localhost:8081/licensing-service
     description: Licensing Service URL
 security:
-  - basicAuth: [ ]
+  - basicAuth: []
 paths:
   /v1/licenses/access:
     post:
@@ -96,13 +96,21 @@ components:
           type: string
         message:
           type: string
+      x-ignore-model: true
     ApiResponseLicenseAccessResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-        - type: object
-          properties:
-            data:
-              $ref: "#/components/schemas/LicenseAccessResponse"
+      type: object
+      properties:
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/LicenseAccessResponse"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiError"
       x-api-wrapper: true
       x-api-wrapper-datatype: LicenseAccessResponse
     LicenseAccessResponse:
@@ -144,42 +152,6 @@ components:
         - serviceId
         - serviceVersion
         - signature
-    ApiResponse:
-      type: object
-      properties:
-        status:
-          type: integer
-          format: int32
-        message:
-          type: string
-        errors:
-          type: array
-          items:
-            type: object
-            properties:
-              errorCode:
-                type: string
-              message:
-                type: string
-    ApiResponseVoid:
-      type: object
-      properties:
-        status:
-          type: integer
-          format: int32
-        message:
-          type: string
-        data:
-          type: object
-        errors:
-          type: array
-          items:
-            type: object
-            properties:
-              errorCode:
-                type: string
-              message:
-                type: string
   securitySchemes:
     basicAuth:
       type: http

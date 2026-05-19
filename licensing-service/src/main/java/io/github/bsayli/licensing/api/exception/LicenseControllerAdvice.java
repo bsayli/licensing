@@ -1,10 +1,10 @@
 package io.github.bsayli.licensing.api.exception;
 
-import io.github.bsayli.licensing.common.api.ApiError;
-import io.github.bsayli.licensing.common.api.ApiResponse;
 import io.github.bsayli.licensing.common.exception.ServiceErrorCode;
 import io.github.bsayli.licensing.common.exception.ServiceException;
 import io.github.bsayli.licensing.common.i18n.LocalizedMessageResolver;
+import io.github.bsayli.licensing.contract.api.ApiError;
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import io.github.bsayli.licensing.repository.exception.RepositoryException;
 import io.github.bsayli.licensing.service.user.exception.UserOperationException;
 import jakarta.validation.ConstraintViolation;
@@ -51,7 +51,7 @@ public class LicenseControllerAdvice {
 
     String topMsg = messageResolver.getMessage("request.validation.failed");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(ApiResponse.error(HttpStatus.BAD_REQUEST, topMsg, errors));
+        .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), topMsg, errors));
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
@@ -74,7 +74,7 @@ public class LicenseControllerAdvice {
 
     String topMsg = messageResolver.getMessage("request.validation.failed");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(ApiResponse.error(HttpStatus.BAD_REQUEST, topMsg, errors));
+        .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), topMsg, errors));
   }
 
   @ExceptionHandler(MissingServletRequestParameterException.class)
@@ -88,7 +88,7 @@ public class LicenseControllerAdvice {
     String msg = messageResolver.getMessage("request.param.missing", ex.getParameterName());
     List<ApiError> errors = List.of(new ApiError(ServiceErrorCode.MISSING_PARAMETER.name(), msg));
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(ApiResponse.error(HttpStatus.BAD_REQUEST, msg, errors));
+        .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), msg, errors));
   }
 
   @ExceptionHandler(MissingRequestHeaderException.class)
@@ -98,18 +98,18 @@ public class LicenseControllerAdvice {
     String msg = messageResolver.getMessage("request.header.missing", ex.getHeaderName());
     List<ApiError> errors = List.of(new ApiError(ServiceErrorCode.MISSING_PARAMETER.name(), msg));
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(ApiResponse.error(HttpStatus.BAD_REQUEST, msg, errors));
+        .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), msg, errors));
   }
 
   @ExceptionHandler(ServiceException.class)
   public ResponseEntity<ApiResponse<Void>> handleServiceException(ServiceException ex) {
     ServiceErrorCode code = ex.getCode();
-    HttpStatus http = code.httpStatus();
+    HttpStatus httpStatus = code.httpStatus();
 
-    var logger = http.is5xxServerError() ? log.atError() : log.atWarn();
+    var logger = httpStatus.is5xxServerError() ? log.atError() : log.atWarn();
     logger
         .setCause(ex)
-        .addArgument(http.value())
+        .addArgument(httpStatus.value())
         .addArgument(code)
         .addArgument(ex.getMessageKey())
         .log("Service exception. statusCode={}, code={}, messageKey={} ");
@@ -118,23 +118,23 @@ public class LicenseControllerAdvice {
     String top = messageResolver.getMessage("license.validation.failed");
 
     ApiResponse<Void> body =
-        ApiResponse.error(http, top, List.of(new ApiError(code.name(), detail)));
-    return ResponseEntity.status(http).body(body);
+        ApiResponse.error(httpStatus.value(), top, List.of(new ApiError(code.name(), detail)));
+    return ResponseEntity.status(httpStatus).body(body);
   }
 
   @ExceptionHandler(RepositoryException.class)
   public ResponseEntity<ApiResponse<Void>> handleRepositoryException(RepositoryException ex) {
-    HttpStatus http =
+    HttpStatus httpStatus =
         switch (ex.getErrorCode()) {
           case USER_NOT_FOUND -> HttpStatus.NOT_FOUND;
           case USER_ATTRIBUTE_MISSING, USER_ATTRIBUTE_INVALID_FORMAT ->
               HttpStatus.INTERNAL_SERVER_ERROR;
         };
 
-    var logger = http.is5xxServerError() ? log.atError() : log.atWarn();
+    var logger = httpStatus.is5xxServerError() ? log.atError() : log.atWarn();
     logger
         .setCause(ex)
-        .addArgument(http.value())
+        .addArgument(httpStatus.value())
         .addArgument(ex.getErrorCode())
         .addArgument(ex.getMessageKey())
         .log("Repository exception handled. statusCode={}, errorCode={}, messageKey={} ");
@@ -143,22 +143,23 @@ public class LicenseControllerAdvice {
     String top = messageResolver.getMessage("repository.operation.failed");
 
     ApiResponse<Void> body =
-        ApiResponse.error(http, top, List.of(new ApiError(ex.getErrorCode().name(), detail)));
-    return ResponseEntity.status(http).body(body);
+        ApiResponse.error(
+            httpStatus.value(), top, List.of(new ApiError(ex.getErrorCode().name(), detail)));
+    return ResponseEntity.status(httpStatus).body(body);
   }
 
   @ExceptionHandler(UserOperationException.class)
   public ResponseEntity<ApiResponse<Void>> handleUserOperationException(UserOperationException ex) {
-    HttpStatus http =
+    HttpStatus httpStatus =
         switch (ex.getErrorCode()) {
           case ALREADY_PROCESSING -> HttpStatus.CONFLICT;
           case MAX_RETRY_ATTEMPTS_EXCEEDED -> HttpStatus.TOO_MANY_REQUESTS;
         };
 
-    var logger = http.is5xxServerError() ? log.atError() : log.atWarn();
+    var logger = httpStatus.is5xxServerError() ? log.atError() : log.atWarn();
     logger
         .setCause(ex)
-        .addArgument(http.value())
+        .addArgument(httpStatus.value())
         .addArgument(ex.getErrorCode())
         .addArgument(ex.getMessageKey())
         .log("User operation exception handled. statusCode={}, errorCode={}, messageKey={} ");
@@ -167,8 +168,9 @@ public class LicenseControllerAdvice {
     String top = messageResolver.getMessage("user.operation.failed");
 
     ApiResponse<Void> body =
-        ApiResponse.error(http, top, List.of(new ApiError(ex.getErrorCode().name(), detail)));
-    return ResponseEntity.status(http).body(body);
+        ApiResponse.error(
+            httpStatus.value(), top, List.of(new ApiError(ex.getErrorCode().name(), detail)));
+    return ResponseEntity.status(httpStatus).body(body);
   }
 
   @ExceptionHandler(Exception.class)
@@ -179,7 +181,7 @@ public class LicenseControllerAdvice {
     List<ApiError> errors =
         List.of(new ApiError(ServiceErrorCode.INTERNAL_SERVER_ERROR.name(), msg));
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, msg, errors));
+        .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), msg, errors));
   }
 
   private String resolveStrict(String keyOrText, Object... args) {

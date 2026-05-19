@@ -6,12 +6,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.5</version>
+        <version>3.5.14</version>
         <relativePath/>
     </parent>
     <groupId>io.github.bsayli</groupId>
     <artifactId>licensing-service</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
   
     <name>licensing-service</name>
     <description>Licensing Service App</description>
@@ -19,9 +19,11 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
+        <openapi-generics-server-starter.version>1.0.2</openapi-generics-server-starter.version>
+        <springdoc-openapi-starter.version>2.8.17</springdoc-openapi-starter.version>
+        <licensing-api-contract.version>1.0.5</licensing-api-contract.version>
         <jjwt.version>0.12.7</jjwt.version>
-        <bcprov-jdk18on.version>1.81</bcprov-jdk18on.version>
-        <springdoc-openapi-starter.version>2.8.13</springdoc-openapi-starter.version>
+        <bcprov-jdk18on.version>1.84</bcprov-jdk18on.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <commons-pool2.version>2.12.1</commons-pool2.version>
         <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
@@ -30,6 +32,19 @@
         <jedis.version>6.0.0</jedis.version>
     </properties>
     <dependencies>
+
+        <dependency>
+            <groupId>io.github.blueprint-platform</groupId>
+            <artifactId>openapi-generics-server-starter</artifactId>
+            <version>${openapi-generics-server-starter.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.bsayli</groupId>
+            <artifactId>licensing-api-contract</artifactId>
+            <version>${licensing-api-contract.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>

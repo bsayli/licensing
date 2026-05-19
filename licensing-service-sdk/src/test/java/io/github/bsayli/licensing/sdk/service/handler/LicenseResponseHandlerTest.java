@@ -3,8 +3,8 @@ package io.github.bsayli.licensing.sdk.service.handler;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import io.github.bsayli.licensing.client.common.contract.ApiClientResponse;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import io.github.bsayli.licensing.sdk.common.exception.LicensingSdkRemoteServiceException;
 import io.github.bsayli.licensing.sdk.common.i18n.LocalizedMessageResolver;
 import java.util.List;
@@ -29,7 +29,7 @@ class LicenseResponseHandlerTest {
   @DisplayName("extractTokenOrThrow -> OK + token")
   void extractTokenOrThrow_ok_withToken() {
     @SuppressWarnings("unchecked")
-    ApiClientResponse<LicenseAccessResponse> resp = mock(ApiClientResponse.class);
+    ApiResponse<LicenseAccessResponse> resp = mock(ApiResponse.class);
     when(resp.getStatus()).thenReturn(HttpStatus.OK.value());
     LicenseAccessResponse data = mock(LicenseAccessResponse.class);
     when(resp.getData()).thenReturn(data);
@@ -47,7 +47,7 @@ class LicenseResponseHandlerTest {
     when(messages.getMessage("sdk.remote.empty.token.detail")).thenReturn("detail");
 
     @SuppressWarnings("unchecked")
-    ApiClientResponse<LicenseAccessResponse> resp = mock(ApiClientResponse.class);
+    ApiResponse<LicenseAccessResponse> resp = mock(ApiResponse.class);
     when(resp.getStatus()).thenReturn(HttpStatus.OK.value());
     LicenseAccessResponse data = mock(LicenseAccessResponse.class);
     when(resp.getData()).thenReturn(data);
@@ -67,7 +67,7 @@ class LicenseResponseHandlerTest {
   @DisplayName("extractTokenIfPresentOrThrow -> OK + no data -> null")
   void extractTokenIfPresentOrThrow_ok_noData_returnsNull() {
     @SuppressWarnings("unchecked")
-    ApiClientResponse<LicenseAccessResponse> resp = mock(ApiClientResponse.class);
+    ApiResponse<LicenseAccessResponse> resp = mock(ApiResponse.class);
     when(resp.getStatus()).thenReturn(HttpStatus.OK.value());
     when(resp.getData()).thenReturn(null);
 
@@ -83,7 +83,7 @@ class LicenseResponseHandlerTest {
     when(messages.getMessage("sdk.remote.no.payload")).thenReturn("no-payload");
 
     @SuppressWarnings("unchecked")
-    ApiClientResponse<LicenseAccessResponse> resp = mock(ApiClientResponse.class);
+    ApiResponse<LicenseAccessResponse> resp = mock(ApiResponse.class);
     when(resp.getStatus()).thenReturn(HttpStatus.BAD_REQUEST.value());
     when(resp.getMessage()).thenReturn(null);
     when(resp.getErrors()).thenReturn(null);

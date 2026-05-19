@@ -1,13 +1,14 @@
 package io.github.bsayli.licensing.sdk.service.client.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.*;
 
 import io.github.bsayli.licensing.client.adapter.LicensingServiceClientAdapter;
-import io.github.bsayli.licensing.client.common.contract.ApiClientResponse;
 import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -37,10 +38,10 @@ class LicenseServiceClientImplTest {
             .checksum("chk")
             .licenseKey("LK_xxx");
     @SuppressWarnings("unchecked")
-    ApiClientResponse<LicenseAccessResponse> expected = mock(ApiClientResponse.class);
+    ApiResponse<LicenseAccessResponse> expected = mock(ApiResponse.class);
     when(adapter.issueAccess(any(IssueAccessRequest.class))).thenReturn(expected);
 
-    ApiClientResponse<LicenseAccessResponse> actual = client.issueAccess(req);
+    ApiResponse<LicenseAccessResponse> actual = client.issueAccess(req);
 
     assertSame(expected, actual);
     ArgumentCaptor<IssueAccessRequest> captor = ArgumentCaptor.forClass(IssueAccessRequest.class);
@@ -49,11 +50,11 @@ class LicenseServiceClientImplTest {
     verify(adapter, times(1)).issueAccess(any(IssueAccessRequest.class));
     verifyNoMoreInteractions(adapter);
 
-    org.junit.jupiter.api.Assertions.assertEquals("crm", passed.getServiceId());
-    org.junit.jupiter.api.Assertions.assertEquals("1.2.3", passed.getServiceVersion());
-    org.junit.jupiter.api.Assertions.assertEquals("inst-1", passed.getInstanceId());
-    org.junit.jupiter.api.Assertions.assertEquals("chk", passed.getChecksum());
-    org.junit.jupiter.api.Assertions.assertEquals("LK_xxx", passed.getLicenseKey());
+    assertEquals("crm", passed.getServiceId());
+    assertEquals("1.2.3", passed.getServiceVersion());
+    assertEquals("inst-1", passed.getInstanceId());
+    assertEquals("chk", passed.getChecksum());
+    assertEquals("LK_xxx", passed.getLicenseKey());
   }
 
   @Test
@@ -67,11 +68,11 @@ class LicenseServiceClientImplTest {
             .instanceId("inst-1")
             .checksum("chk");
     @SuppressWarnings("unchecked")
-    ApiClientResponse<LicenseAccessResponse> expected = mock(ApiClientResponse.class);
+    ApiResponse<LicenseAccessResponse> expected = mock(ApiResponse.class);
     when(adapter.validateAccess(anyString(), any(ValidateAccessRequest.class)))
         .thenReturn(expected);
 
-    ApiClientResponse<LicenseAccessResponse> actual = client.validateAccess(token, req);
+    ApiResponse<LicenseAccessResponse> actual = client.validateAccess(token, req);
 
     assertSame(expected, actual);
     ArgumentCaptor<String> tokenCap = ArgumentCaptor.forClass(String.class);
@@ -80,11 +81,11 @@ class LicenseServiceClientImplTest {
     verify(adapter).validateAccess(tokenCap.capture(), reqCap.capture());
     verify(adapter, times(1)).validateAccess(anyString(), any(ValidateAccessRequest.class));
     verifyNoMoreInteractions(adapter);
-    org.junit.jupiter.api.Assertions.assertEquals("jwt-token", tokenCap.getValue());
+    assertEquals("jwt-token", tokenCap.getValue());
     ValidateAccessRequest passed = reqCap.getValue();
-    org.junit.jupiter.api.Assertions.assertEquals("crm", passed.getServiceId());
-    org.junit.jupiter.api.Assertions.assertEquals("1.2.3", passed.getServiceVersion());
-    org.junit.jupiter.api.Assertions.assertEquals("inst-1", passed.getInstanceId());
-    org.junit.jupiter.api.Assertions.assertEquals("chk", passed.getChecksum());
+    assertEquals("crm", passed.getServiceId());
+    assertEquals("1.2.3", passed.getServiceVersion());
+    assertEquals("inst-1", passed.getInstanceId());
+    assertEquals("chk", passed.getChecksum());
   }
 }

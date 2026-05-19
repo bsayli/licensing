@@ -1,12 +1,12 @@
 package io.github.bsayli.licensing.client.adapter.impl;
 
 import io.github.bsayli.licensing.client.adapter.LicensingServiceClientAdapter;
-import io.github.bsayli.licensing.client.common.contract.ApiClientResponse;
 import io.github.bsayli.licensing.client.common.core.ApiClientExecutor;
 import io.github.bsayli.licensing.client.generated.api.LicenseControllerApi;
 import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,13 +21,13 @@ public class LicensingServiceClientAdapterImpl implements LicensingServiceClient
   }
 
   @Override
-  public ApiClientResponse<LicenseAccessResponse> issueAccess(IssueAccessRequest request) {
+  public ApiResponse<LicenseAccessResponse> issueAccess(IssueAccessRequest request) {
     return executor.handle(
         "issueAccess", LicenseAccessResponse.class, () -> api.createAccess(request));
   }
 
   @Override
-  public ApiClientResponse<LicenseAccessResponse> validateAccess(
+  public ApiResponse<LicenseAccessResponse> validateAccess(
       String licenseToken, ValidateAccessRequest request) {
     return executor.handle(
         "validateAccess",
