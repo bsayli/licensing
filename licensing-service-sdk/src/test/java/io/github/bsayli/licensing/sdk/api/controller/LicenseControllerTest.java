@@ -3,9 +3,9 @@ package io.github.bsayli.licensing.sdk.api.controller;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import io.github.bsayli.licensing.sdk.api.dto.LicenseAccessRequest;
 import io.github.bsayli.licensing.sdk.api.dto.LicenseToken;
-import io.github.bsayli.licensing.sdk.common.api.ApiResponse;
 import io.github.bsayli.licensing.sdk.common.i18n.LocalizedMessageResolver;
 import io.github.bsayli.licensing.sdk.service.LicenseOrchestrationService;
 import org.junit.jupiter.api.DisplayName;
@@ -47,11 +47,11 @@ class LicenseControllerTest {
 
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertNotNull(resp.getBody());
-    assertEquals(200, resp.getBody().status());
-    assertEquals("License is valid", resp.getBody().message());
-    assertNotNull(resp.getBody().data());
-    assertEquals("jwt-abc.def.ghi", resp.getBody().data().licenseToken());
-    assertTrue(resp.getBody().errors().isEmpty());
+    assertEquals(200, resp.getBody().getStatus());
+    assertEquals("License is valid", resp.getBody().getMessage());
+    assertNotNull(resp.getBody().getData());
+    assertEquals("jwt-abc.def.ghi", resp.getBody().getData().licenseToken());
+    assertTrue(resp.getBody().getErrors().isEmpty());
 
     verify(licenseService).getLicenseToken(req);
     verify(messageResolver).getMessage("license.validation.success");

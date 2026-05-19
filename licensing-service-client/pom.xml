@@ -4,10 +4,17 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>io.github.blueprint-platform</groupId>
+        <artifactId>openapi-generics-java-codegen-parent</artifactId>
+        <version>1.0.2</version>
+        <relativePath/>
+    </parent>
+
     <groupId>io.github.bsayli</groupId>
     <artifactId>licensing-service-client</artifactId>
-    <version>1.0.4</version>
-  
+    <version>1.0.5</version>
+
     <name>licensing-service-client</name>
     <description>Generated client for licensing-service using generics-aware OpenAPI templates</description>
     <packaging>jar</packaging>
@@ -16,20 +23,31 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
-        <openapi.generator.version>7.15.0</openapi.generator.version>
-        <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
-        <build.helper.plugin.version>3.6.0</build.helper.plugin.version>
-        <spring-boot.version>3.5.5</spring-boot.version>
-        <jakarta.validation.version>3.0.2</jakarta.validation.version>
-        <jakarta.annotation-api.version>2.1.1</jakarta.annotation-api.version>
-        <junit-jupiter.version>5.13.4</junit-jupiter.version>
-        <mockwebserver.version>5.1.0</mockwebserver.version>
-        <httpclient5.version>5.5</httpclient5.version>
-        <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
-        <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
+        <spring-boot.version>3.5.14</spring-boot.version>
+        <openapi.generator.version>7.22.0</openapi.generator.version>
+        <licensing-api-contract.version>1.0.5</licensing-api-contract.version>
+        <jakarta.validation.version>3.1.1</jakarta.validation.version>
+        <jakarta.annotation-api.version>3.0.0</jakarta.annotation-api.version>
+        <mockwebserver.version>5.3.2</mockwebserver.version>
+        <httpclient5.version>5.5.2</httpclient5.version>
+        <slf4j-api.version>2.0.17</slf4j-api.version>
+        <logback.version>1.5.32</logback.version>
+
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
+        <maven-failsafe-plugin.version>3.5.5</maven-failsafe-plugin.version>
+        <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
+        <argLine/>
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>io.github.bsayli</groupId>
+            <artifactId>licensing-api-contract</artifactId>
+            <version>${licensing-api-contract.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -65,6 +83,19 @@
         </dependency>
 
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j-api.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <version>${spring-boot.version}</version>
@@ -84,67 +115,64 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <excludes>
-                    <exclude>**/*.yaml</exclude>
                     <exclude>openapi-templates/**</exclude>
                 </excludes>
             </resource>
         </resources>
 
         <plugins>
+
             <plugin>
-                <groupId>org.openapitools</groupId>
-                <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>${openapi.generator.version}</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>generate-client</id>
+                        <id>resolve-mockito-agent</id>
                         <goals>
-                            <goal>generate</goal>
+                            <goal>properties</goal>
                         </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/licensing-service-api-docs.yaml</inputSpec>
-                            <generatorName>java</generatorName>
-                            <library>restclient</library>
-                            <output>${project.build.directory}/generated-sources/openapi</output>
-                            <apiPackage>io.github.bsayli.licensing.client.generated.api</apiPackage>
-                            <modelPackage>io.github.bsayli.licensing.client.generated.dto</modelPackage>
-                            <invokerPackage>io.github.bsayli.licensing.client.generated.invoker</invokerPackage>
-                            <templateDirectory>${project.basedir}/src/main/resources/openapi-templates
-                            </templateDirectory>
-                            <generateSupportingFiles>true</generateSupportingFiles>
-                            <generateApiDocumentation>false</generateApiDocumentation>
-                            <generateApiTests>false</generateApiTests>
-                            <generateModelDocumentation>false</generateModelDocumentation>
-                            <generateModelTests>false</generateModelTests>
-                            <configOptions>
-                                <useSpringBoot3>true</useSpringBoot3>
-                                <useJakartaEe>true</useJakartaEe>
-                                <serializationLibrary>jackson</serializationLibrary>
-                                <dateLibrary>java8</dateLibrary>
-                                <useBeanValidation>true</useBeanValidation>
-                                <openApiNullable>false</openApiNullable>
-                                <sourceFolder>src/gen/java</sourceFolder>
-                            </configOptions>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
 
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>${build.helper.plugin.version}</version>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>add-generated-sources</id>
+                        <id>generate-client</id>
                         <phase>generate-sources</phase>
                         <goals>
-                            <goal>add-source</goal>
+                            <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <sources>
-                                <source>${project.build.directory}/generated-sources/openapi/src/gen/java</source>
-                            </sources>
+                            <generatorName>java-generics-contract</generatorName>
+                            <inputSpec>${project.basedir}/src/main/resources/licensing-service-api-docs.yaml</inputSpec>
+
+                            <library>restclient</library>
+
+                            <apiPackage>io.github.bsayli.licensing.client.generated.api</apiPackage>
+                            <modelPackage>io.github.bsayli.licensing.client.generated.dto</modelPackage>
+                            <invokerPackage>io.github.bsayli.licensing.client.generated.invoker</invokerPackage>
+                            <configOptions>
+                                <useSpringBoot3>true</useSpringBoot3>
+                                <serializationLibrary>jackson</serializationLibrary>
+                                <openApiNullable>false</openApiNullable>
+                            </configOptions>
+
+                            <additionalProperties>
+                                <additionalProperty>
+                                    openapi-generics.envelope=io.github.bsayli.licensing.contract.api.ApiResponse
+                                </additionalProperty>
+                            </additionalProperties>
+
+                            <cleanupOutput>true</cleanupOutput>
+                            <skipValidateSpec>false</skipValidateSpec>
+
+                            <generateApiDocumentation>false</generateApiDocumentation>
+                            <generateApiTests>false</generateApiTests>
+                            <generateModelDocumentation>false</generateModelDocumentation>
+                            <generateModelTests>false</generateModelTests>
                         </configuration>
                     </execution>
                 </executions>
@@ -153,10 +181,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.plugin.version}</version>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <release>${java.version}</release>
-                    <encoding>UTF-8</encoding>
+                    <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
 
@@ -165,8 +193,32 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
-                    <useModulePath>false</useModulePath>
+                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+                    <includes>
+                        <include>**/*Test.java</include>
+                    </includes>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven-failsafe-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>default</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+                            <includes>
+                                <include>**/*IT.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
@@ -181,15 +233,27 @@
                         </goals>
                     </execution>
                     <execution>
+                        <id>prepare-agent-integration</id>
+                        <goals>
+                            <goal>prepare-agent-integration</goal>
+                        </goals>
+                    </execution>
+                    <execution>
                         <id>report</id>
                         <phase>verify</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>report-integration</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report-integration</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
-
         </plugins>
     </build>
 </project>

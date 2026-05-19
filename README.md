@@ -1,16 +1,21 @@
 # Welcome to the Licensing Project!
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
-[![Release](https://img.shields.io/github/v/release/bsayli/licensing?logo=github\&label=release)](https://github.com/bsayli/licensing/releases/latest)
+[![Release](https://img.shields.io/github/v/release/bsayli/licensing?logo=github&label=release)](https://github.com/bsayli/licensing/releases/latest)
 [![codecov](https://codecov.io/gh/bsayli/licensing/branch/main/graph/badge.svg)](https://codecov.io/gh/bsayli/licensing)
+
 [![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
+[![OpenAPI Generics](https://img.shields.io/badge/OpenAPI%20Generics-1.0.2-blue)](https://github.com/blueprint-platform/openapi-generics)
+[![OpenAPI Generator](https://img.shields.io/badge/OpenAPI%20Generator-7.22.0-blue?logo=openapiinitiative)](https://openapi-generator.tech/)
+
 [![Keycloak](https://img.shields.io/badge/Keycloak-26.x-purple?logo=keycloak)](https://www.keycloak.org/)
 [![Redis](https://img.shields.io/badge/Redis-8.x-red?logo=redis)](https://redis.io/)
-[![Maven](https://img.shields.io/badge/Maven-3.9-blue?logo=apachemaven)](https://maven.apache.org/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://www.docker.com/)
 [![Caffeine](https://img.shields.io/badge/Caffeine-Cache-orange)](https://github.com/ben-manes/caffeine)
 [![JWT](https://img.shields.io/badge/JWT-EdDSA-lightgrey?logo=jsonwebtokens)](https://jwt.io/)
+
+[![Maven](https://img.shields.io/badge/Maven-3.9-blue?logo=apachemaven)](https://maven.apache.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 <p align="center">
@@ -66,6 +71,7 @@ This project provides a **complete licensing framework** for applications, combi
 
 ## Subprojects
 
+* **licensing-api-contract**: Shared API response contract (`ApiResponse<T>`, `ApiError`) reused by service, client, SDK, and CLI modules.
 * **license-generator**: Java project for license key generation, encryption, and cryptographic tooling.
 * **licensing-service**: Spring Boot application that issues and validates license tokens.
 * **licensing-service-sdk**: Spring Boot application acting as a client SDK (with caching & detached signature) for integrating licensing capabilities into external apps.
@@ -136,7 +142,7 @@ licensing-service-sdk-cli | INFO Message: License is valid
 cd licensing/licensing-service-sdk-cli
 mvn clean package
 cd target
-java -jar licensing-service-sdk-cli-1.0.1.jar -s crm -v 1.5.0 -i "crm~macbook~00:2A:8D:BE:F1:56" -k "BSAYLI.<opaqueB64Url>"
+java -jar licensing-service-sdk-cli-1.0.5.jar -s crm -v 1.5.0 -i "crm~macbook~00:2A:8D:BE:F1:56" -k "BSAYLI.<opaqueB64Url>"
 ```
 
 ---
@@ -183,9 +189,10 @@ If you found this project useful, please consider giving it a star ⭐ on GitHub
 
 ## Related Modules (Quick View)
 
-| Module                        | Purpose                                    | Documentation                                              |
-| ----------------------------- | ------------------------------------------ | ---------------------------------------------------------- |
-| **licensing-service**         | REST API for issuing and validating tokens | [README](licensing-service/README.md)                      |
-| **licensing-service-sdk**     | Client SDK for integration                 | [README](licensing-service-sdk/README.md)                  |
-| **licensing-service-sdk-cli** | CLI demo client                            | [README](licensing-service-sdk-cli/README.md)              |
-| **license-generator**         | Key & signature tooling                    | [README](license-generator/README.md)                      |
+| Module                        | Purpose                                                     | Documentation                                 |
+|-------------------------------|-------------------------------------------------------------|-----------------------------------------------|
+| **licensing-service**         | REST API for issuing and validating tokens                  | [README](licensing-service/README.md)         |
+| **licensing-service-sdk**     | Client SDK for integration                                  | [README](licensing-service-sdk/README.md)     |
+| **licensing-service-sdk-cli** | CLI demo client                                             | [README](licensing-service-sdk-cli/README.md) |
+| **licensing-api-contract**    | Shared API response contract (`ApiResponse<T>`, `ApiError`) | [README](licensing-api-contract/README.md)    |
+| **license-generator**         | Key and signature tooling                                   | [README](license-generator/README.md)         |

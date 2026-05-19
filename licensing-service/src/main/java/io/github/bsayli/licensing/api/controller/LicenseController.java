@@ -4,8 +4,8 @@ import io.github.bsayli.licensing.api.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.api.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.api.dto.ValidateAccessRequest;
 import io.github.bsayli.licensing.api.validation.annotations.ValidLicenseToken;
-import io.github.bsayli.licensing.common.api.ApiResponse;
 import io.github.bsayli.licensing.common.i18n.LocalizedMessageResolver;
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import io.github.bsayli.licensing.service.LicenseOrchestrationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -32,7 +32,8 @@ public class LicenseController {
       @Valid @RequestBody IssueAccessRequest request) {
     var result = service.issueAccess(request);
     String msg = messageResolver.getMessage("license.validation.success");
-    return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.of(HttpStatus.OK, msg, result));
+    return ResponseEntity.status(HttpStatus.OK)
+        .body(ApiResponse.of(HttpStatus.OK.value(), msg, result));
   }
 
   @PostMapping("/access/validate")
@@ -42,6 +43,7 @@ public class LicenseController {
 
     var result = service.validateAccess(request, licenseToken);
     String msg = messageResolver.getMessage("license.validation.success");
-    return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.of(HttpStatus.OK, msg, result));
+    return ResponseEntity.status(HttpStatus.OK)
+        .body(ApiResponse.of(HttpStatus.OK.value(), msg, result));
   }
 }

@@ -5,7 +5,7 @@ networks:
 services:
   licensing-service-sdk-cli:
     build: ./../../licensing-service-sdk-cli
-    image: licensing-service-sdk-cli:1.0.1
+    image: licensing-service-sdk-cli:1.0.5
     container_name: licensing-service-sdk-cli
     networks:
       - license_network
@@ -14,5 +14,5 @@ services:
       INSTANCE_ID: "licensing-service~demo~00:11:22:33:44:55"
       SERVICE_ID: "crm"
       SERVICE_VERSION: "1.5.0"
-      LICENSE_KEY: "BSAYLI~X66e_qYlfPxWiIaN2ahPb9tQFyqjMuTih06LCytzjZ0~0aT6lLTZGkO1zHHPHFDzwF7zPiZLRLWSl06HSVQO5z+NqtzzcFCUkkVFuqHTYKcAcI9037sQQQSfBQakQDUoCA=="
+      LICENSE_KEY: "BSAYLI.AQA3-gCQ66DQsfC0LwnAO8DTjKgad7DhPaOtCf7WG2bFUoK9pmScIhhCf2S-D0j8g4jC7nlFrLDpuM0ezEoDQc79SizxxEIUGN9YUhTNBW7iRQ"
     restart: "no"

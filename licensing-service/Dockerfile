@@ -1,9 +1,18 @@
 FROM maven:3.9.11-eclipse-temurin-21-noble AS builder
-WORKDIR /app
-COPY pom.xml .
+WORKDIR /build
+
+# Install shared contract module into the local Maven repository
+COPY licensing-api-contract/ licensing-api-contract/
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -q -DskipTests -f licensing-api-contract/pom.xml install
+
+# Build licensing-service
+WORKDIR /build/licensing-service
+COPY licensing-service/pom.xml .
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -q -DskipTests dependency:go-offline
-COPY src ./src
+
+COPY licensing-service/src ./src
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -q -T 2C -DskipTests --no-transfer-progress clean package && \
     java -Djarmode=layertools -jar target/*.jar extract
@@ -23,14 +32,14 @@ RUN apt-get update && \
 
 LABEL org.opencontainers.image.title="licensing-service" \
       org.opencontainers.image.description="Licensing Service (Spring Boot, EdDSA, Caffeine, Keycloak)" \
-      org.opencontainers.image.version="1.0.1" \
+      org.opencontainers.image.version="1.0.5" \
       org.opencontainers.image.source="https://github.com/bsayli/licensing" \
       org.opencontainers.image.licenses="MIT"
 
-COPY --from=builder --chown=appuser:appuser /app/dependencies/ ./
-COPY --from=builder --chown=appuser:appuser /app/snapshot-dependencies/ ./
-COPY --from=builder --chown=appuser:appuser /app/spring-boot-loader/ ./
-COPY --from=builder --chown=appuser:appuser /app/application/ ./
+COPY --from=builder --chown=appuser:appuser /build/licensing-service/dependencies/ ./
+COPY --from=builder --chown=appuser:appuser /build/licensing-service/snapshot-dependencies/ ./
+COPY --from=builder --chown=appuser:appuser /build/licensing-service/spring-boot-loader/ ./
+COPY --from=builder --chown=appuser:appuser /build/licensing-service/application/ ./
 
 USER appuser
 

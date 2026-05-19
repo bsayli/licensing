@@ -1,7 +1,7 @@
 package io.github.bsayli.licensing.sdk.api.exception;
 
-import io.github.bsayli.licensing.sdk.common.api.ApiError;
-import io.github.bsayli.licensing.sdk.common.api.ApiResponse;
+import io.github.bsayli.licensing.contract.api.ApiError;
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import io.github.bsayli.licensing.sdk.common.exception.LicensingSdkHttpTransportException;
 import io.github.bsayli.licensing.sdk.common.exception.LicensingSdkRemoteServiceException;
 import io.github.bsayli.licensing.sdk.common.i18n.LocalizedMessageResolver;
@@ -41,7 +41,7 @@ public class LicenseControllerAdvice {
     }
     String topMsg = messages.getMessage("request.validation.failed");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(ApiResponse.error(HttpStatus.BAD_REQUEST, topMsg, errors));
+        .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), topMsg, errors));
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
@@ -56,13 +56,13 @@ public class LicenseControllerAdvice {
     }
     String topMsg = messages.getMessage("request.validation.failed");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(ApiResponse.error(HttpStatus.BAD_REQUEST, topMsg, errors));
+        .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), topMsg, errors));
   }
 
   @ExceptionHandler(LicensingSdkRemoteServiceException.class)
   public ResponseEntity<ApiResponse<Void>> handleRemoteError(
       LicensingSdkRemoteServiceException ex) {
-    HttpStatus http =
+    HttpStatus httpStatus =
         Objects.requireNonNullElse(ex.getHttpStatus(), HttpStatus.INTERNAL_SERVER_ERROR);
 
     String top =
@@ -83,26 +83,26 @@ public class LicenseControllerAdvice {
       errs = List.of();
     }
 
-    return ResponseEntity.status(http).body(ApiResponse.error(http, top, errs));
+    return ResponseEntity.status(httpStatus).body(ApiResponse.error(httpStatus.value(), top, errs));
   }
 
   @ExceptionHandler(LicensingSdkHttpTransportException.class)
   public ResponseEntity<ApiResponse<Void>> handleTransportError(
       LicensingSdkHttpTransportException ex) {
     log.error("Transport/parse error when calling licensing-service", ex);
-    HttpStatus http = HttpStatus.BAD_GATEWAY;
+    HttpStatus httpStatus = HttpStatus.BAD_GATEWAY;
     String top = messages.getMessage("license.validation.error");
     List<ApiError> errs = List.of(new ApiError("TRANSPORT_ERROR", top));
-    return ResponseEntity.status(http).body(ApiResponse.error(http, top, errs));
+    return ResponseEntity.status(httpStatus).body(ApiResponse.error(httpStatus.value(), top, errs));
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiResponse<Void>> handleGeneric(Exception ex) {
     log.error("Unexpected error in SDK API layer", ex);
-    HttpStatus http = HttpStatus.INTERNAL_SERVER_ERROR;
+    HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
     String top = messages.getMessage("license.validation.error");
     List<ApiError> errs = List.of(new ApiError("INTERNAL_SERVER_ERROR", top));
-    return ResponseEntity.status(http).body(ApiResponse.error(http, top, errs));
+    return ResponseEntity.status(httpStatus).body(ApiResponse.error(httpStatus.value(), top, errs));
   }
 
   private String resolveStrict(String keyOrText, Object... args) {

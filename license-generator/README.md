@@ -3,8 +3,8 @@
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
 [![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
 [![JJWT](https://img.shields.io/badge/JJWT-0.12.x-orange)](https://github.com/jwtk/jjwt)
-[![BouncyCastle](https://img.shields.io/badge/BouncyCastle-1.81-blue)](https://www.bouncycastle.org/)
-[![Jackson](https://img.shields.io/badge/Jackson-2.19.x-lightgrey)](https://github.com/FasterXML/jackson)
+[![BouncyCastle](https://img.shields.io/badge/BouncyCastle-1.84-blue)](https://www.bouncycastle.org/)
+[![Jackson](https://img.shields.io/badge/Jackson-2.21.x-lightgrey)](https://github.com/FasterXML/jackson)
 [![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
 
 Tools and libraries for generating cryptographic keys, constructing license strings, creating **detached Ed25519

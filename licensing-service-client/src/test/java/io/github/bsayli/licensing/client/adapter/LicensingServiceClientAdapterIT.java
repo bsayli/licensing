@@ -5,12 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.bsayli.licensing.client.adapter.config.LicensingServiceApiClientConfig;
 import io.github.bsayli.licensing.client.adapter.impl.LicensingServiceClientAdapterImpl;
-import io.github.bsayli.licensing.client.common.contract.ApiClientResponse;
 import io.github.bsayli.licensing.client.common.core.ApiClientExecutor;
 import io.github.bsayli.licensing.client.common.core.ResponseParser;
 import io.github.bsayli.licensing.client.generated.dto.IssueAccessRequest;
 import io.github.bsayli.licensing.client.generated.dto.LicenseAccessResponse;
 import io.github.bsayli.licensing.client.generated.dto.ValidateAccessRequest;
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -76,7 +76,7 @@ class LicensingServiceClientAdapterIT {
             .licenseKey("BSAYLI~RND~ENC")
             .signature("BASE64SIG");
 
-    ApiClientResponse<LicenseAccessResponse> resp = adapter.issueAccess(req);
+    ApiResponse<LicenseAccessResponse> resp = adapter.issueAccess(req);
 
     assertNotNull(resp);
     assertEquals(200, resp.getStatus());
@@ -120,7 +120,7 @@ class LicensingServiceClientAdapterIT {
             .signature("BASE64SIG");
 
     String jwt = "jwt-123";
-    ApiClientResponse<LicenseAccessResponse> resp = adapter.validateAccess(jwt, req);
+    ApiResponse<LicenseAccessResponse> resp = adapter.validateAccess(jwt, req);
 
     assertNotNull(resp);
     assertEquals(200, resp.getStatus());

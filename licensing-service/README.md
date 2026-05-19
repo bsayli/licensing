@@ -6,6 +6,7 @@
 [![Keycloak](https://img.shields.io/badge/Keycloak-26.x-8A2BE2?logo=keycloak)](https://www.keycloak.org/)
 [![Redis](https://img.shields.io/badge/Redis-8.x-red?logo=redis)](https://redis.io/)
 [![OpenAPI](https://img.shields.io/badge/OpenAPI-3.x-blue?logo=openapiinitiative)](https://www.openapis.org/)
+[![OpenAPI Generics](https://img.shields.io/badge/OpenAPI%20Generics-1.0.2-blue)](https://github.com/blueprint-platform/openapi-generics)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
 
@@ -315,7 +316,7 @@ mvn clean package
 ```bash
 mvn spring-boot:run
 # or
-java -jar target/licensing-service-1.0.1.jar
+java -jar target/licensing-service-1.0.5.jar
 ```
 
 ### With Docker Compose (from repo root)

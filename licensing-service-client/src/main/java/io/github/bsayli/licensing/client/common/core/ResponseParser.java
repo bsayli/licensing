@@ -1,8 +1,8 @@
 package io.github.bsayli.licensing.client.common.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.bsayli.licensing.client.common.contract.ApiClientResponse;
 import io.github.bsayli.licensing.client.common.exception.ApiClientException;
+import io.github.bsayli.licensing.contract.api.ApiResponse;
 import java.util.Optional;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -20,7 +20,7 @@ public class ResponseParser {
     this.objectMapper = objectMapper;
   }
 
-  public <T> ApiClientResponse<T> parseOrThrow(
+  public <T> ApiResponse<T> parseOrThrow(
       String operation, HttpStatusCodeException e, Class<T> targetClass) {
 
     String responseBody = e.getResponseBodyAsString();
@@ -43,7 +43,7 @@ public class ResponseParser {
           responseBody,
           objectMapper
               .getTypeFactory()
-              .constructParametricType(ApiClientResponse.class, targetClass));
+              .constructParametricType(ApiResponse.class, targetClass));
     } catch (Exception ex) {
       throw new ApiClientException(
           "[" + operation + "] Failed to parse JSON error response",

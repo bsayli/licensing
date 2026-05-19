@@ -103,6 +103,28 @@ class SignatureGeneratorImplTest {
   }
 
   @Test
+  @DisplayName("Generate Postman signature for validate access request")
+  void generatePostmanSignatureForValidate() {
+    String privateKey = "MC4CAQAwBQYDK2VwBCIEIMmR+qdAZ/vAWUKt0ZNlL+CCyqaRScTpAq52WtOmyg8E";
+
+    String licenseToken =
+        "eyJhbGciOiJFZERTQSJ9.eyJzdWIiOiJ2X1VfR0l6VnEzdlBxQmtTcjZXWTZWZU1TMjQ0QURwcnlXNlFpYjYyZGcwIiwibGljZW5zZVN0YXR1cyI6IkFDVElWRSIsImxpY2Vuc2VUaWVyIjoiUHJvZmVzc2lvbmFsIiwibWVzc2FnZSI6IllvdXIgbGljZW5zZSBpcyBhY3RpdmUiLCJpYXQiOjE3NzkxOTg3NzEsImV4cCI6MTc3OTIwNDI1Mn0.Hhx10GUBhuDLcrVk7f563BFir5bqcDN4Wt6vV8a37pEQiYm8eQU1K9fGpQKx_1mWCt4xfg28w_WeraVXs7ZaBA";
+
+    SignatureGenerator gen = new SignatureGeneratorImpl(privateKey);
+
+    ValidateAccessRequest request =
+        new ValidateAccessRequest()
+            .serviceId("crm")
+            .serviceVersion("1.5.0")
+            .instanceId("licensing-service~demo~00:11:22:33:44:55")
+            .checksum("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b8a5");
+
+    String signature = gen.generateForValidate(licenseToken, request);
+
+    System.out.println("signature = " + signature);
+  }
+
+  @Test
   @DisplayName("generateForValidate(null, ...) -> NullPointerException")
   void generateForValidate_nullToken() throws Exception {
     KeyPair kp = newEd25519KeyPair();

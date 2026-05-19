@@ -51,8 +51,9 @@ services:
     restart: unless-stopped
 
   licensing-service:
-    build: ./../../licensing-service
-    image: licensing-service:1.0.1
+    build:
+      context: ./../..
+      dockerfile: licensing-service/Dockerfile
     container_name: licensing-service
     networks: [ license_network ]
     depends_on:
@@ -80,7 +81,7 @@ services:
     build:
       context: ./../..
       dockerfile: licensing-service-sdk/Dockerfile
-    image: licensing-service-sdk:1.0.1
+    image: licensing-service-sdk:1.0.5
     container_name: licensing-service-sdk
     networks: [ license_network ]
     depends_on:
