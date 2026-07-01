@@ -55,11 +55,20 @@ git clone https://github.com/bsayli/licensing.git
 
 ### TL;DR – Quickstart
 
+Rebuild Docker images before running the stack so the latest release artifacts are used instead of cached images.
+
 ```bash
-cd licensing/docker-compose/server && docker-compose up -d
+cd ./docker-compose/server
+docker-compose down
+docker-compose up -d --build
+
 # wait ~45s on first run
-cd ../client && docker-compose up
+
+cd ../client
+docker-compose down
+docker-compose up --build
 ```
+
 
 ---
 
