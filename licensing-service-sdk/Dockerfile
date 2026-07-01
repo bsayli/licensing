@@ -34,7 +34,7 @@ RUN apt-get update && \
 
 LABEL org.opencontainers.image.title="licensing-service-sdk" \
       org.opencontainers.image.description="Licensing Service SDK (Spring Boot)" \
-      org.opencontainers.image.version="1.0.5" \
+      org.opencontainers.image.version="1.0.6" \
       org.opencontainers.image.source="https://github.com/bsayli/licensing" \
       org.opencontainers.image.licenses="MIT"
 

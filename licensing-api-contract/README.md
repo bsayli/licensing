@@ -61,7 +61,7 @@ This keeps the envelope compatible with generated client wrappers while preservi
 <dependency>
   <groupId>io.github.bsayli</groupId>
   <artifactId>licensing-api-contract</artifactId>
-  <version>1.0.5</version>
+  <version>1.0.6</version>
 </dependency>
 ```
 

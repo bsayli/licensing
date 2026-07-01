@@ -81,7 +81,7 @@ services:
     build:
       context: ./../..
       dockerfile: licensing-service-sdk/Dockerfile
-    image: licensing-service-sdk:1.0.5
+    image: licensing-service-sdk:1.0.6
     container_name: licensing-service-sdk
     networks: [ license_network ]
     depends_on:

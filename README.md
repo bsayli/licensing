@@ -1,13 +1,13 @@
 # Welcome to the Licensing Project!
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
-[![Release](https://img.shields.io/badge/Release-v1.0.5-blue?logo=github)](https://github.com/bsayli/licensing/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v1.0.6-blue?logo=github)](https://github.com/bsayli/licensing/releases/latest)
 [![codecov](https://codecov.io/gh/bsayli/licensing/branch/main/graph/badge.svg)](https://codecov.io/gh/bsayli/licensing)
 
 [![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
-[![OpenAPI Generics](https://img.shields.io/badge/OpenAPI%20Generics-1.0.2-blue)](https://github.com/blueprint-platform/openapi-generics)
-[![OpenAPI Generator](https://img.shields.io/badge/OpenAPI%20Generator-7.22.0-blue?logo=openapiinitiative)](https://openapi-generator.tech/)
+[![OpenAPI Generics](https://img.shields.io/badge/OpenAPI%20Generics-1.2.0-blue)](https://github.com/blueprint-platform/openapi-generics)
+[![OpenAPI Generator](https://img.shields.io/badge/OpenAPI%20Generator-7.23.0-blue?logo=openapiinitiative)](https://openapi-generator.tech/)
 
 [![Keycloak](https://img.shields.io/badge/Keycloak-26.x-purple?logo=keycloak)](https://www.keycloak.org/)
 [![Redis](https://img.shields.io/badge/Redis-8.x-red?logo=redis)](https://redis.io/)
@@ -142,7 +142,7 @@ licensing-service-sdk-cli | INFO Message: License is valid
 cd licensing/licensing-service-sdk-cli
 mvn clean package
 cd target
-java -jar licensing-service-sdk-cli-1.0.5.jar -s crm -v 1.5.0 -i "crm~macbook~00:2A:8D:BE:F1:56" -k "BSAYLI.<opaqueB64Url>"
+java -jar licensing-service-sdk-cli-1.0.6.jar -s crm -v 1.5.0 -i "crm~macbook~00:2A:8D:BE:F1:56" -k "BSAYLI.<opaqueB64Url>"
 ```
 
 ---

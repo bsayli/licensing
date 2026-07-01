@@ -6,12 +6,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.14</version>
+        <version>3.5.15</version>
         <relativePath/>
     </parent>
     <groupId>io.github.bsayli</groupId>
     <artifactId>licensing-service-sdk</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
   
     <name>licensing-service-sdk</name>
     <description>Licensing Service SDK App</description>
@@ -22,7 +22,7 @@
         <java.version>21</java.version>
         <springdoc-openapi-starter.version>2.8.17</springdoc-openapi-starter.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
-        <licensing-service-client.version>1.0.5</licensing-service-client.version>
+        <licensing-service-client.version>1.0.6</licensing-service-client.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
     </properties>
 

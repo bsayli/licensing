@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Licensing Service API
   description: Licensing Service type-safe generic API responses with OpenAPI
-  version: 1.0.5
+  version: 1.0.6
 servers:
   - url: http://localhost:8081/licensing-service
     description: Licensing Service URL

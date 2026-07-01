@@ -20,7 +20,7 @@ RUN apt-get update && \
 
 LABEL org.opencontainers.image.title="licensing-service-sdk-cli" \
       org.opencontainers.image.description="CLI for Licensing Service SDK" \
-      org.opencontainers.image.version="1.0.5" \
+      org.opencontainers.image.version="1.0.6" \
       org.opencontainers.image.source="https://github.com/bsayli/licensing" \
       org.opencontainers.image.licenses="MIT"
 

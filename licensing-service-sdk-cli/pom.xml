@@ -13,20 +13,20 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
-        <picocli.version>4.7.6</picocli.version>
+        <picocli.version>4.7.7</picocli.version>
         <httpclient5-fluent.version>5.5</httpclient5-fluent.version>
-        <jackson-databind.version>2.21.3</jackson-databind.version>
-        <slf4j-api.version>2.0.17</slf4j-api.version>
-        <logback-classic.version>1.5.32</logback-classic.version>
+        <jackson-databind.version>2.22.0</jackson-databind.version>
+        <slf4j-api.version>2.0.18</slf4j-api.version>
+        <logback-classic.version>1.5.37</logback-classic.version>
         <junit.jupiter.version>5.13.4</junit.jupiter.version>
-        <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
-        <spring-boot-maven-plugin.version>3.5.14</spring-boot-maven-plugin.version>
+        <spring-boot-maven-plugin.version>3.5.15</spring-boot-maven-plugin.version>
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <mockito-core.version>5.19.0</mockito-core.version>
         <mockito-inline.version>5.2.0</mockito-inline.version>
         <mockito-junit-jupiter.version>5.19.0</mockito-junit-jupiter.version>
-        <licensing-api-contract.version>1.0.5</licensing-api-contract.version>
+        <licensing-api-contract.version>1.0.6</licensing-api-contract.version>
     </properties>
 
     <dependencies>

@@ -7,13 +7,13 @@
     <parent>
         <groupId>io.github.blueprint-platform</groupId>
         <artifactId>openapi-generics-java-codegen-parent</artifactId>
-        <version>1.0.2</version>
+        <version>1.2.0</version>
         <relativePath/>
     </parent>
 
     <groupId>io.github.bsayli</groupId>
     <artifactId>licensing-service-client</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
 
     <name>licensing-service-client</name>
     <description>Generated client for licensing-service using generics-aware OpenAPI templates</description>
@@ -23,19 +23,19 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
-        <spring-boot.version>3.5.14</spring-boot.version>
-        <openapi.generator.version>7.22.0</openapi.generator.version>
-        <licensing-api-contract.version>1.0.5</licensing-api-contract.version>
+        <spring-boot.version>3.5.15</spring-boot.version>
+        <openapi.generator.version>7.23.0</openapi.generator.version>
+        <licensing-api-contract.version>1.0.6</licensing-api-contract.version>
         <jakarta.validation.version>3.1.1</jakarta.validation.version>
         <jakarta.annotation-api.version>3.0.0</jakarta.annotation-api.version>
         <mockwebserver.version>5.3.2</mockwebserver.version>
         <httpclient5.version>5.5.2</httpclient5.version>
-        <slf4j-api.version>2.0.17</slf4j-api.version>
-        <logback.version>1.5.32</logback.version>
+        <slf4j-api.version>2.0.18</slf4j-api.version>
+        <logback.version>1.5.37</logback.version>
 
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
-        <maven-failsafe-plugin.version>3.5.5</maven-failsafe-plugin.version>
+        <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
+        <maven-failsafe-plugin.version>3.5.6</maven-failsafe-plugin.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <argLine/>
     </properties>

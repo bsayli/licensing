@@ -316,7 +316,7 @@ mvn clean package
 ```bash
 mvn spring-boot:run
 # or
-java -jar target/licensing-service-1.0.5.jar
+java -jar target/licensing-service-1.0.6.jar
 ```
 
 ### With Docker Compose (from repo root)

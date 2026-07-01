@@ -6,7 +6,7 @@
 
     <groupId>io.github.bsayli</groupId>
     <artifactId>licensing-api-contract</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
     <packaging>jar</packaging>
 
     <name>licensing-api-contract</name>

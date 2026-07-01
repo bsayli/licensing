@@ -36,7 +36,7 @@ Add to your service's `pom.xml`:
 <dependency>
     <groupId>io.github.bsayli</groupId>
     <artifactId>licensing-service-client</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
 </dependency>
 ```
 
@@ -134,7 +134,7 @@ mvn clean package
 Produces:
 
 ```
-target/licensing-service-client-1.0.5.jar
+target/licensing-service-client-1.0.6.jar
 ```
 
 ---

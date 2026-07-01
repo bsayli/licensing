@@ -64,7 +64,7 @@ Default values can also be injected from environment variables:
 ## Example
 
 ```bash
-java -jar target/licensing-service-sdk-cli-1.0.5.jar \
+java -jar target/licensing-service-sdk-cli-1.0.6.jar \
   -k 'BSAYLI.AQA3-gCQ66DQsfC0LwnAO8DTjKgad7DhPaOtCf7WG2bFUoK9pmScIhhCf2S-D0j8g4jC7nlFrLDpuM0ezEoDQc79SizxxEIUGN9YUhTNBW7iRQ' \
   -s crm \
   -v 1.5.0 \
