@@ -1,4 +1,4 @@
-FROM maven:3.9.11-eclipse-temurin-21-noble AS builder
+FROM maven:3.9.16-eclipse-temurin-21-noble AS builder
 WORKDIR /build
 
 COPY licensing-api-contract/pom.xml licensing-api-contract/pom.xml
@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/root/.m2 \
     mvn -q -T 2C --no-transfer-progress -DskipTests -f licensing-service-sdk/pom.xml clean package && \
     java -Djarmode=layertools -jar licensing-service-sdk/target/*.jar extract
 
-FROM eclipse-temurin:21.0.8_9-jre-noble
+FROM eclipse-temurin:21-jre-noble
 WORKDIR /app
 
 RUN apt-get update && \
@@ -34,7 +34,7 @@ RUN apt-get update && \
 
 LABEL org.opencontainers.image.title="licensing-service-sdk" \
       org.opencontainers.image.description="Licensing Service SDK (Spring Boot)" \
-      org.opencontainers.image.version="1.0.6" \
+      org.opencontainers.image.version="1.0.7" \
       org.opencontainers.image.source="https://github.com/bsayli/licensing" \
       org.opencontainers.image.licenses="MIT"
 

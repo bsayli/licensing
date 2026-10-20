@@ -223,7 +223,7 @@ mvn clean package
 ```bash
 mvn spring-boot:run
 # or
-java -jar target/licensing-service-sdk-1.0.0.jar
+java -jar target/licensing-service-sdk-1.0.7.jar
 ```
 
 ---

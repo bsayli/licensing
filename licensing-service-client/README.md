@@ -2,8 +2,8 @@
 
 [![Build](https://github.com/bsayli/licensing/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bsayli/licensing/actions/workflows/build.yml)
 [![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
-[![OpenAPI Generator](https://img.shields.io/badge/OpenAPI%20Generator-7.23.0-blue?logo=openapiinitiative)](https://openapi-generator.tech/)
-[![OpenAPI Generics](https://img.shields.io/badge/OpenAPI%20Generics-1.2.0-blue)](https://github.com/blueprint-platform/openapi-generics)
+[![OpenAPI Generator](https://img.shields.io/badge/OpenAPI%20Generator-7.26.0-blue?logo=openapiinitiative)](https://openapi-generator.tech/)
+[![OpenAPI Generics](https://img.shields.io/badge/OpenAPI%20Generics-1.2.1-blue)](https://github.com/blueprint-platform/openapi-generics)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
 [![Maven](https://img.shields.io/badge/Maven-3.9-blue?logo=apachemaven)](https://maven.apache.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](../LICENSE)
@@ -36,7 +36,7 @@ Add to your service's `pom.xml`:
 <dependency>
     <groupId>io.github.bsayli</groupId>
     <artifactId>licensing-service-client</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
 </dependency>
 ```
 
@@ -134,7 +134,7 @@ mvn clean package
 Produces:
 
 ```
-target/licensing-service-client-1.0.6.jar
+target/licensing-service-client-1.0.7.jar
 ```
 
 ---

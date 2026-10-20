@@ -1,4 +1,4 @@
-FROM maven:3.9.11-eclipse-temurin-21-noble AS builder
+FROM maven:3.9.16-eclipse-temurin-21-noble AS builder
 WORKDIR /build
 
 # Install shared contract module into the local Maven repository
@@ -17,7 +17,7 @@ RUN --mount=type=cache,target=/root/.m2 \
     mvn -q -T 2C -DskipTests --no-transfer-progress clean package && \
     java -Djarmode=layertools -jar target/*.jar extract
 
-FROM eclipse-temurin:21.0.8_9-jre-noble
+FROM eclipse-temurin:21-jre-noble
 WORKDIR /app
 
 RUN apt-get update && \
@@ -32,7 +32,7 @@ RUN apt-get update && \
 
 LABEL org.opencontainers.image.title="licensing-service" \
       org.opencontainers.image.description="Licensing Service (Spring Boot, EdDSA, Caffeine, Keycloak)" \
-      org.opencontainers.image.version="1.0.6" \
+      org.opencontainers.image.version="1.0.7" \
       org.opencontainers.image.source="https://github.com/bsayli/licensing" \
       org.opencontainers.image.licenses="MIT"
 
