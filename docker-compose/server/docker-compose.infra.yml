@@ -4,7 +4,7 @@ networks:
 
 services:
   keycloak:
-    image: quay.io/keycloak/keycloak:26.3.3
+    image: quay.io/keycloak/keycloak:26.8.1
     container_name: licensing-keycloak
     networks: [ license_network ]
     ports:
@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:8.2.1-bookworm
+    image: redis:8.2.10-bookworm
     container_name: licensing-redis
     networks: [ license_network ]
     ports:
